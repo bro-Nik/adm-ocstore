@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}  {% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block link %}
+{% endblock %}
+{% block content %}
+
+<!-- Container fluid -->
+<div class="bg-primary pt-10 pb-21"></div>
+<div class="container-fluid mt-n22 px-6">
+  <!-- row filter  -->
+  <div class="row">
+    <div class="col-lg-12 col-md-12 col-12">
+      <!-- Page header -->
+      <div>
+        <div class="d-flex align-items-center">
+          <div class="mb-2 mb-lg-0">
+            <h3 class="mb-0  text-white">
+              <a href="{{ url_for('other_shops') }}" class="text-white">Магазины</a>
+              | {{ shop.name }} | Категории</h3>
+          </div>
+          <div class="ms-auto d-flex gap-2">
+            <a class="btn btn-white" href="{{ url_for('other_shop_category', shop_id=shop.shop_id) }}">Добавить</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- row  -->
+  <div class="row mt-3 mb-6">
+    <!-- menu nav -->
+    <nav class="nav">
+      <a class="nav-link text-white active" href="#">Категории</a>
+      <a class="nav-link text-white" href="{{ url_for('other_shop_settings', shop_id=shop.shop_id) }}">Настройки</a>
+      <!-- <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a> -->
+    </nav>
+  </div>
+
+  <!-- row  -->
+  <div class="row mt-6 mb-6">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="card h-100">
+
+        <!-- card header  -->
+        <div class="card-header bg-white py-4">
+          <h4 class="mb-0">Категории</h4>
+        </div>
+        <!-- table  -->
+        <form class="" id ="categories"  method="post" action="">
+          <div class="table-responsive">
+            <table class="table text-nowrap">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col"><!-- <input class="form-check-input" type="checkbox"> --></th>
+                  <th scope="col">Название</th>
+                  <th scope="col">Товаров</th>
+                  <th scope="col">Изменения</th>
+                  <th scope="col">Последний парсинг</th>
+                  <th scope="col"></th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody id="tab-categories">
+                {% set category_count = namespace(counter=false) %}
+                {% set category_count.counter = 0 %}
+
+                {% for category in shop.categories|sort(attribute='sort') if not category.parent_id %}
+                  <tr>
+                    <td class="text-average">
+                      {% set category_count.counter = category_count.counter + 1 %}
+                      <input class="form-check-input to-check" type="checkbox" name="{{ 'category-' + category_count.counter|string }}" value="{{ category.other_category_id }}">
+                    </td>
+                    <td class="text-average">
+                      <a href="{{ url_for('other_shops_products',
+                        shop_id=category.shop_id,
+                        category_id=category.other_category_id) }}">
+                        {{ category.name }}</a>
+                    </td>
+                    <td class="text-average">{{ category.products|length if category.products }}</td>
+                    <td class="text-average">
+                      {% if category.new_product %}
+                        {{ category.new_product }}
+                      {% endif %}
+                      {% if category.new_price %}
+                        {{ category.new_price }}
+                      {% endif %}
+                    </td>
+                    <td class="text-average">{{ category.last_parsing|how_long_ago if category.last_parsing }}</td>
+                    <td class="">
+                      <a href="{{ url_for('other_shop_category', shop_id=shop.shop_id,
+                          category_id=category.other_category_id) }}">Настройки
+                      </a>
+                    </td>
+                  </tr>
+                  {% for category in shop.categories|sort(attribute='sort') if category.parent_id %}
+                    <tr>
+                      <td class="text-average">
+                        {% set category_count.counter = category_count.counter + 1 %}
+                        <input class="form-check-input to-check" type="checkbox" name="{{ 'category-' + category_count.counter|string }}" value="{{ category.other_category_id }}">
+                      </td>
+                      <td class="text-average">
+                        <a href="{{ url_for('other_shops_products',
+                                            shop_id=category.shop_id,
+                                            category_id=category.other_category_id) }}">
+                          - - {{ category.name }}
+                        </a>
+                      </td>
+                      <td class="text-average">{{ category.products|length }}</td>
+                      <td class="text-average">
+                        {% if category.new_product %}
+                          <a href="{{ url_for('other_shops_products',
+                              shop_id=shop.shop_id, category_id=category.other_category_id,
+                              changes='new_product') }}">
+                            Т: {{ new_product[category.other_category_id]|length }}
+                          </a>
+                        {% endif %}
+                        {% if category.new_price %}
+                          <a href="{{ url_for('other_shops_products',
+                              shop_id=shop.shop_id, category_id=category.other_category_id,
+                              changes='new_price') }}">
+                            Ц: {{ new_price[category.other_category_id]|length }}
+                          </a>
+                        {% endif %}
+                      </td>
+                      <td class="text-average">{{ category.last_parsing|how_long_ago if category.last_parsing }}</td>
+                      <td class="">
+                        <a href="{{ url_for('other_shop_category', shop_id=shop.shop_id,
+                            category_id=category.other_category_id) }}">Настройки
+                        </a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% endfor %}
+              </tbody>
+            </table>
+            <input type="hidden" name="categories-count" value="{{ category_count.counter }}">
+            <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns visually-hidden">
+              <button class="btn btn-sm btn-primary" type="submit" 
+                  onclick="fAction('start_parsing')">Старт прасинга</button>
+              <button class="btn btn-sm btn-success" type="button" data-bs-toggle="modal"
+                  data-bs-target="#deleteModal" onclick="fAction('accept_changes', 'Принять изменения?')">Принять изменения</button>
+              <button class="btn btn-sm btn-danger" type="button" data-bs-toggle="modal"
+                data-bs-target="#deleteModal" onclick="fAction('del_categories_and_products', 'Удалить категории?')">Удалить</button>
+              <button class="btn btn-sm btn-danger" type="button" data-bs-toggle="modal"
+                data-bs-target="#deleteModal" onclick="fAction('del_only_products', 'Удалить товары?')">Удалить товары</button>
+              <button class="btn btn-sm btn-secondary" type="button" onclick="showButtons(false)">Отмена</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-3" id="titleModal">Вы уверенны?</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <button id="submitForm" type="submit" form="categories" class="w-100 mb-2 btn rounded-3 btn-danger"><strong>Да</strong></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// Чекбоксы принятия ссылки
+function showButtons(status) {
+  var Buttons = document.querySelector('.hidden-btns');
+  if (status === true) {
+    Buttons.classList.remove("visually-hidden");
+  }
+  else if (status === false) {
+    Buttons.classList.add("visually-hidden");
+  }
+}
+// Клик по чекбоксам
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains('to-check')) {
+  var Buttons = document.querySelector('.hidden-btns');
+  if (e.target.checked === true){
+    Buttons.classList.remove("visually-hidden");
+  };
+  }
+});
+// Замена formaction
+const url = "{{ url_for('other_shop_action', shop_id=shop.shop_id) }}"
+function fAction(action, title="None") {
+var x = document.getElementById("categories").action;
+  x = `${url + "/" + action}`
+  document.getElementById("categories").action = x
+  document.getElementById("titleModal").textContent = `${title}`
+}
+</script>
+{% endblock %}

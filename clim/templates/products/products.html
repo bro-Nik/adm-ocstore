@@ -1,0 +1,60 @@
+{% extends "products/base.html" %}
+{% block page_name %} Товары {% endblock %}
+
+{% block table %}
+<table class="table text-nowrap">
+  <form class="" id="Products" method="post" action="">
+    <thead class="table-light">
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Price</th>
+        <th scope="col">Manuf</th>
+        <th scope="col">Quantity</th>
+        <th scope="col">ISBN</th>
+        <th scope="col">Option</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% set group_attribute = namespace(name='') %}
+
+      {% for product in products %}
+        {% for attribute in product.attributes if attribute.attribute_id == session.get('group_attribute')|int %}
+          {% if attribute.text != group_attribute.name %}
+            {% set group_attribute.name = attribute.text %}
+            <tr>
+              <td colspan=2><b>{{ attribute.text }}</b></td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+
+        <tr>
+          <td class="text-average">
+            <input class="form-check-input to-check" type="checkbox" name="" value="">
+            {{ product.description.name }}
+          </td>
+          <td class=""></td>
+          <td class="">{{ product.price|int if product.price|int == product.price else product.price }}</td>
+          <td class="">{{ product.manufacturer.name }}</td>
+          <td class="">{{ product.quantity }}</td>
+          <td class="">{{ product.isbn }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+// Чекбоксы принятия ссылки
+function showButtons(status) {
+  var Buttons = document.querySelector('.hidden-btns');
+  if (status === true) {
+    Buttons.classList.remove("visually-hidden");
+  }
+  else if (status === false) {
+    Buttons.classList.add("visually-hidden");
+  }
+}
+</script>
+{% endblock %}

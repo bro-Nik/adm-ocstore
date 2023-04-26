@@ -1,0 +1,97 @@
+{% extends "products/base.html" %}
+{% block page_name %} Сопоставление товаров {% endblock %}
+{% block head_form %}
+  <a class="btn btn-white" href="{{ url_for('start_change_prices') }}">Авто-подбор цен</a>
+{% endblock %}
+
+{% block table %}
+<form class="" id="confirmProducts" method="post" action="{{ url_for('confirm_prices', page=request.args.get('page')) }}">
+  <table class="table text-nowrap">
+    <thead class="table-light">
+      <tr>
+        <th scope="col" class="sticky-table">Название</th>
+        <th scope="col">Цена</th>
+        {% for shop in other_shops %}
+          <th scope="col"><input id="shop-{{ shop.shop_id }}" class="form-check-input me-1" type="checkbox" onclick="Check('{{ shop.shop_id }}')">{{ shop.name }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% set var = namespace(product_count=0, group_name='') %}
+
+      {% for product in products %}
+        {% for attribute in product.attributes if attribute.attribute_id == session.get('group_attribute')|int %}
+          {% if attribute.text != var.group_name %}
+            {% set var.group_name = attribute.text %}
+            <tr>
+              <td colspan=2><b>{{ attribute.text }}</b></td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+
+        <tr>
+          <td class="sticky-table">{{ product.mpn }}</td>
+          <td class="">{{ product.price|int if product.price|int == product.price else product.price }}</td>
+
+          {% set var.product_count = var.product_count + 1 %}
+
+          {% for shop in other_shops %}
+            <td class="">
+              {% if product.other_shop %}
+                {% for other_product in product.other_shop %}
+                  {% if other_product.shop_id == shop.shop_id %}
+                    {% if other_product.link_confirmed %}
+                      {% if other_product.price|int == product.price|int %}
+                        <span class="text-success">{{ other_product.price }}</span>
+                      {% else %}
+                        <input class="form-check-input to-check shop-{{ shop.shop_id }}" type="radio"
+                        name="{{ 'product-id-' + var.product_count|string }}" value="{{ product.product_id }}">
+                        <input type="hidden" name="{{ 'price-' + var.product_count|string }}" value="{{ other_product.price }}">
+                        <span class="text-danger">{{ other_product.price }}</span>
+                      {% endif %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <input type="hidden" name="products-count" value="{{ var.product_count }}">
+  <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns visually-hidden">
+    <button class="btn rounded-3 btn-primary" type="submit">Применить</button>
+    <button class="btn rounded-3 btn-secondary" type="button" onclick="changeOptions('cancel')">Отмена</button>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+// Чекбоксы принятия ссылки
+function Check(btn) {
+  var status = document.getElementById(`${'shop-' + btn}`).checked;
+  var toCheck = document.querySelectorAll(`${'.to-check.shop-' + btn}`);
+  toCheck.forEach(element => {
+    element.checked = status;
+  });
+  var Buttons = document.querySelectorAll('.hidden-btns');
+    Buttons.forEach(element => {
+      element.classList.remove("visually-hidden");
+    });
+}
+
+// Клик по чекбоксам
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains('to-check')) {
+  var Buttons = document.querySelector('.hidden-btns');
+  if (e.target.checked === true){
+    Buttons.classList.remove("visually-hidden");
+  };
+  }
+});
+</script>
+{% endblock %}

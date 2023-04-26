@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  {% block head %}
+  {% include 'partials/head.html' %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}"> -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <title>{% block title %}{% endblock %}</title>
+  {% endblock %}
+</head>
+<body class="bg-light">
+  <div id="db-wrapper">
+    <!-- navbar vertical -->
+    {% include 'partials/navbar-vertical.html' %}
+    <!-- Page content -->
+    <div id="page-content">
+      {% include 'partials/header.html' %}
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="px-6 mt-3 mb-3">
+          {% for message in messages %}
+            <div class="alert alert-success alert-dismissible" role="alert">
+              {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+
+  </div>
+<!-- Scripts -->
+{% include 'partials/scripts.html' %}
+
+</body>
+</html>
