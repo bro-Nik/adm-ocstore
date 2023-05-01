@@ -125,11 +125,12 @@ def option_values(option_id):
 
     for item in tuple(products_and_options):
         if not count_list.get(item.product_option_value.option_value_id):
-            count_list[item.product_option_value.option_value_id] = []
+            count_list[item.product_option_value.option_value_id] = 0
 
-        count_list[item.product_option_value.option_value_id].append(item.product_id)
+        count_list[item.product_option_value.option_value_id] += 1
 
-        if not item.product_option_value.product_option.settings:
+        if not (item.product_option_value.product_option
+                or item.product_option_value.product_option.settings):
             continue
 
         if item.product_option_value.price == item.product_option_value.product_option.settings.price:
@@ -198,6 +199,7 @@ def option_value_add(option_id, value_id=None):
     """ Отправка данных на добавление или изменение значения опции """
     name = request.form.get('name')
     price = request.form.get('price')
+    price = price if price else 0
     sort = request.form.get('sort')
     settings_dict = {
         'categories_ids': request.form.getlist('categories_ids'),
@@ -494,14 +496,7 @@ def option_value_products(option_id, value_id):
         .where(AttributeDescription.name != None)
         .order_by(Attribute.sort_order)).all()
 
-    if request.form.get('ids'):
-        ids = request.form.get('ids')
-        ids = re.sub(r'( |]|\[)', '', ids)
-        ids = ids.split(',')
-        filter = {'products_ids': ids}
-    else:
-        filter = get_filter_options(option_value)
-
+    filter = get_filter_options(option_value)
     products = get_products(filter=filter)
 
     request_base = Manufacturer.query

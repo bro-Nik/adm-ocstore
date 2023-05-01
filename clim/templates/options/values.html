@@ -63,13 +63,7 @@
                       <input type="number" class="form-control form-control-sm rounded-3 to-show visually-hidden" value="{{ price|int if price|int == price else price }}" name="{{ 'price-' + value_count.counter|string }}">
                     </td>
                     <td class="text-average col-1">
-                      <form method="post" action="{{ url_for('option_value_products',
-                        option_id=option_id, value_id=value.option_value_id) }}">
-                        <input type="hidden" name="ids" value="{{ count_list.get(value.option_value_id) }}">
-                        <button class="btn btn-link m-0 p-0" type="submit">
-                          {{ count_list.get(value.option_value_id)|length if count_list.get(value.option_value_id) }}
-                        </button>
-                      </form>
+                      {{ count_list.get(value.option_value_id) if count_list.get(value.option_value_id) }}
                     </td>
                   </tr>
                 {% endfor %}

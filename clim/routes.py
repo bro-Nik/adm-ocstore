@@ -72,12 +72,6 @@ def get_products(pagination=True, filter={}):
             .where(ProductAttribute.attribute_id == group_attribute)
             .order_by(ProductAttribute.text))
 
-    if filter.get('products_ids'):
-        products_ids = filter.get('products_ids')
-        print(products_ids)
-        print(type(products_ids))
-        request_base = request_base.filter(Product.product_id.in_(products_ids))
-
     if filter.get('stock'):
         stock = filter.get('stock')
         if stock == 'in stock on order':
