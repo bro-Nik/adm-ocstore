@@ -1,5 +1,6 @@
 import json
 from flask import render_template, redirect, url_for, request
+from flask_login import login_required
 
 from clim.app import app, db
 from clim.models import Attribute, AttributeDescription, Manufacturer, Option,\
@@ -21,6 +22,7 @@ def get_option_value(value_id):
 
 
 @app.route('/adm/options', methods=['GET'])
+@login_required
 def options():
     """ Страница опций """
     options = db.session.execute(db.select(Option)).scalars()
@@ -29,6 +31,7 @@ def options():
 
 @app.route('/adm/options/add', methods=['GET'])
 @app.route('/adm/options/<int:option_id>/settings', methods=['GET'])
+@login_required
 def option_settings(option_id=None):
     """ Добавить или изменить опцию """
     option = settings = None
@@ -45,6 +48,7 @@ def option_settings(option_id=None):
 
 @app.route('/adm/options/add_option', methods=['POST'])
 @app.route('/adm/options/<int:option_id>/update', methods=['POST'])
+@login_required
 def option_add(option_id=None):
     """ Отправка данных на добавление или изменение опции """
     name = request.form.get('name')
@@ -83,6 +87,7 @@ def option_add(option_id=None):
 
 
 @app.route('/adm/options/delete', methods=['POST'])
+@login_required
 def options_delete():
     """ Удаление опций """
     options_count = request.form.get('options-count')
@@ -106,6 +111,7 @@ def options_delete():
 
 
 @app.route('/adm/options/<int:option_id>/values', methods=['GET'])
+@login_required
 def option_values(option_id):
     """ Варианты опции """
     option = get_option(option_id)
@@ -140,6 +146,7 @@ def option_values(option_id):
 
 @app.route('/adm/options/<int:option_id>/new_value', methods=['GET'])
 @app.route('/adm/options/<int:option_id>/value_<int:value_id>/settings', methods=['GET'])
+@login_required
 def option_value_settings(option_id, value_id=None):
     """ Добавить или изменить вариант опции """
     option = get_option(option_id)
@@ -185,6 +192,7 @@ def option_value_settings(option_id, value_id=None):
 
 @app.route('/adm/options/<int:option_id>/add_value', methods=['POST'])
 @app.route('/adm/options/<int:option_id>/value_<int:value_id>/update', methods=['POST'])
+@login_required
 def option_value_add(option_id, value_id=None):
     """ Отправка данных на добавление или изменение значения опции """
     name = request.form.get('name')
@@ -235,6 +243,7 @@ def option_value_add(option_id, value_id=None):
 
 @app.route('/adm/options/<int:option_id>', methods=['POST'])
 @app.route('/adm/options/<int:option_id>/<string:action>', methods=['POST'])
+@login_required
 def options_action(option_id, action=None):
     """ Действия над значениями опции """
     values_count = request.form.get('values-count')
@@ -396,6 +405,7 @@ def product_clean_options(product_id):
 
 
 @app.route('/adm/options/<int:option_id>/change', methods=['POST'])
+@login_required
 def change_options_value(option_id):
     values_count = request.form.get('values-count')
     counter = 1
@@ -468,6 +478,7 @@ def get_filter_options(option_value):
 
 
 @app.route('/adm/options/option_<int:option_id>/value_<string:value_id>', methods=['GET', 'POST'])
+@login_required
 def option_value_products(option_id, value_id):
 
     option_value = get_option_value(value_id)
@@ -504,6 +515,7 @@ def option_value_products(option_id, value_id):
 
 @app.route('/adm/options/option_<int:option_id>/value_<string:value_id>/action/<string:action>', methods=['GET', 'POST'])
 @app.route('/adm/options/option_<int:option_id>/value_<string:value_id>/action', methods=['GET', 'POST'])
+@login_required
 def option_value_products_action(option_id, value_id, action=None):
     """ Действия над товараим в опции """
     products_count = request.form.get('products-count')
@@ -540,6 +552,7 @@ def option_value_products_action(option_id, value_id, action=None):
 
 
 @app.route('/adm/options/delete_', methods=['GET'])
+@login_required
 def option_del():
     options = ProductOption.query.filter(ProductOption.product_option_value == None)
     values = ProductOptionValue.query.filter(ProductOptionValue.product_option_ == None)

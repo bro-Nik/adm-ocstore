@@ -1,4 +1,5 @@
 from clim.app import db
+from flask_login import UserMixin
 
 
 class Product(db.Model):
@@ -237,3 +238,10 @@ class OtherCategory(db.Model):
     new_price = db.Column(db.Text)
     new_product = db.Column(db.Text)
     sort = db.Column(db.Integer)
+
+
+class User(db.Model, UserMixin):
+    __tablename__ = 'adm_user'
+    id = db.Column(db.Integer, primary_key=True)
+    login = db.Column(db.String(255), nullable=False, unique=True)
+    password = db.Column(db.String(255), nullable=False)

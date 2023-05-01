@@ -1,5 +1,6 @@
 from flask import render_template, redirect, url_for, request, session, abort,\
     g
+from flask_login import login_required
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -13,6 +14,7 @@ from clim.routes import products
 
 
 @app.route('/adm/other_shops', methods=['GET'])
+@login_required
 def other_shops():
     """ Страница магазинов """
     shops = db.session.execute(db.select(OtherShops)).scalars()
@@ -21,6 +23,7 @@ def other_shops():
 
 @app.route('/adm/other_shops/add_shop', methods=['GET'])
 @app.route('/adm/other_shops/<int:shop_id>/settings', methods=['GET'])
+@login_required
 def other_shop_settings(shop_id=None):
     """ Добавить или изменить магазин """
     if shop_id:
@@ -33,6 +36,7 @@ def other_shop_settings(shop_id=None):
 
 @app.route('/adm/other_shops/add_shop', methods=['POST'])
 @app.route('/adm/other_shops/<int:shop_id>/update', methods=['POST'])
+@login_required
 def other_shop_add(shop_id=None):
     """ Отправка данных на добавление или изменение магазина """
     name = request.form.get('name')
@@ -54,6 +58,7 @@ def other_shop_add(shop_id=None):
 
 
 @app.route('/adm/other_shops/delete', methods=['POST'])
+@login_required
 def other_shop_delete():
     """ Удаление магазинов """
     shops_count = request.form.get('shops-count')
@@ -79,6 +84,7 @@ def other_shop_delete():
 
 
 @app.route('/adm/other_shops/<int:shop_id>/categories', methods=['GET'])
+@login_required
 def other_shop_categories(shop_id):
     """ Категории магазина """
     shop = db.session.execute(db.select(OtherShops).filter_by(shop_id=shop_id)).scalar()
@@ -101,6 +107,7 @@ def other_shop_categories(shop_id):
 
 @app.route('/adm/other_shops/<int:shop_id>/add_categories', methods=['POST'])
 @app.route('/adm/other_shops/<int:shop_id>/<int:category_id>', methods=['POST'])
+@login_required
 def other_shop_add_category(shop_id, category_id=None):
     """ Отправка данных на добавление или изменение категории """
     # Parsing parameters
@@ -157,6 +164,7 @@ def other_shop_add_category(shop_id, category_id=None):
 
 @app.route('/adm/other_shops/<int:shop_id>/new_category', methods=['GET'])
 @app.route('/adm/other_shops/<int:shop_id>/category/<int:category_id>', methods=['GET'])
+@login_required
 def other_shop_category(shop_id, category_id=None):
     """ Настройки категории магазина """
     shop = db.session.execute(
@@ -173,6 +181,7 @@ def other_shop_category(shop_id, category_id=None):
 
 @app.route('/adm/other_shops/get_products_test/<int:category_id>',
            methods=['GET'])
+@login_required
 def get_other_products_test(category_id):
     result = get_other_products_task(category_id, True)
     return json.dumps(result)
@@ -180,6 +189,7 @@ def get_other_products_test(category_id):
 
 @app.route('/adm/other_shops/<int:shop_id>/get_products/<int:category_id>',
            methods=['GET'])
+@login_required
 def get_other_products(shop_id, category_id):
     get_other_products_task.delay(category_id)
     return redirect(url_for('other_shop_categories', shop_id=shop_id))
@@ -311,6 +321,7 @@ def get_other_products_task(category_id, test=None):
 
 @app.route('/adm/other_shops/<int:shop_id>', methods=['POST'])
 @app.route('/adm/other_shops/<int:shop_id>/<string:action>', methods=['POST'])
+@login_required
 def other_shop_action(shop_id, action=None):
     """ Действия над категориями или товарами """
     categories_count = request.form.get('categories-count')
@@ -363,6 +374,7 @@ def other_shop_action(shop_id, action=None):
            methods=['GET', 'POST'])
 @app.route('/adm/other_shops/<int:shop_id>/category/products',
            methods=['GET', 'POST'])
+@login_required
 def other_shops_products(shop_id, category_id=None, changes=None):
     if request.method == 'POST':
         category_id = request.form.get('category_id')

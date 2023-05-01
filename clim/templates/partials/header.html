@@ -8,7 +8,7 @@
     <div class="ms-lg-3 d-none d-md-none d-lg-block">
       <!-- Form -->
       <form class="d-flex align-items-center">
-        <input type="search" class="form-control" placeholder="Search" />
+        <input type="search" class="form-control" placeholder="Поиск" />
       </form>
     </div>
     <!--Navbar nav -->
@@ -114,8 +114,8 @@
 
 
             <div class="lh-1 ">
-              <h5 class="mb-1"> John E. Grainger</h5>
-              <a href="#" class="text-inherit fs-6">View my profile</a>
+              <h5 class="mb-1"> {{ current_user.login }}</h5>
+              <a href="#" class="text-inherit fs-6">Показать профиль</a>
             </div>
             <div class=" dropdown-divider mt-3 mb-2"></div>
           </div>
@@ -124,15 +124,16 @@
 
             <li>
               <a class="dropdown-item" href="#">
-                <i class="me-2 icon-xxs dropdown-item-icon" data-feather="user"></i>Edit
-                Profile
+                <i class="me-2 icon-xxs dropdown-item-icon" data-feather="user"></i>
+                Изменить профиль
               </a>
+
             </li>
             <li>
               <a class="dropdown-item"
                 href="#">
                 <i class="me-2 icon-xxs dropdown-item-icon"
-                  data-feather="activity"></i>Activity Log
+                  data-feather="activity"></i>Активность
               </a>
 
 
@@ -141,19 +142,19 @@
             <li>
               <a class="dropdown-item text-primary" href="#">
                 <i class="me-2 icon-xxs text-primary dropdown-item-icon"
-                  data-feather="star"></i>Go Pro
+                  data-feather="star"></i>Про
               </a>
             </li>
             <li>
               <a class="dropdown-item" href="#">
                 <i class="me-2 icon-xxs dropdown-item-icon"
-                  data-feather="settings"></i>Account Settings
+                  data-feather="settings"></i>Настройки
               </a>
             </li>
             <li>
-              <a class="dropdown-item" href="@@webRoot/index.html">
+              <a class="dropdown-item" href="{{ url_for('logout') }}">
                 <i class="me-2 icon-xxs dropdown-item-icon"
-                  data-feather="power"></i>Sign Out
+                  data-feather="power"></i>Выйти
               </a>
             </li>
           </ul>

@@ -1,1 +1,1 @@
-from clim import app, models, routes, other_shops, options
+from clim import app, models, routes, other_shops, options, users

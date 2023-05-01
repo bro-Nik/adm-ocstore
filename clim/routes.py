@@ -1,9 +1,10 @@
 import json
 from copy import copy
 from flask import render_template, redirect, url_for, request, session, flash
+from flask_login import login_required, current_user
 from thefuzz import fuzz as f
 
-from clim.app import app, db, redis, celery
+from clim.app import app, db, redis, celery, login_manager
 from clim.models import OtherShops, SeoUrl, AttributeDescription, Category, \
     CategoryDescription, Manufacturer, OptionValueDescription, \
     Product, ProductAttribute, ProductOptionValue, Option, OptionValue,\
@@ -11,6 +12,7 @@ from clim.models import OtherShops, SeoUrl, AttributeDescription, Category, \
 
 
 @app.route('/categories', methods=['GET', 'POST'])
+@login_required
 def categories():
     categories = tuple(db.session.execute(
         db.select(Category).order_by(Category.sort_order)).scalars())
@@ -173,6 +175,7 @@ def get_filter(method, path=None):
 
 @app.route('/adm/products', methods=['GET', 'POST'])
 @app.route('/adm/products/<string:path>', methods=['GET', 'POST'])
+@login_required
 def products(path=None):
     other_shops = db.session.execute(db.select(OtherShops)).scalars()
 
@@ -199,11 +202,13 @@ def products(path=None):
 
 
 @app.route('/adm/catalog_settings', methods=['GET', 'POST'])
+@login_required
 def catelog_settings():
     return render_template('catalog_settings.html')
 
 
 @app.route('/comparison_products', methods=['POST'])
+@login_required
 def start_comparison_products():
     """ Запуск подбира похожих товаров """
     all_products = request.form.get('all_products')
@@ -282,6 +287,7 @@ def comparison_products(filter):
 
 
 @app.route('/confirm_product_to_product', methods=['POST'])
+@login_required
 def confirm_product_to_product():
     count = 1
     products_count = int(request.form.get('products-count'))
@@ -309,6 +315,7 @@ def confirm_product_to_product():
 
 
 @app.route('/confirm_prices', methods=['POST'])
+@login_required
 def confirm_prices():
     count = 1
     products_count = request.form.get('products-count')
@@ -341,6 +348,7 @@ def confirm_prices():
 
 
 @app.route('/del_not_confirm_products', methods=['GET', 'POST'])
+@login_required
 def del_not_confirm_products():
 
     other_products = tuple(db.session.execute(db.select(OtherProduct)).scalars())
@@ -354,6 +362,7 @@ def del_not_confirm_products():
 
 
 @app.route('/adm/products/change_prices', methods=['GET'])
+@login_required
 def start_change_prices():
     change_prices.delay()
     page = request.args.get('page')

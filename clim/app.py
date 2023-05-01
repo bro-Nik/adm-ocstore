@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_login import LoginManager
 import redis
 from celery import Celery
 
@@ -42,6 +43,7 @@ def make_celery(app):
 
 celery = make_celery(app)
 redis = redis.StrictRedis('127.0.0.1', 6379)
+login_manager = LoginManager(app)
 
 
 
