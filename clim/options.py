@@ -129,8 +129,10 @@ def option_values(option_id):
 
         count_list[item.product_option_value.option_value_id] += 1
 
-        if not (item.product_option_value.product_option
-                or item.product_option_value.product_option.settings):
+        if not item.product_option_value.product_option:
+            continue
+
+        if not item.product_option_value.product_option.settings:
             continue
 
         if item.product_option_value.price == item.product_option_value.product_option.settings.price:
