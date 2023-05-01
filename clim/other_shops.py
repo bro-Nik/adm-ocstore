@@ -13,7 +13,7 @@ from clim.models import OtherCategory, OtherProduct, OtherShops
 from clim.routes import products
 
 
-@app.route('/adm/other_shops', methods=['GET'])
+@app.route('/other_shops', methods=['GET'])
 @login_required
 def other_shops():
     """ Страница магазинов """
@@ -21,8 +21,8 @@ def other_shops():
     return render_template('other_shops/other_shops.html', shops=shops)
 
 
-@app.route('/adm/other_shops/add_shop', methods=['GET'])
-@app.route('/adm/other_shops/<int:shop_id>/settings', methods=['GET'])
+@app.route('/other_shops/add_shop', methods=['GET'])
+@app.route('/other_shops/<int:shop_id>/settings', methods=['GET'])
 @login_required
 def other_shop_settings(shop_id=None):
     """ Добавить или изменить магазин """
@@ -34,8 +34,8 @@ def other_shop_settings(shop_id=None):
     return render_template('other_shops/settings.html', shop=shop)
 
 
-@app.route('/adm/other_shops/add_shop', methods=['POST'])
-@app.route('/adm/other_shops/<int:shop_id>/update', methods=['POST'])
+@app.route('/other_shops/add_shop', methods=['POST'])
+@app.route('/other_shops/<int:shop_id>/update', methods=['POST'])
 @login_required
 def other_shop_add(shop_id=None):
     """ Отправка данных на добавление или изменение магазина """
@@ -57,7 +57,7 @@ def other_shop_add(shop_id=None):
     return redirect(url_for('other_shops'))
 
 
-@app.route('/adm/other_shops/delete', methods=['POST'])
+@app.route('/other_shops/delete', methods=['POST'])
 @login_required
 def other_shop_delete():
     """ Удаление магазинов """
@@ -83,7 +83,7 @@ def other_shop_delete():
     return redirect(url_for('other_shops'))
 
 
-@app.route('/adm/other_shops/<int:shop_id>/categories', methods=['GET'])
+@app.route('/other_shops/<int:shop_id>/categories', methods=['GET'])
 @login_required
 def other_shop_categories(shop_id):
     """ Категории магазина """
@@ -105,8 +105,8 @@ def other_shop_categories(shop_id):
                            new_product=new_product)
 
 
-@app.route('/adm/other_shops/<int:shop_id>/add_categories', methods=['POST'])
-@app.route('/adm/other_shops/<int:shop_id>/<int:category_id>', methods=['POST'])
+@app.route('/other_shops/<int:shop_id>/add_categories', methods=['POST'])
+@app.route('/other_shops/<int:shop_id>/<int:category_id>', methods=['POST'])
 @login_required
 def other_shop_add_category(shop_id, category_id=None):
     """ Отправка данных на добавление или изменение категории """
@@ -162,8 +162,8 @@ def other_shop_add_category(shop_id, category_id=None):
                             category_id=category.other_category_id))
 
 
-@app.route('/adm/other_shops/<int:shop_id>/new_category', methods=['GET'])
-@app.route('/adm/other_shops/<int:shop_id>/category/<int:category_id>', methods=['GET'])
+@app.route('/other_shops/<int:shop_id>/new_category', methods=['GET'])
+@app.route('/other_shops/<int:shop_id>/category/<int:category_id>', methods=['GET'])
 @login_required
 def other_shop_category(shop_id, category_id=None):
     """ Настройки категории магазина """
@@ -179,7 +179,7 @@ def other_shop_category(shop_id, category_id=None):
                            parsing=parsing, shop=shop)
 
 
-@app.route('/adm/other_shops/get_products_test/<int:category_id>',
+@app.route('/other_shops/get_products_test/<int:category_id>',
            methods=['GET'])
 @login_required
 def get_other_products_test(category_id):
@@ -187,7 +187,7 @@ def get_other_products_test(category_id):
     return json.dumps(result)
 
 
-@app.route('/adm/other_shops/<int:shop_id>/get_products/<int:category_id>',
+@app.route('/other_shops/<int:shop_id>/get_products/<int:category_id>',
            methods=['GET'])
 @login_required
 def get_other_products(shop_id, category_id):
@@ -319,8 +319,8 @@ def get_other_products_task(category_id, test=None):
     print('End')
 
 
-@app.route('/adm/other_shops/<int:shop_id>', methods=['POST'])
-@app.route('/adm/other_shops/<int:shop_id>/<string:action>', methods=['POST'])
+@app.route('/other_shops/<int:shop_id>', methods=['POST'])
+@app.route('/other_shops/<int:shop_id>/<string:action>', methods=['POST'])
 @login_required
 def other_shop_action(shop_id, action=None):
     """ Действия над категориями или товарами """
@@ -368,11 +368,11 @@ def other_shop_action(shop_id, action=None):
     return redirect(url_for('other_shop_categories', shop_id=shop_id))
 
 
-@app.route('/adm/other_shops/<int:shop_id>/category/<int:category_id>/products/<string:changes>',
+@app.route('/other_shops/<int:shop_id>/category/<int:category_id>/products/<string:changes>',
            methods=['GET', 'POST'])
-@app.route('/adm/other_shops/<int:shop_id>/category/<int:category_id>/products',
+@app.route('/other_shops/<int:shop_id>/category/<int:category_id>/products',
            methods=['GET', 'POST'])
-@app.route('/adm/other_shops/<int:shop_id>/category/products',
+@app.route('/other_shops/<int:shop_id>/category/products',
            methods=['GET', 'POST'])
 @login_required
 def other_shops_products(shop_id, category_id=None, changes=None):

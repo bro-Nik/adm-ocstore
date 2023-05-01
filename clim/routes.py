@@ -72,6 +72,12 @@ def get_products(pagination=True, filter={}):
             .where(ProductAttribute.attribute_id == group_attribute)
             .order_by(ProductAttribute.text))
 
+    if filter.get('products_ids'):
+        products_ids = filter.get('products_ids')
+        print(products_ids)
+        print(type(products_ids))
+        request_base = request_base.filter(Product.product_id.in_(products_ids))
+
     if filter.get('stock'):
         stock = filter.get('stock')
         if stock == 'in stock on order':
@@ -173,8 +179,8 @@ def get_filter(method, path=None):
     return filter
 
 
-@app.route('/adm/products', methods=['GET', 'POST'])
-@app.route('/adm/products/<string:path>', methods=['GET', 'POST'])
+@app.route('/products', methods=['GET', 'POST'])
+@app.route('/products/<string:path>', methods=['GET', 'POST'])
 @login_required
 def products(path=None):
     other_shops = db.session.execute(db.select(OtherShops)).scalars()
@@ -201,7 +207,7 @@ def products(path=None):
                            attributes=attributes)
 
 
-@app.route('/adm/catalog_settings', methods=['GET', 'POST'])
+@app.route('/catalog_settings', methods=['GET', 'POST'])
 @login_required
 def catelog_settings():
     return render_template('catalog_settings.html')
@@ -361,7 +367,7 @@ def del_not_confirm_products():
     return redirect(url_for('products', path='comparison', page=page))
 
 
-@app.route('/adm/products/change_prices', methods=['GET'])
+@app.route('/products/change_prices', methods=['GET'])
 @login_required
 def start_change_prices():
     change_prices.delay()

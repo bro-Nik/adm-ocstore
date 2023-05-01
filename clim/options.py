@@ -1,4 +1,5 @@
 import json
+import re
 from flask import render_template, redirect, url_for, request
 from flask_login import login_required
 
@@ -21,7 +22,7 @@ def get_option_value(value_id):
         db.select(OptionValue).filter_by(option_value_id=value_id)).scalar()
 
 
-@app.route('/adm/options', methods=['GET'])
+@app.route('/options', methods=['GET'])
 @login_required
 def options():
     """ Страница опций """
@@ -29,8 +30,8 @@ def options():
     return render_template('options/options.html', options=options)
 
 
-@app.route('/adm/options/add', methods=['GET'])
-@app.route('/adm/options/<int:option_id>/settings', methods=['GET'])
+@app.route('/options/add', methods=['GET'])
+@app.route('/options/<int:option_id>/settings', methods=['GET'])
 @login_required
 def option_settings(option_id=None):
     """ Добавить или изменить опцию """
@@ -46,8 +47,8 @@ def option_settings(option_id=None):
                            settings=settings)
 
 
-@app.route('/adm/options/add_option', methods=['POST'])
-@app.route('/adm/options/<int:option_id>/update', methods=['POST'])
+@app.route('/options/add_option', methods=['POST'])
+@app.route('/options/<int:option_id>/update', methods=['POST'])
 @login_required
 def option_add(option_id=None):
     """ Отправка данных на добавление или изменение опции """
@@ -86,7 +87,7 @@ def option_add(option_id=None):
     return redirect(url_for('options'))
 
 
-@app.route('/adm/options/delete', methods=['POST'])
+@app.route('/options/delete', methods=['POST'])
 @login_required
 def options_delete():
     """ Удаление опций """
@@ -110,7 +111,7 @@ def options_delete():
     return redirect(url_for('options'))
 
 
-@app.route('/adm/options/<int:option_id>/values', methods=['GET'])
+@app.route('/options/<int:option_id>/values', methods=['GET'])
 @login_required
 def option_values(option_id):
     """ Варианты опции """
@@ -124,9 +125,9 @@ def option_values(option_id):
 
     for item in tuple(products_and_options):
         if not count_list.get(item.product_option_value.option_value_id):
-            count_list[item.product_option_value.option_value_id] = 0
+            count_list[item.product_option_value.option_value_id] = []
 
-        count_list[item.product_option_value.option_value_id] += 1
+        count_list[item.product_option_value.option_value_id].append(item.product_id)
 
         if not item.product_option_value.product_option.settings:
             continue
@@ -144,8 +145,8 @@ def option_values(option_id):
                            other_prices=other_prices)
 
 
-@app.route('/adm/options/<int:option_id>/new_value', methods=['GET'])
-@app.route('/adm/options/<int:option_id>/value_<int:value_id>/settings', methods=['GET'])
+@app.route('/options/<int:option_id>/new_value', methods=['GET'])
+@app.route('/options/<int:option_id>/value_<int:value_id>/settings', methods=['GET'])
 @login_required
 def option_value_settings(option_id, value_id=None):
     """ Добавить или изменить вариант опции """
@@ -190,8 +191,8 @@ def option_value_settings(option_id, value_id=None):
                            attribute_values=attribute_values)
 
 
-@app.route('/adm/options/<int:option_id>/add_value', methods=['POST'])
-@app.route('/adm/options/<int:option_id>/value_<int:value_id>/update', methods=['POST'])
+@app.route('/options/<int:option_id>/add_value', methods=['POST'])
+@app.route('/options/<int:option_id>/value_<int:value_id>/update', methods=['POST'])
 @login_required
 def option_value_add(option_id, value_id=None):
     """ Отправка данных на добавление или изменение значения опции """
@@ -215,8 +216,13 @@ def option_value_add(option_id, value_id=None):
         option_value = get_option_value(value_id)
         option_value.sort_order = sort
         option_value.description.name = name
-        option_value.settings.price = price
-        option_value.settings.settings = settings
+        if option_value.settings:
+            option_value.settings.price = price
+            option_value.settings.settings = settings
+        else:
+            option_value.settings = OptionValueSetting(price=price,
+                                                       settings=settings)
+
     else:
         option_value = OptionValue(sort_order=sort, image=0,
                                    option_id=option_id)
@@ -241,8 +247,8 @@ def option_value_add(option_id, value_id=None):
                             value_id=value_id))
 
 
-@app.route('/adm/options/<int:option_id>', methods=['POST'])
-@app.route('/adm/options/<int:option_id>/<string:action>', methods=['POST'])
+@app.route('/options/<int:option_id>', methods=['POST'])
+@app.route('/options/<int:option_id>/<string:action>', methods=['POST'])
 @login_required
 def options_action(option_id, action=None):
     """ Действия над значениями опции """
@@ -404,7 +410,7 @@ def product_clean_options(product_id):
     db.session.commit()
 
 
-@app.route('/adm/options/<int:option_id>/change', methods=['POST'])
+@app.route('/options/<int:option_id>/change', methods=['POST'])
 @login_required
 def change_options_value(option_id):
     values_count = request.form.get('values-count')
@@ -477,7 +483,7 @@ def get_filter_options(option_value):
     return filter
 
 
-@app.route('/adm/options/option_<int:option_id>/value_<string:value_id>', methods=['GET', 'POST'])
+@app.route('/options/option_<int:option_id>/value_<string:value_id>', methods=['GET', 'POST'])
 @login_required
 def option_value_products(option_id, value_id):
 
@@ -488,7 +494,14 @@ def option_value_products(option_id, value_id):
         .where(AttributeDescription.name != None)
         .order_by(Attribute.sort_order)).all()
 
-    filter = get_filter_options(option_value)
+    if request.form.get('ids'):
+        ids = request.form.get('ids')
+        ids = re.sub(r'( |]|\[)', '', ids)
+        ids = ids.split(',')
+        filter = {'products_ids': ids}
+    else:
+        filter = get_filter_options(option_value)
+
     products = get_products(filter=filter)
 
     request_base = Manufacturer.query
@@ -513,8 +526,8 @@ def option_value_products(option_id, value_id):
                            other_products=other_products)
 
 
-@app.route('/adm/options/option_<int:option_id>/value_<string:value_id>/action/<string:action>', methods=['GET', 'POST'])
-@app.route('/adm/options/option_<int:option_id>/value_<string:value_id>/action', methods=['GET', 'POST'])
+@app.route('/options/option_<int:option_id>/value_<string:value_id>/action/<string:action>', methods=['GET', 'POST'])
+@app.route('/options/option_<int:option_id>/value_<string:value_id>/action', methods=['GET', 'POST'])
 @login_required
 def option_value_products_action(option_id, value_id, action=None):
     """ Действия над товараим в опции """
@@ -551,7 +564,7 @@ def option_value_products_action(option_id, value_id, action=None):
                             value_id=value_id))
 
 
-@app.route('/adm/options/delete_', methods=['GET'])
+@app.route('/options/delete_', methods=['GET'])
 @login_required
 def option_del():
     options = ProductOption.query.filter(ProductOption.product_option_value == None)
