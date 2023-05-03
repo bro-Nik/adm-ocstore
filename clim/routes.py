@@ -484,6 +484,7 @@ def confirm_prices():
                 continue
 
             product.price = float(price)
+            product.quantity = 10
             if product.product_id in discount_products:
                 for option in product.options:
                     if option.option_id == 24:
@@ -521,6 +522,7 @@ def start_change_prices():
 
 @celery.task()
 def change_prices():
+    delta = 0.3
     products = tuple(db.session.execute(db.select(Product)).scalars())
 
     def convert_price(price):
@@ -536,32 +538,32 @@ def change_prices():
 
         # Одна цена конкурента
         if len(product.other_shop) < 2:
-            other_product_price = convert_price(product.other_shop[0].price)
-            if not other_product_price:
+            other_price = convert_price(product.other_shop[0].price)
+            if not other_price:
                 continue
 
-            if other_product_price > product.price:
-                product.price = other_product_price
+            if (other_price > product.price
+                    or other_price >= product.price - (product.price * delta)):
+                product.price = other_price
+                product.quantity = 10
 
-            elif other_product_price < product.price:
-                if product.price / (product.price - other_product_price) > 30:
-                    product.price = other_product_price
             continue
 
         # Несколько цен конкурентов
-        prices = {}
+        prices = []
         for other_product in product.other_shop:
-            other_product_price = convert_price(other_product.price)
-            if not other_product_price:
-                continue
+            other_price = convert_price(other_product.price)
+            if other_price:
+                prices.append(other_price)
 
-            if prices.get(other_product_price):
-                prices[other_product_price].append(other_product.shop_id)
-            else:
-                prices[other_product_price] = [other_product.shop_id]
-            for price in prices:
-                if len(prices[price]) > 1:
-                    product.price = price
+        if product.price in prices:
+            continue
+
+        for other_price in sorted(prices):
+            if abs(product.price - other_price) <= product.price * delta:
+                product.price = other_price
+                product.quantity = 10
+                break
 
     db.session.commit()
     print('End')
