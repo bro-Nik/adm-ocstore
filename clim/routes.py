@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 from flask_sqlalchemy import query
 from requests import delete
 from thefuzz import fuzz as f
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from clim.app import app, db, redis, celery, login_manager
 from clim.models import OtherShops, ProductImage, ProductVariant, RedirectManager, Review, SeoUrl, AttributeDescription, Category, \
@@ -272,8 +272,7 @@ def product_delete(product_id: int):
             to_url=new_url,
             response_code=301,
             date_start=datetime.now().date(),
-            # date_end=0000-00-00,
-            date_end='0000-00-00',
+            date_end=datetime.now().date() + timedelta(days=3652),
             times_used=0
         )
         db.session.add(redirect)
