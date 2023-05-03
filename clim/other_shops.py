@@ -299,6 +299,7 @@ def get_other_products_task(category_id, test=None):
 
         page = '?page=' + str(n_page)
         n_page += 1
+        time.sleep(1)
 
     changes = {}
     if len(category.products) != products_count:

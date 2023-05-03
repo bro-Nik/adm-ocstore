@@ -1,3 +1,4 @@
+from itertools import product
 from clim.app import db
 from flask_login import UserMixin
 
@@ -9,6 +10,10 @@ class Product(db.Model):
     ean = db.Column(db.String(64))
     image = db.Column(db.String(255))
     price = db.Column(db.Float(15.4))
+    images = db.relationship('ProductImage',
+                             backref=db.backref('product', lazy=True))
+    related_products = db.relationship('ProductRelated',
+                                    backref=db.backref('product', lazy=True))
     manufacturer = db.relationship('Manufacturer',
                                    backref=db.backref('products', lazy=True))
     manufacturer_id = db.Column(db.Integer,
@@ -20,6 +25,29 @@ class Product(db.Model):
     quantity = db.Column(db.Integer)
     attributes = db.relationship('ProductAttribute',
                                    backref='product', lazy=True)
+
+
+class ProductImage(db.Model):
+    __tablename__ = 'oc_product_image'
+    product_image_id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'),
+                           primary_key=True)
+    image = db.Column(db.String(255))
+
+
+class ProductRelated(db.Model):
+    __tablename__ = 'oc_product_related'
+    product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'),
+                           primary_key=True)
+    related_id = db.Column(db.Integer,
+                           primary_key=True)
+
+
+class ProductVariant(db.Model):
+    __tablename__ = 'oc_prodvar'
+    prodvar_id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer)
+    prodvar_product_str_id = db.Column(db.Text)
 
 
 class Manufacturer(db.Model):
@@ -37,8 +65,33 @@ class ProductDescription(db.Model):
 
 product_to_category = db.Table('oc_product_to_category',
     db.Column('product_id', db.Integer, db.ForeignKey('oc_product.product_id')),
-    db.Column('category_id', db.Integer, db.ForeignKey('oc_category_description.category_id'))
+    db.Column('category_id', db.Integer, db.ForeignKey('oc_category_description.category_id')),
+    db.Column('main_category', db.Boolean)
 )
+
+
+product_to_download = db.Table('oc_product_to_download',
+    db.Column('product_id', db.Integer, db.ForeignKey('oc_product.product_id')),
+    db.Column('download_id', db.Integer, db.ForeignKey('oc_download.download_id'))
+)
+
+
+class Download(db.Model):
+    __tablename__ = 'oc_download'
+    download_id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(160))
+    products = db.relationship('Product', secondary=product_to_download,
+                               backref=db.backref('downloads', lazy='dynamic'))
+    description = db.relationship('DownloadDescription',
+                                  backref='download', uselist=False)
+
+
+class DownloadDescription(db.Model):
+    __tablename__ = 'oc_download_description'
+    download_id = db.Column(db.Integer,
+                            db.ForeignKey('oc_download.download_id'),
+                            primary_key=True)
+    name = db.Column(db.String(64))
 
 
 class Category(db.Model):
@@ -63,7 +116,7 @@ class CategoryDescription(db.Model):
 class ProductAttribute(db.Model):
     __tablename__ = 'oc_product_attribute'
     product_id = db.Column(db.Integer,
-                                db.ForeignKey('oc_product.product_id'),
+                           db.ForeignKey('oc_product.product_id'),
                            primary_key=True)
     attribute_id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text)
@@ -245,3 +298,28 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     login = db.Column(db.String(255), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
+
+
+class Review(db.Model):
+    __tablename__ = 'oc_review'
+    review_id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer)
+
+
+class RedirectManager(db.Model):
+    __tablename__ = 'oc_redirect_manager'
+    redirect_manager_id = db.Column(db.Integer, primary_key=True)
+    active = db.Column(db.Boolean)
+    from_url = db.Column(db.Text)
+    to_url = db.Column(db.Text)
+    response_code = db.Column(db.Integer)
+    date_start = db.Column(db.Date)
+    date_end = db.Column(db.Date)
+    times_used = db.Column(db.Integer)
+
+
+# class Setting(db.Model):
+#     __tablename__ = 'adm_setting'
+#     setting_id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(64))
+#     value = db.Column(db.Text)

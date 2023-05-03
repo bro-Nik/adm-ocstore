@@ -1,14 +1,18 @@
 import json
+import os
 from copy import copy
 from flask import render_template, redirect, url_for, request, session, flash
 from flask_login import login_required, current_user
+from flask_sqlalchemy import query
+from requests import delete
 from thefuzz import fuzz as f
+from datetime import datetime
 
 from clim.app import app, db, redis, celery, login_manager
-from clim.models import OtherShops, SeoUrl, AttributeDescription, Category, \
+from clim.models import OtherShops, ProductImage, ProductVariant, RedirectManager, Review, SeoUrl, AttributeDescription, Category, \
     CategoryDescription, Manufacturer, OptionValueDescription, \
     Product, ProductAttribute, ProductOptionValue, Option, OptionValue,\
-    OtherProduct, Attribute
+    OtherProduct, Attribute, product_to_category
 
 
 @app.route('/categories', methods=['GET', 'POST'])
@@ -148,7 +152,8 @@ def get_categories():
 
 
 def get_manufacturers():
-    return db.session.execute(db.select(Manufacturer)).scalars()
+    return db.session.execute(
+        db.select(Manufacturer).order_by(Manufacturer.name)).scalars()
 
 
 def get_filter(method, path=None):
@@ -201,10 +206,155 @@ def products(path=None):
                            attributes=attributes)
 
 
-@app.route('/catalog_settings', methods=['GET', 'POST'])
+@app.route('/products/action', methods=['POST'])
 @login_required
-def catelog_settings():
-    return render_template('catalog_settings.html')
+def products_action():
+    action = request.form.get('action')
+
+    count = 1
+    products_count = int(request.form.get('products-count'))
+    while count <= products_count:
+        product_id = request.form.get('product-id-' + str(count))
+        if product_id:
+            product_id = int(product_id)
+
+            if action == 'delete':
+                product_delete(product_id)
+
+        count += 1
+
+    page = request.args.get('page')
+    return redirect(url_for('products', page=page))
+
+
+def get_url(category_id=None, product_id=None):
+    if category_id:
+        filter = 'category_id='+str(category_id)
+
+    elif product_id:
+        filter = 'product_id='+str(product_id)
+
+    else:
+        return None
+
+    return db.session.execute(db.select(SeoUrl).filter_by(query=filter)).scalar()
+
+
+def product_delete(product_id: int):
+    """ Удаление товара и все, что с ним связано """
+    image_path = app.config['IMAGE_PATH']
+    download_path = app.config['DOWNLOAD_PATH']
+
+    old_url = new_url = None
+
+    product = get_product(product_id)
+
+    # Seo url
+    product_url = get_url(product_id=product_id)
+    if product_url:
+        old_url = app.config['CATALOG_DOMAIN'] + product_url.keyword
+        db.session.delete(product_url)
+
+    # Добавляем редирект
+    main_category = db.session.execute(
+        db.select(product_to_category)
+        .filter_by(product_id=product_id, main_category=1)).one()
+
+    main_category_url = get_url(category_id=main_category.category_id)
+
+    if main_category_url:
+        new_url = app.config['CATALOG_DOMAIN'] + main_category_url.keyword
+
+    if old_url and new_url:
+        redirect = RedirectManager(
+            active=1,
+            from_url=old_url,
+            to_url=new_url,
+            response_code=301,
+            date_start=datetime.now().date(),
+            date_end=0000-00-00,
+            times_used=0
+        )
+        db.session.add(redirect)
+        db.session.commit()
+
+    if product.description:
+        db.session.delete(product.description)
+
+    if product.image and os.path.isfile(image_path + product.image):
+        os.remove(image_path + product.image)
+    if product.images:
+        for image in product.images:
+            other_images = db.session.execute(
+                db.select(ProductImage).filter(
+                    (ProductImage.product_id != product.product_id)
+                    & (ProductImage.image == image.image))).scalar()
+            if not other_images and os.path.isfile(image_path + image.image):
+                os.remove(image_path + image.image)
+
+            db.session.delete(image)
+
+    if product.categories:
+        for category in product.categories:
+            category.products.remove(product)
+            db.session.commit()
+
+    if product.related_products:
+        for related_product in product.related_products:
+            db.session.delete(related_product)
+
+    if product.attributes:
+        for attribute in product.attributes:
+            db.session.delete(attribute)
+        db.session.commit()
+
+    if product.options:
+        for option in product.options:
+            if option.product_option_value:
+                db.session.delete(option.product_option_value)
+            db.session.delete(option)
+
+    if product.other_shop:
+        for other_product in product.other_shop:
+            other_product.link_confirmed = None
+            other_product.product_id = 0
+
+    product_variants = (ProductVariant.query
+                        .filter_by(product_id=product.product_id)).all()
+    if product_variants:
+        for variant in product_variants:
+            db.session.delete(variant)
+    variants_in_products = ProductVariant.query.all()
+    if variants_in_products:
+        for variant in variants_in_products:
+            ids = variant.prodvar_product_str_id.split(',')
+            id = str(product.product_id)
+            if id in ids:
+                ids.remove(id)
+                variant.prodvar_product_str_id = ','.join(ids)
+
+    reviews = Review.query.filter(Review.product_id == product.product_id).all()
+    if reviews:
+        for review in reviews:
+            db.session.delete(review)
+
+    if product.downloads:
+        for download in product.downloads:
+
+            if len(download.products) == 1:
+                if os.path.isfile(download_path + download.filename):
+                    os.remove(download_path + download.filename)
+
+                if download.description:
+                    db.session.delete(download.description)
+
+                db.session.delete(download)
+            else:
+                download.products.remove(product)
+
+    db.session.delete(product)
+    db.session.commit()
+
 
 
 @app.route('/comparison_products', methods=['POST'])
@@ -417,3 +567,42 @@ def change_prices():
     print('End')
 
 
+# @app.route('/settings', methods=['GET', 'POST'])
+# @login_required
+# def settings():
+#     settings_in_base = db.session.execute(db.select(Setting)).scalars()
+#
+#     def get_setting(name):
+#         for setting in settings_in_base:
+#             if setting.name == name:
+#                 return setting
+#         else:
+#             return None
+#
+#     if request.method == 'POST':
+#
+#         new_settings = {}
+#
+#         new_settings['catalog'] = None
+#         settings_list = {
+#             'image_path': request.form.get('image_path'),
+#             'download_path': request.form.get('download_path')
+#             }
+#         for setting in settings_list:
+#             if settings_list[setting]:
+#                 new_settings['catalog'] = json.dumps(settings_list)
+#                 break
+#
+#         for new_setting_name in new_settings:
+#             setting_in_base = get_setting(new_setting_name)
+#             if setting_in_base:
+#                 setting_in_base.value = new_settings.get(new_setting_name)
+#             else:
+#                 new_setting = Setting(name=new_setting_name,
+#                                       value=new_settings.get(new_setting_name))
+#                 db.session.add(new_setting)
+#         db.session.commit()
+#
+#
+#
+#     return render_template('settings.html', settings=settings_in_base)

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}  {% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block link %}
+{% endblock %}
+{% block content %}
+
+<!-- Container fluid -->
+<div class="bg-primary pt-10 pb-21"></div>
+<div class="container-fluid mt-n22 px-6">
+
+
+  <!-- row  -->
+  <div class="row mt-6 mb-6">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="card h-100">
+
+        <!-- card header  -->
+        <div class="card-header bg-white py-4">
+          <h4 class="mb-0">Настройки</h4>
+        </div>
+
+        <!-- card -->
+        <div class="card">
+          <form  method="post" action="{{ url_for('settings') }}">
+
+            <!-- card body -->
+            <div class="card-body">
+              <!-- border -->
+              <div class="mb-6">
+                <h4 class="mb-1">Основная информация</h4>
+              </div>
+              
+              <!-- row -->
+              <div class="mb-3 row">
+                <div class="col-sm-4 mb-3 mb-lg-0">
+                  <label for="image_path" class="form-label">Путь до Images
+                  </label>
+                  <input type="text" class="form-control"
+                      id="image_path" name="image_path" value="">
+                </div>
+                
+                <div class="col-sm-4">
+                  <label for="download_path" class="form-label">Путь до Downloads</label>
+                  <input type="text" class="form-control" 
+                      id="download_path" name="download_path" value="">
+                </div>
+                
+              </div>
+
+              <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
