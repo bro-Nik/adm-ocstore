@@ -272,7 +272,8 @@ def product_delete(product_id: int):
             to_url=new_url,
             response_code=301,
             date_start=datetime.now().date(),
-            date_end=0000-00-00,
+            # date_end=0000-00-00,
+            date_end='0000-00-00',
             times_used=0
         )
         db.session.add(redirect)
