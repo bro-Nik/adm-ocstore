@@ -68,9 +68,10 @@
               <option value="clean_field_{{ field|lower }}">Очистить {{ field }}</option>
             {% endfor %}
           </optgroup>
-          <optgroup label="Изменить количество">
+          <optgroup label="Изменить статус">
             {% set stock_status = {'В наличии': 'in_stock',
-                                   'Запрос цены': 'on_order',
+                                   'Под заказ': 'on_order',
+                                   'Запрос цены': 'price_request',
                                    'Нет в наличии': 'not_in_stock'} %}
             {% for status in stock_status %}
               <option value="{{ 'stock_status_' + stock_status[status] }}">{{ status }}</option>

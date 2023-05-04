@@ -283,9 +283,12 @@ def update_stock_status(product_id: int, status: str):
     if status == 'in_stock':
         product.quantity = 10
     elif status == 'on_order':
+        product.quantity = 1
+    elif status == 'price_request':
         product.price = 100001
     elif status == 'not_in_stock':
         product.quantity = 0
+
     db.session.commit()
 
 
