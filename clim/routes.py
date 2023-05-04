@@ -75,7 +75,6 @@ def get_products(pagination=True, filter={}):
 
     request_base = Product.query
 
-
     if filter.get('group_attribute'):
         group_attribute = int(filter.get('group_attribute'))
         request_base = (request_base.join(Product.attributes)
@@ -169,9 +168,32 @@ def get_categories():
         db.select(Category).order_by(Category.sort_order)).scalars()
 
 
-def get_manufacturers():
-    return db.session.execute(
-        db.select(Manufacturer).order_by(Manufacturer.name)).scalars()
+def get_manufacturers(filter={}):
+    request_base = Manufacturer.query.order_by(Manufacturer.name)
+
+    if filter.get('stock'):
+        stock = filter.get('stock')
+        if stock == 'in stock on order':
+            request_base = (request_base
+                .join(Manufacturer.products).filter(Product.quantity > 0))
+        elif stock == 'in stock':
+            request_base = (request_base
+                .join(Manufacturer.products).filter((Product.quantity > 0)
+                                               & (Product.price != 100001)))
+        elif stock == 'not in stock':
+            request_base = (request_base
+                .join(Manufacturer.products).filter(Product.quantity == 0))
+        elif stock == 'on order':
+            request_base = (request_base
+                .join(Manufacturer.products).filter(Product.price == 100001))
+
+    if filter.get('categories_ids'):
+        categories_ids = filter.get('categories_ids')
+        request_base = (request_base.join(Manufacturer.products)
+                .join(Product.categories)
+                .filter(CategoryDescription.category_id.in_(categories_ids)))
+
+    return request_base.all()
 
 
 def get_filter(method, path=None):
@@ -210,10 +232,11 @@ def products(path=None):
         .where(AttributeDescription.name != None)
         .order_by(Attribute.sort_order)).all()
 
-    categories = get_categories()
-    manufacturers = get_manufacturers()
-
     filter = get_filter(request.method, path)
+
+    categories = get_categories()
+    manufacturers = get_manufacturers(filter)
+
     products = get_products(filter=filter)
 
     page = ('products/' + path + '.html') if path else 'products/products.html'
