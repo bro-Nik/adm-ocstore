@@ -1,5 +1,5 @@
 {% extends "products/base.html" %}
-{% block page_name %} Сопоставление товаров {% endblock %}
+{% set page_name = 'Цены' %}
 {% block head_form %}
   <a class="btn btn-white" href="{{ url_for('start_change_prices') }}">Авто-подбор цен</a>
 {% endblock %}

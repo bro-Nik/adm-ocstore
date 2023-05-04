@@ -65,6 +65,11 @@ def get_product(product_id: int):
         db.select(Product).filter_by(product_id=product_id)).scalar()
 
 
+def get_other_product(product_id: int):
+    return db.session.execute(
+        db.select(OtherProduct).filter_by(other_product_id=product_id)).scalar()
+
+
 def get_products(pagination=True, filter={}):
     """ Получить с фильром """
 
@@ -238,6 +243,8 @@ def products_action():
                 product_delete(product_id)
             elif 'clean_field_' in action:
                 clean_field(product_id, action.replace('clean_field_', ''))
+            elif 'stock_status_' in action:
+                update_stock_status(product_id, action.replace('stock_status_', ''))
 
         count += 1
 
@@ -267,6 +274,18 @@ def clean_field(product_id: int, whan_clean: str):
         product.isbn = ''
     elif whan_clean == 'jan':
         product.jan = ''
+    db.session.commit()
+
+
+def update_stock_status(product_id: int, status: str):
+    product = get_product(product_id)
+
+    if status == 'in_stock':
+        product.quantity = 10
+    elif status == 'on_order':
+        product.price = 100001
+    elif status == 'not_in_stock':
+        product.quantity = 0
     db.session.commit()
 
 
@@ -469,14 +488,21 @@ def comparison_products(filter):
 @app.route('/confirm_product_to_product', methods=['POST'])
 @login_required
 def confirm_product_to_product():
+    """ Привязка или отвязка товара конкурента """
+    action = request.form.get('action')
+
     count = 1
     products_count = int(request.form.get('products-count'))
     while count <= products_count:
-        next_checked = request.form.get('other-product-id-' + str(count))
-        if next_checked:
-            other_product = db.session.execute(
-                db.select(OtherProduct)
-                .filter_by(other_product_id=int(next_checked))).scalar()
+        product_id = request.form.get('other-product-id-' + str(count))
+
+        if not product_id:
+            count += 1
+            continue
+
+        other_product = get_other_product(int(product_id))
+
+        if action == 'bind':
             other_product.link_confirmed = True
 
             other_compared = (db.session.execute(
@@ -487,6 +513,11 @@ def confirm_product_to_product():
                 .scalars())
             for product in other_compared:
                 product.product_id = None
+
+        elif action == 'unbind':
+            other_product.link_confirmed = None
+            other_product.product_id = 0
+
         count += 1
     db.session.commit()
 
