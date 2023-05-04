@@ -22,7 +22,9 @@ class Product(db.Model):
                                   backref='product', uselist=False)
     other_shop = db.relationship('OtherProduct', backref='product', lazy=True)
     isbn = db.Column(db.String(64))
+    jan = db.Column(db.String(64))
     quantity = db.Column(db.Integer)
+    viewed = db.Column(db.Integer)
     attributes = db.relationship('ProductAttribute',
                                    backref='product', lazy=True)
 

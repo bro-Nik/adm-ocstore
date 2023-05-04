@@ -70,6 +70,7 @@ def get_products(pagination=True, filter={}):
 
     request_base = Product.query
 
+
     if filter.get('group_attribute'):
         group_attribute = int(filter.get('group_attribute'))
         request_base = (request_base.join(Product.attributes)
@@ -87,6 +88,15 @@ def get_products(pagination=True, filter={}):
             request_base = request_base.filter(Product.quantity == 0)
         elif stock == 'on order':
             request_base = request_base.filter(Product.price == 100001)
+
+    if filter.get('field'):
+        field = filter.get('field')
+        if field == 'ean':
+            request_base = request_base.filter(Product.ean != '')
+        elif field == 'jan':
+            request_base = request_base.filter(Product.jan != '')
+        elif field == 'isbn':
+            request_base = request_base.filter(Product.isbn != '')
 
     if filter.get('manufacturers_ids'):
         manufacturers_ids = filter.get('manufacturers_ids')
@@ -131,7 +141,10 @@ def get_products(pagination=True, filter={}):
     elif filter.get('other_filter') == 'no_options':
         request_base = request_base.filter(Product.options == None)
 
-    request_base = request_base.order_by(Product.mpn)
+    if filter.get('sort') == 'viewed':
+        request_base = request_base.order_by(Product.viewed.desc())
+    else:
+        request_base = request_base.order_by(Product.mpn)
 
     if pagination:
         results_per_page = session.get('results_per_page')
@@ -161,6 +174,7 @@ def get_filter(method, path=None):
         session['categories_ids'] = request.form.getlist('categories_ids')
         session['manufacturers_ids'] = request.form.getlist('manufacturers_ids')
         session['stock'] = request.form.get('stock')
+        session['field'] = request.form.get('field')
         if path:
             session[path + '_other_filter'] = request.form.get('other_filter')
 
@@ -171,7 +185,9 @@ def get_filter(method, path=None):
         'categories_ids': session.get('categories_ids'),
         'manufacturers_ids': session.get('manufacturers_ids'),
         'stock': session.get('stock'),
-        'group_attribute': session.get('group_attribute')}
+        'field': session.get('field'),
+        'group_attribute': session.get('group_attribute')
+    }
 
     if path:
         filter['other_filter'] = session.get(path + '_other_filter')
@@ -220,6 +236,8 @@ def products_action():
 
             if action == 'delete':
                 product_delete(product_id)
+            elif 'clean_field_' in action:
+                clean_field(product_id, action.replace('clean_field_', ''))
 
         count += 1
 
@@ -238,6 +256,18 @@ def get_url(category_id=None, product_id=None):
         return None
 
     return db.session.execute(db.select(SeoUrl).filter_by(query=filter)).scalar()
+
+
+def clean_field(product_id: int, whan_clean: str):
+    product = get_product(product_id)
+
+    if whan_clean == 'ean':
+        product.ean = ''
+    elif whan_clean == 'isbn':
+        product.isbn = ''
+    elif whan_clean == 'jan':
+        product.jan = ''
+    db.session.commit()
 
 
 def product_delete(product_id: int):
