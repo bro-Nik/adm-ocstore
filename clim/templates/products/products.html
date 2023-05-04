@@ -76,7 +76,13 @@
               <option value="{{ 'stock_status_' + stock_status[status] }}">{{ status }}</option>
             {% endfor %}
           </optgroup>
-          <option value="delete">Удалить</option>
+          <optgroup label="Удалить">
+            {% set delete = {'Удалить с редиректом': 'redirect',
+                             'Удалить без редиректа': 'not_redirect'} %}
+            {% for value in delete %}
+              <option value="{{ 'delete_' + delete[value] }}">{{ value }}</option>
+            {% endfor %}
+          </optgroup>
         </select>
     </div>
     <button class="btn rounded-3 btn-primary" type="submit">OK</button>

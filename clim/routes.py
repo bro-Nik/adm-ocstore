@@ -230,7 +230,7 @@ def products(path=None):
 @app.route('/products/action', methods=['POST'])
 @login_required
 def products_action():
-    action = request.form.get('action')
+    action = str(request.form.get('action'))
 
     count = 1
     products_count = int(request.form.get('products-count'))
@@ -239,8 +239,8 @@ def products_action():
         if product_id:
             product_id = int(product_id)
 
-            if action == 'delete':
-                product_delete(product_id)
+            if 'delete_' in action:
+                product_delete(product_id, action.replace('delete_', ''))
             elif 'clean_field_' in action:
                 clean_field(product_id, action.replace('clean_field_', ''))
             elif 'stock_status_' in action:
@@ -289,7 +289,7 @@ def update_stock_status(product_id: int, status: str):
     db.session.commit()
 
 
-def product_delete(product_id: int):
+def product_delete(product_id: int, action: str):
     """ Удаление товара и все, что с ним связано """
     image_path = app.config['IMAGE_PATH']
     download_path = app.config['DOWNLOAD_PATH']
@@ -305,27 +305,29 @@ def product_delete(product_id: int):
         db.session.delete(product_url)
 
     # Добавляем редирект
-    main_category = db.session.execute(
-        db.select(product_to_category)
-        .filter_by(product_id=product_id, main_category=1)).one()
+    if action == 'redirect':
 
-    main_category_url = get_url(category_id=main_category.category_id)
+        main_category = db.session.execute(
+            db.select(product_to_category)
+            .filter_by(product_id=product_id, main_category=1)).one()
 
-    if main_category_url:
-        new_url = app.config['CATALOG_DOMAIN'] + main_category_url.keyword
+        main_category_url = get_url(category_id=main_category.category_id)
 
-    if old_url and new_url:
-        redirect = RedirectManager(
-            active=1,
-            from_url=old_url,
-            to_url=new_url,
-            response_code=301,
-            date_start=datetime.now().date(),
-            date_end=datetime.now().date() + timedelta(days=3652),
-            times_used=0
-        )
-        db.session.add(redirect)
-        db.session.commit()
+        if main_category_url:
+            new_url = app.config['CATALOG_DOMAIN'] + main_category_url.keyword
+
+        if old_url and new_url:
+            redirect = RedirectManager(
+                active=1,
+                from_url=old_url,
+                to_url=new_url,
+                response_code=301,
+                date_start=datetime.now().date(),
+                date_end=datetime.now().date() + timedelta(days=3652),
+                times_used=0
+            )
+            db.session.add(redirect)
+            db.session.commit()
 
     if product.description:
         db.session.delete(product.description)
