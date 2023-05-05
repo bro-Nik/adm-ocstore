@@ -31,15 +31,15 @@
               <td colspan=1>
                 <input id="group-{{ var.group_count }}" class="form-check-input to-check me-1"
                     type="checkbox" onclick="Check('{{ var.group_count }}')">
-                <b>{{ attribute.text }}</b>
+                <b class="cursor-pointer" onclick="Hidden('{{ var.group_count }}')">{{ attribute.text }}</b>
               </td>
             </tr>
           {% endif %}
         {% endfor %}
 
-        <tr>
+        {% set var.product_count = var.product_count + 1 %}
+        <tr class="group-{{ var.group_count|string }}">
           <td class="text-average">
-            {% set var.product_count = var.product_count + 1 %}
             <input class="form-check-input to-check group-{{ var.group_count }}" type="checkbox"
             name="{{ 'product-id-' + var.product_count|string }}" value="{{ product.product_id }}">
             {{ product.mpn }}
@@ -125,5 +125,15 @@ document.addEventListener("click", function(e) {
   }
 });
 
+// Скрыть товары атрибута
+function Hidden(attribute) {
+  var toHidden = document.querySelectorAll(`${'.group-' + attribute}`);
+    toHidden.forEach(element => {
+      if (element.classList.contains('visually-hidden'))
+        element.classList.remove("visually-hidden");
+      else 
+        element.classList.add("visually-hidden");
+    });
+}
 </script>
 {% endblock %}

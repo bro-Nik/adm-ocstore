@@ -701,6 +701,7 @@ def change_prices():
 #
 #     return render_template('settings.html', settings=settings_in_base)
 
+
 @app.route('/work_plan', methods=['GET', 'POST'])
 @login_required
 def work_plan():
