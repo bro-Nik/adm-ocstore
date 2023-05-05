@@ -136,17 +136,17 @@
                     <td>
                       <input class="form-check-input" type="checkbox"
                         name="models-{{ var.manuf_count }}" value="1"
-                        {{ 'checked' if work_plan[manufacturer].get('models') and work_plan.get(manufacturer) }}>
+                        {{ 'checked' if work_plan.get(manufacturer) and work_plan[manufacturer].get('models') }}>
                     </td>
                     <td>
                       <input class="form-check-input" type="checkbox"
                         name="prices-{{ var.manuf_count }}" value="1"
-                        {{ 'checked' if work_plan[manufacturer].get('prices') and work_plan.get(manufacturer) }}>
+                        {{ 'checked' if work_plan.get(manufacturer) and work_plan[manufacturer].get('prices') }}>
                     </td>
                     <td>
                       <input class="form-check-input" type="checkbox"
                         name="stock-{{ var.manuf_count }}" value="1"
-                        {{ 'checked' if work_plan[manufacturer].get('stock') and work_plan.get(manufacturer) }}>
+                        {{ 'checked' if work_plan.get(manufacturer) and work_plan[manufacturer].get('stock') }}>
                     </td>
                   </tr>
                 {% endfor %}
