@@ -311,6 +311,7 @@ def update_stock_status(product_id: int, status: str):
         product.quantity = 10
     elif status == 'on_order':
         product.quantity = 1
+        product.sort_order = 100
     elif status == 'price_request':
         product.price = 100001
     elif status == 'not_in_stock':

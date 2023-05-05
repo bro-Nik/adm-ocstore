@@ -27,6 +27,7 @@ class Product(db.Model):
     viewed = db.Column(db.Integer)
     attributes = db.relationship('ProductAttribute',
                                    backref='product', lazy=True)
+    sort_order = db.Column(db.Integer)
 
 
 class ProductImage(db.Model):
