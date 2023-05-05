@@ -21,6 +21,7 @@
           </div>
           <div class="ms-auto d-flex gap-2">
             <button class="btn btn-white" type="submit" form="Manufs">Сохранить</button>
+            <a class="btn btn-danger" href="{{ url_for('work_plan_clean', category_id=category_id) }}">Очистить</a>
           </div>
         </div>
       </div>
@@ -133,21 +134,14 @@
                       <input type="hidden" name="manufacturer-{{ var.manuf_count }}"
                         value="{{ manufacturer }}">
                     </td>
-                    <td>
-                      <input class="form-check-input" type="checkbox"
-                        name="models-{{ var.manuf_count }}" value="1"
-                        {{ 'checked' if work_plan.get(manufacturer) and work_plan[manufacturer].get('models') }}>
-                    </td>
-                    <td>
-                      <input class="form-check-input" type="checkbox"
-                        name="prices-{{ var.manuf_count }}" value="1"
-                        {{ 'checked' if work_plan.get(manufacturer) and work_plan[manufacturer].get('prices') }}>
-                    </td>
-                    <td>
-                      <input class="form-check-input" type="checkbox"
-                        name="stock-{{ var.manuf_count }}" value="1"
-                        {{ 'checked' if work_plan.get(manufacturer) and work_plan[manufacturer].get('stock') }}>
-                    </td>
+
+                    {% for field in work_plan_fields %}
+                      <td>
+                        <input class="form-check-input" type="checkbox"
+                          name="{{ field }}-{{ var.manuf_count }}" value="1"
+                          {{ 'checked' if work_plan.get(manufacturer) and work_plan[manufacturer].get(field) }}>
+                      </td>
+                    {% endfor %}
                   </tr>
                 {% endfor %}
 

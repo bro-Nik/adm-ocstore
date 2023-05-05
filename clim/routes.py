@@ -710,6 +710,7 @@ def change_prices():
 @app.route('/work_plan', methods=['GET', 'POST'])
 @login_required
 def work_plan():
+    global work_plan_fields
     categories = get_categories()
 
     manufacturers_ids = request.form.getlist('manufacturers_ids')
@@ -726,7 +727,7 @@ def work_plan():
     if work_plan:
         work_plan = json.loads(work_plan.value)
         work_plan = work_plan.get(str(category_id))
-    else:
+    if not work_plan:
         work_plan = {}
 
     manufacturers = []
@@ -750,17 +751,23 @@ def work_plan():
                            category_id=category_id,
                            manufacturers_ids=manufacturers_ids,
                            manufacturers=manufacturers,
-                           all_manufacturers=all_manufacturers)
+                           all_manufacturers=all_manufacturers,
+                           work_plan_fields=work_plan_fields)
+
+
+work_plan_fields = ['models', 'prices', 'stock']
 
 
 @app.route('/work_plan_<int:category_id>_update', methods=['POST'])
 @login_required
 def work_plan_update(category_id):
+    global work_plan_fields
+    category_id = str(category_id)
+
     plan_in_base = db.session.execute(
         db.select(Module).filter_by(name='work_plan')).scalar()
 
     all_plans = {}
-    new_plan = {}
 
     if plan_in_base:
         all_plans = json.loads(plan_in_base.value)
@@ -769,18 +776,18 @@ def work_plan_update(category_id):
     count = 1
 
     while count <= int(manufacturers_count):
+        new_plan = {}
         manufacturer = request.form.get('manufacturer-' + str(count))
 
-        if not new_plan.get(manufacturer):
-            new_plan[manufacturer] = {}
+        for field in work_plan_fields:
+            new_plan[field] = request.form.get(field + '-' + str(count))
 
-        new_plan[manufacturer]['models'] = request.form.get('models-' + str(count))
-        new_plan[manufacturer]['prices'] = request.form.get('prices-' + str(count))
-        new_plan[manufacturer]['stock'] = request.form.get('stock-' + str(count))
+        if not all_plans.get(category_id):
+            all_plans[category_id] = {}
+
+        all_plans[category_id][manufacturer] = new_plan
 
         count += 1
-
-    all_plans[category_id] = new_plan
 
     if plan_in_base:
         plan_in_base.value = json.dumps(all_plans)
@@ -790,4 +797,19 @@ def work_plan_update(category_id):
         db.session.add(new_plan)
 
     db.session.commit()
+    return redirect(url_for('work_plan'))
+
+
+@app.route('/work_plan_<int:category_id>_clean', methods=['GET'])
+@login_required
+def work_plan_clean(category_id):
+    plan_in_base = db.session.execute(
+        db.select(Module).filter_by(name='work_plan')).scalar()
+
+    if plan_in_base:
+        plan = json.loads(plan_in_base.value)
+        plan.pop(str(category_id), None)
+        plan_in_base.value = json.dumps(plan)
+        db.session.commit()
+
     return redirect(url_for('work_plan'))
