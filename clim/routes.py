@@ -257,6 +257,7 @@ def products(path=None):
 @login_required
 def products_action():
     action = str(request.form.get('action'))
+    other = request.form.get('other')
 
     count = 1
     products_count = int(request.form.get('products-count'))
@@ -266,7 +267,7 @@ def products_action():
             product_id = int(product_id)
 
             if 'delete_' in action:
-                product_delete(product_id, action.replace('delete_', ''))
+                product_delete(product_id, action.replace('delete_', ''), other)
             elif 'clean_field_' in action:
                 clean_field(product_id, action.replace('clean_field_', ''))
             elif 'stock_status_' in action:
@@ -318,7 +319,7 @@ def update_stock_status(product_id: int, status: str):
     db.session.commit()
 
 
-def product_delete(product_id: int, action: str):
+def product_delete(product_id: int, action: str, redirect_to):
     """ Удаление товара и все, что с ним связано """
     image_path = app.config['IMAGE_PATH']
     download_path = app.config['DOWNLOAD_PATH']
@@ -334,7 +335,7 @@ def product_delete(product_id: int, action: str):
         db.session.delete(product_url)
 
     # Добавляем редирект
-    if action == 'redirect':
+    if action == 'redirect_to_category':
 
         main_category = db.session.execute(
             db.select(product_to_category)
@@ -345,6 +346,10 @@ def product_delete(product_id: int, action: str):
         if main_category_url:
             new_url = app.config['CATALOG_DOMAIN'] + main_category_url.keyword
 
+    elif action == 'redirect_to':
+        new_url = redirect_to
+
+    if 'redirect_to' in action:
         if old_url and new_url:
             redirect = RedirectManager(
                 active=1,

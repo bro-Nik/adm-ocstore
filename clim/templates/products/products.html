@@ -60,6 +60,9 @@
 
   <input type="hidden" name="products-count" value="{{ var.product_count }}">
   <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns visually-hidden">
+    <div class="col-md-4">
+      <input type="text" class="form-control" name="other">
+    </div>
     <div class="col-md-2">
         <select class="selectpicker" data-width="100%" data-none-selected-text = "Что делать?" name="action">
           <option></option>
@@ -78,8 +81,9 @@
             {% endfor %}
           </optgroup>
           <optgroup label="Удалить">
-            {% set delete = {'Удалить с редиректом': 'redirect',
-                             'Удалить без редиректа': 'not_redirect'} %}
+            {% set delete = {'С редиректом на категорию': 'redirect_to_category',
+                             'С редиректом из поля': 'redirect_to',
+                             'Без редиректа': 'not_redirect'} %}
             {% for value in delete %}
               <option value="{{ 'delete_' + delete[value] }}">{{ value }}</option>
             {% endfor %}
