@@ -2,7 +2,7 @@
 {% set page_name = 'Товары' %}
 
 {% block table %}
-<form class="" id="Products" method="post" action="{{ url_for('products_action') }}">
+<form class="" id="Products" method="post" action="{{ url_for('products_action', page=request.args.get('page')) }}">
   <table class="table text-nowrap">
     <thead class="table-light">
       <tr>

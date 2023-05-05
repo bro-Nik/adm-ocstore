@@ -3,13 +3,15 @@ import os
 from copy import copy
 from flask import render_template, redirect, url_for, request, session, flash
 from flask_login import login_required, current_user
+from flask_migrate import catch_errors
 from flask_sqlalchemy import query
 from requests import delete
 from thefuzz import fuzz as f
 from datetime import datetime, timedelta
+from transliterate import slugify
 
 from clim.app import app, db, redis, celery, login_manager
-from clim.models import OtherShops, ProductImage, ProductVariant, RedirectManager, Review, SeoUrl, AttributeDescription, Category, \
+from clim.models import Module, OtherShops, ProductImage, ProductVariant, RedirectManager, Review, SeoUrl, AttributeDescription, Category, \
     CategoryDescription, Manufacturer, OptionValueDescription, \
     Product, ProductAttribute, ProductOptionValue, Option, OptionValue,\
     OtherProduct, Attribute, product_to_category
@@ -83,14 +85,16 @@ def get_products(pagination=True, filter={}):
 
     if filter.get('stock'):
         stock = filter.get('stock')
-        if stock == 'in stock on order':
+        if stock == 'not not in stock':
             request_base = request_base.filter(Product.quantity > 0)
         elif stock == 'in stock':
-            request_base = request_base.filter((Product.quantity > 0)
+            request_base = request_base.filter((Product.quantity == 10)
                                                & (Product.price != 100001))
+        elif stock == 'on order':
+            request_base = request_base.filter(Product.quantity == 1)
         elif stock == 'not in stock':
             request_base = request_base.filter(Product.quantity == 0)
-        elif stock == 'on order':
+        elif stock == 'price request':
             request_base = request_base.filter(Product.price == 100001)
 
     if filter.get('field'):
@@ -124,26 +128,26 @@ def get_products(pagination=True, filter={}):
                    .filter(ProductOptionValue.option_value_id == filter.get('option_value_id')))
 
     if filter.get('options') == 'whith options':
-        request_base = (request_base.filter(Product.options != None))
+        request_base = (request_base.filter(Product.options is not None))
     elif filter.get('options') == 'whithout options':
-        request_base = (request_base.filter(Product.options == None))
+        request_base = (request_base.filter(Product.options is None))
 
     if filter.get('other_filter') == 'not_confirmed':
         request_base = (request_base.join(Product.other_shop)
-                   .filter((OtherProduct.product_id != None)
-                          & (OtherProduct.link_confirmed == None)))
+                        .filter((OtherProduct.product_id is not None)
+                                & (OtherProduct.link_confirmed is None)))
 
     if filter.get('other_filter') == 'not_matched':
-        request_base = (request_base.filter(Product.other_shop == None))
+        request_base = (request_base.filter(Product.other_shop is None))
 
     elif filter.get('other_filter') == 'different_price':
         request_base = (request_base.join(Product.other_shop)
-                   .filter((OtherProduct.price != Product.price)
-                          & (OtherProduct.link_confirmed != None)
-                          & (OtherProduct.price != None)))
+                        .filter((OtherProduct.price != Product.price)
+                                & (OtherProduct.link_confirmed is not None)
+                                & (OtherProduct.price is not None)))
 
     elif filter.get('other_filter') == 'no_options':
-        request_base = request_base.filter(Product.options == None)
+        request_base = request_base.filter(Product.options is None)
 
     if filter.get('sort') == 'viewed':
         request_base = request_base.order_by(Product.viewed.desc())
@@ -229,7 +233,7 @@ def products(path=None):
 
     attributes = (Attribute.query
         .join(Attribute.description)
-        .where(AttributeDescription.name != None)
+        .where(AttributeDescription.name is not None)
         .order_by(Attribute.sort_order)).all()
 
     filter = get_filter(request.method, path)
@@ -241,7 +245,6 @@ def products(path=None):
 
     page = ('products/' + path + '.html') if path else 'products/products.html'
 
-    print('group: ', session.get('group_attribute'))
     return render_template(page,
                            products=products,
                            manufacturers=tuple(manufacturers),
@@ -457,7 +460,7 @@ def comparison_products(filter):
 
     other_products = tuple(db.session.execute(
         db.select(OtherProduct)
-        .filter(OtherProduct.link_confirmed == None)).scalars())
+        .filter(OtherProduct.link_confirmed is None)).scalars())
 
     def matching_set(matching, product, other_product):
         id = other_product.other_product_id
@@ -697,3 +700,88 @@ def change_prices():
 #
 #
 #     return render_template('settings.html', settings=settings_in_base)
+
+@app.route('/work_plan', methods=['GET', 'POST'])
+@login_required
+def work_plan():
+    categories = get_categories()
+
+    manufacturers_ids = request.form.getlist('manufacturers_ids')
+
+    category_id = request.form.get('category_id')
+    category_id = int(category_id) if category_id else 11900283
+
+    category = db.session.execute(
+        db.select(Category).filter_by(category_id=category_id)).scalar()
+
+    work_plan = db.session.execute(
+        db.select(Module).filter_by(name='work_plan')).scalar()
+
+    if work_plan:
+        work_plan = json.loads(work_plan.value)
+        work_plan = work_plan.get(str(category_id))
+    else:
+        work_plan = {}
+
+    manufacturers = []
+    all_manufacturers = []
+
+    for product in category.description.products:
+        if not product.manufacturer:
+            continue
+
+        if not product.manufacturer.name in all_manufacturers:
+            all_manufacturers.append(product.manufacturer.name)
+
+    if manufacturers_ids:
+        manufacturers = manufacturers_ids
+    else:
+        manufacturers = all_manufacturers
+
+    return render_template('work_plan.html',
+                           work_plan=work_plan,
+                           categories=tuple(categories),
+                           category_id=category_id,
+                           manufacturers_ids=manufacturers_ids,
+                           manufacturers=manufacturers,
+                           all_manufacturers=all_manufacturers)
+
+
+@app.route('/work_plan_<int:category_id>_update', methods=['POST'])
+@login_required
+def work_plan_update(category_id):
+    plan_in_base = db.session.execute(
+        db.select(Module).filter_by(name='work_plan')).scalar()
+
+    all_plans = {}
+    new_plan = {}
+
+    if plan_in_base:
+        all_plans = json.loads(plan_in_base.value)
+
+    manufacturers_count = request.form.get('manufacturers-count')
+    count = 1
+
+    while count <= int(manufacturers_count):
+        manufacturer = request.form.get('manufacturer-' + str(count))
+
+        if not new_plan.get(manufacturer):
+            new_plan[manufacturer] = {}
+
+        new_plan[manufacturer]['models'] = request.form.get('models-' + str(count))
+        new_plan[manufacturer]['prices'] = request.form.get('prices-' + str(count))
+        new_plan[manufacturer]['stock'] = request.form.get('stock-' + str(count))
+
+        count += 1
+
+    all_plans[category_id] = new_plan
+
+    if plan_in_base:
+        plan_in_base.value = json.dumps(all_plans)
+    else:
+        new_plan = Module(name='work_plan',
+                          value=json.dumps(all_plans))
+        db.session.add(new_plan)
+
+    db.session.commit()
+    return redirect(url_for('work_plan'))

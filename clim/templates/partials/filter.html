@@ -71,8 +71,9 @@
               <select class="selectpicker" data-width="100%" id="stock" name="stock">
                 <option value="">Все</option>
                 <option {{ 'selected' if stock == 'in stock' }} value="in stock">В наличии</option>
-                <option {{ 'selected' if stock == 'in stock on order' }} value="in stock on order">В наличии и под заказ</option>
+                <option {{ 'selected' if stock == 'not not in stock' }} value="not not in stock">Все, кроме нет в наличии</option>
                 <option {{ 'selected' if stock == 'on order' }} value="on order">Под заказ</option>
+                <option {{ 'selected' if stock == 'price request' }} value="price request">Запрос цены</option>
                 <option {{ 'selected' if stock == 'not in stock' }} value="not in stock">Нет в наличии</option>
               </select>
             </div>

@@ -325,3 +325,10 @@ class RedirectManager(db.Model):
 #     setting_id = db.Column(db.Integer, primary_key=True)
 #     name = db.Column(db.String(64))
 #     value = db.Column(db.Text)
+
+
+class Module(db.Model):
+    __tablename__ = 'adm_modules'
+    module_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64))
+    value = db.Column(db.Text)

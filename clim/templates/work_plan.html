@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}  {% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block link %}
+{% endblock %}
+{% block content %}
+
+<!-- Container fluid -->
+<div class="bg-primary pt-10 pb-21"></div>
+<div class="container-fluid mt-n22 px-6">
+  <!-- row filter  -->
+  <div class="row">
+    <div class="col-lg-12 col-md-12 col-12">
+      <!-- Page header -->
+      <div>
+        <div class="d-flex align-items-center">
+          <div class="mb-2 mb-lg-0">
+            <h3 class="mb-0  text-white">План работ</h3>
+          </div>
+          <div class="ms-auto d-flex gap-2">
+            <button class="btn btn-white" type="submit" form="Manufs">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- filter -->
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12 mt-6">
+    <div class="card h-100">
+
+      <div class="card-body">
+        <form id="Filter" class=""  method="post" action="{{ url_for('work_plan') }}">
+            
+          <div class="row g-2">
+
+            <div class="col-md-3">
+              <div class="mb-1">
+                <label for="category_id" class="form-label h7">Категория</label>
+                <select class="selectpicker" data-width="100%" data-live-search="true"
+                  data-none-selected-text = "Все" data-none-results-text="Не найдено {0}"
+                  id="category_id" name="category_id">
+
+                  {% for category in categories %}
+                    {% set id = category.category_id %}
+                    {% if not category.parent_id %} 
+                      <option {{ 'selected' if id == category_id }} value="{{ id }}">
+                        {{ category.description.name }}
+                      </option>
+
+                      {% for subcategory in categories %}
+                        {% set id = subcategory.category_id %}
+                        {% if subcategory.parent_id == category.category_id %}
+                          <option {{ 'selected' if id == category_id }} value="{{ id }}">
+                            - {{ subcategory.description.name }}
+                          </option>
+
+                          {% for subsubcategory in categories %}
+                            {% set id = subsubcategory.category_id %}
+                            {% if subsubcategory.parent_id|string == subcategory.category_id %}
+                              <option {{ 'selected' if id == category_id }} value="{{ id }}">
+                                - -{{ subsubcategory.description.name }}
+                              </option>
+                            {% endif %}
+                          {% endfor %}
+
+                        {% endif %}
+                      {% endfor %}
+                        
+                    {% endif %}
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="col-md-2">
+              <div class="mb-1">
+                <label for="manufacturers_ids" class="form-label h7">Производитель</label>
+                <select class="selectpicker" data-width="100%" data-live-search="true"
+                  data-none-selected-text="Все" data-none-results-text="Не найдено {0}"
+                  multiple id="manufacturers_ids" name="manufacturers_ids">
+
+                  {% for manufacturer in all_manufacturers|sort %}
+                    <option {{ 'selected' if manufacturers_ids and manufacturer in manufacturers_ids }}>{{ manufacturer }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+
+            <div class="col-auto d-flex align-items-end">
+              <button class="mb-1 btn rounded-3 btn-primary btn-title" type="submit">Фильтр</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- row  -->
+  <div class="row mt-6 mb-6">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="card h-100">
+
+        <!-- card header  -->
+        <div class="card-header bg-white py-4">
+          <h4 class="mb-0">Производители</h4>
+        </div>
+        <!-- table  -->
+        <form class="" id="Manufs"  method="post" action="{{ url_for('work_plan_update', category_id=category_id) }}">
+          <div class="table-responsive">
+            <table class="table text-nowrap">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">Название</th>
+                  <th scope="col">Модели</th>
+                  <th scope="col">Цены</th>
+                  <th scope="col">Наличие</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                {% set var = namespace(manuf_count=0) %}
+
+                {% for manufacturer in manufacturers|sort %}
+                  {% set var.manuf_count = var.manuf_count + 1 %}
+                  <tr>
+                    <td class="">{{ manufacturer }}
+                      <input type="hidden" name="manufacturer-{{ var.manuf_count }}"
+                        value="{{ manufacturer }}">
+                    </td>
+                    <td>
+                      <input class="form-check-input" type="checkbox"
+                        name="models-{{ var.manuf_count }}" value="1"
+                        {{ 'checked' if work_plan[manufacturer].get('models') and work_plan.get(manufacturer) }}>
+                    </td>
+                    <td>
+                      <input class="form-check-input" type="checkbox"
+                        name="prices-{{ var.manuf_count }}" value="1"
+                        {{ 'checked' if work_plan[manufacturer].get('prices') and work_plan.get(manufacturer) }}>
+                    </td>
+                    <td>
+                      <input class="form-check-input" type="checkbox"
+                        name="stock-{{ var.manuf_count }}" value="1"
+                        {{ 'checked' if work_plan[manufacturer].get('stock') and work_plan.get(manufacturer) }}>
+                    </td>
+                  </tr>
+                {% endfor %}
+
+                <input type="hidden" name="manufacturers-count" value="{{ var.manuf_count }}">
+              </tbody>
+            </table>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-3">Вы уверенны?</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <button type="submit" form="shops" class="w-100 mb-2 btn rounded-3 btn-danger"><strong>Да</strong></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Чекбоксы принятия ссылки
+function Check(btn) {
+  var status = document.getElementById('check').checked;
+  var toCheck = document.querySelectorAll('.to-check');
+  toCheck.forEach(element => {
+    element.checked = status;
+  });
+  showButtons(status)
+}
+function showButtons(status) {
+  var Buttons = document.querySelector('.hidden-btns');
+  if (status === true) {
+    Buttons.classList.remove("visually-hidden");
+  }
+  else if (status === false) {
+    Buttons.classList.add("visually-hidden");
+  }
+}
+// Клик по чекбоксам
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains('to-check')) {
+  var Buttons = document.querySelector('.hidden-btns');
+  if (e.target.checked === true){
+    Buttons.classList.remove("visually-hidden");
+  };
+  }
+});
+</script>
+{% endblock %}
