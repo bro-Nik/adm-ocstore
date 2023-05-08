@@ -71,15 +71,16 @@
               <option value="clean_field_{{ field|lower }}">Очистить {{ field }}</option>
             {% endfor %}
           </optgroup>
+
           <optgroup label="Изменить статус">
-            {% set stock_status = {'В наличии': 'in_stock',
-                                   'Под заказ': 'on_order',
-                                   'Запрос цены': 'price_request',
-                                   'Нет в наличии': 'not_in_stock'} %}
-            {% for status in stock_status %}
-              <option value="{{ 'stock_status_' + stock_status[status] }}">{{ status }}</option>
+            <option value="stock_status_in_stock">В наличии</option>
+            {% for status in stock_statuses %}
+              <option value="{{ 'stock_status_' + status.stock_status_id|string }}">{{ status.name }}</option>
             {% endfor %}
+            <option value="stock_status_price_request">Запрос цены</option>
+            <option value="stock_status_not_in_stock">Товара нет в наличии</option>
           </optgroup>
+
           <optgroup label="Удалить">
             {% set delete = {'С редиректом на категорию': 'redirect_to_category',
                              'С редиректом из поля': 'redirect_to',

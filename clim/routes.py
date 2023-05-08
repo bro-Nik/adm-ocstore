@@ -14,7 +14,7 @@ from clim.app import app, db, redis, celery, login_manager
 from clim.models import Module, OtherShops, ProductImage, ProductVariant, RedirectManager, Review, SeoUrl, AttributeDescription, Category, \
     CategoryDescription, Manufacturer, OptionValueDescription, \
     Product, ProductAttribute, ProductOptionValue, Option, OptionValue,\
-    OtherProduct, Attribute, product_to_category
+    OtherProduct, Attribute, StockStatus, product_to_category
 
 
 @app.route('/categories', methods=['GET', 'POST'])
@@ -172,6 +172,11 @@ def get_categories():
         db.select(Category).order_by(Category.sort_order)).scalars()
 
 
+def get_stock_statuses():
+    return db.session.execute(
+        db.select(StockStatus).filter_by(language_id=1)).scalars()
+
+
 def get_manufacturers(filter={}):
     request_base = Manufacturer.query.order_by(Manufacturer.name)
 
@@ -240,6 +245,7 @@ def products(path=None):
 
     categories = get_categories()
     manufacturers = get_manufacturers(filter)
+    stock_statuses = get_stock_statuses()
 
     products = get_products(filter=filter)
 
@@ -249,6 +255,7 @@ def products(path=None):
                            products=products,
                            manufacturers=tuple(manufacturers),
                            categories=tuple(categories),
+                           stock_statuses=stock_statuses,
                            other_shops=tuple(other_shops),
                            attributes=attributes)
 
@@ -309,13 +316,14 @@ def update_stock_status(product_id: int, status: str):
 
     if status == 'in_stock':
         product.quantity = 10
-    elif status == 'on_order':
-        product.quantity = 1
-        product.sort_order = 100
-    elif status == 'price_request':
-        product.price = 100001
     elif status == 'not_in_stock':
         product.quantity = 0
+    elif status == 'price_request':
+        product.price = 100001
+        product.quantity = 1
+    else:
+        product.stock_status_id = int(status)
+        product.quantity = 1
 
     db.session.commit()
 
@@ -812,5 +820,22 @@ def work_plan_clean(category_id):
         plan.pop(str(category_id), None)
         plan_in_base.value = json.dumps(plan)
         db.session.commit()
+
+    return redirect(url_for('work_plan'))
+
+
+@app.route('/new_stock', methods=['GET'])
+@login_required
+def new_stock():
+    products = db.session.execute(db.select(Product)).scalars()
+
+    for product in products:
+        if product.quantity == 1:
+            product.stock_status_id = 8
+
+        if product.quantity > 1:
+            product.stock_status_id = 7
+
+    db.session.commit()
 
     return redirect(url_for('work_plan'))

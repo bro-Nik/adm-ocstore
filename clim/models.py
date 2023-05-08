@@ -27,7 +27,10 @@ class Product(db.Model):
     viewed = db.Column(db.Integer)
     attributes = db.relationship('ProductAttribute',
                                    backref='product', lazy=True)
-    sort_order = db.Column(db.Integer)
+    stock_status_id = db.Column(db.Integer,
+                                db.ForeignKey('oc_stock_status.stock_status_id'))
+    stock_status = db.relationship('StockStatus',
+                                   backref=db.backref('products', lazy=True))
 
 
 class ProductImage(db.Model):
@@ -333,3 +336,10 @@ class Module(db.Model):
     module_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64))
     value = db.Column(db.Text)
+
+
+class StockStatus(db.Model):
+    __tablename__ = 'oc_stock_status'
+    stock_status_id = db.Column(db.Integer, primary_key=True)
+    language_id = db.Column(db.Integer)
+    name = db.Column(db.String(32))
