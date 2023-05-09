@@ -73,12 +73,10 @@
           </optgroup>
 
           <optgroup label="Изменить статус">
-            <option value="stock_status_in_stock">В наличии</option>
             {% for status in stock_statuses %}
               <option value="{{ 'stock_status_' + status.stock_status_id|string }}">{{ status.name }}</option>
             {% endfor %}
             <option value="stock_status_price_request">Запрос цены</option>
-            <option value="stock_status_not_in_stock">Товара нет в наличии</option>
           </optgroup>
 
           <optgroup label="Удалить">

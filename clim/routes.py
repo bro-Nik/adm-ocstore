@@ -314,16 +314,27 @@ def clean_field(product_id: int, whan_clean: str):
 def update_stock_status(product_id: int, status: str):
     product = get_product(product_id)
 
-    if status == 'in_stock':
-        product.quantity = 10
-    elif status == 'not_in_stock':
-        product.quantity = 0
-    elif status == 'price_request':
+    if status == 'price_request':
         product.price = 100001
         product.quantity = 1
     else:
+        settings_in_base = db.session.execute(
+            db.select(Module).filter_by(name='stock_statuses')).scalar()
+
+        settings = {}
+        if settings_in_base:
+            settings = json.loads(settings_in_base.value)
+
+        status_type = settings.get(str(status))
+
         product.stock_status_id = int(status)
-        product.quantity = 1
+
+        if status_type == 'В наличии':
+            product.quantity = 10
+        elif status_type == 'Под заказ':
+            product.quantity = 1
+        elif status_type == 'Нет в наличии':
+            product.quantity = 0
 
     db.session.commit()
 
@@ -839,3 +850,64 @@ def new_stock():
     db.session.commit()
 
     return redirect(url_for('work_plan'))
+
+
+@app.route('/stock_statuses', methods=['GET'])
+@login_required
+def stock_statuses():
+    stock_statuses = db.session.execute(db.select(StockStatus)).scalars()
+
+    settings_in_base = db.session.execute(
+        db.select(Module).filter_by(name='stock_statuses')).scalar()
+    settings = {}
+    if settings_in_base:
+        settings = json.loads(settings_in_base.value)
+
+    return render_template('stock_statuses.html',
+                           stock_statuses=stock_statuses,
+                           settings=settings)
+
+
+@app.route('/stock_statuses_action', methods=['POST'])
+@login_required
+def stock_statuses_action():
+    settings_in_base = db.session.execute(
+        db.select(Module).filter_by(name='stock_statuses')).scalar()
+
+    settings = {}
+    if settings_in_base:
+        settings = json.loads(settings_in_base.value)
+
+    statuses_count = request.form.get('statuses-count')
+
+    count = 1
+
+    while count <= int(statuses_count):
+        status_id = request.form.get('status-' + str(count))
+        action = request.form.get('action-' + str(count))
+        if not action:
+            count += 1
+            continue
+
+        if action == 'delete':
+            stock_status = db.session.execute(
+                db.select(StockStatus)
+                .filter_by(stock_status_id=int(status_id))).scalar()
+            db.session.delete(stock_status)
+
+        else:
+            settings[status_id] = action
+
+        count += 1
+
+    if settings:
+        if settings_in_base:
+            settings_in_base.value = json.dumps(settings)
+        else:
+            new_status = Module(name='stock_statuses',
+                                value=json.dumps(settings))
+            db.session.add(new_status)
+    db.session.commit()
+
+    return redirect(url_for('stock_statuses'))
+

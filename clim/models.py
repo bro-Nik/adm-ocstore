@@ -341,5 +341,5 @@ class Module(db.Model):
 class StockStatus(db.Model):
     __tablename__ = 'oc_stock_status'
     stock_status_id = db.Column(db.Integer, primary_key=True)
-    language_id = db.Column(db.Integer)
+    language_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(32))
