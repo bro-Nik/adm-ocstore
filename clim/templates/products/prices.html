@@ -1,11 +1,11 @@
 {% extends "products/base.html" %}
 {% set page_name = 'Цены' %}
 {% block head_form %}
-  <a class="btn btn-white" href="{{ url_for('start_change_prices') }}">Авто-подбор цен</a>
+  <a class="btn btn-white" href="{{ url_for('products_prices_settings') }}">Настройки</a>
 {% endblock %}
 
 {% block table %}
-<form class="" id="confirmProducts" method="post" action="{{ url_for('confirm_prices', page=request.args.get('page')) }}">
+<form class="" id="confirmProducts" method="post" action="{{ url_for('products_prices_action', page=request.args.get('page')) }}">
   <table class="table text-nowrap">
     <thead class="table-light">
       <tr>
@@ -31,7 +31,15 @@
 
         <tr>
           <td class="sticky-table">{{ product.mpn }}</td>
-          <td class="">{{ product.price|int if product.price|int == product.price else product.price }}</td>
+          <td class="">
+            {% if product.special_offers %}
+              {% set special_price = (product.special_offers|sort(attribute='price'))[0].price %}
+              {{ special_price|int if special_price|int == special_price else special_price }}
+              <del>{{ product.price|int if product.price|int == product.price else product.price }}</del>
+            {% else %}
+              {{ product.price|int if product.price|int == product.price else product.price }}
+            {% endif %}
+          </td>
 
           {% set var.product_count = var.product_count + 1 %}
 
@@ -41,7 +49,9 @@
                 {% for other_product in product.other_shop %}
                   {% if other_product.shop_id == shop.shop_id %}
                     {% if other_product.link_confirmed %}
-                      {% if other_product.price|int == product.price|int %}
+                      {% if special_price and other_product.price|int == special_price|int %}
+                        <span class="text-success">{{ other_product.price }}</span>
+                      {% elif not special_price and other_product.price|int == product.price|int %}
                         <span class="text-success">{{ other_product.price }}</span>
                       {% else %}
                         <input class="form-check-input to-check shop-{{ shop.shop_id }}" type="radio"
@@ -61,8 +71,26 @@
   </table>
 
   <input type="hidden" name="products-count" value="{{ var.product_count }}">
-  <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns visually-hidden">
-    <button class="btn rounded-3 btn-primary" type="submit">Применить</button>
+  <div class="m-3 d-grid gap-2 d-flex justify-content-end">
+    <div class="col-md-2">
+        <select class="selectpicker" data-width="100%" data-none-selected-text = "Что делать?" name="action">
+          <option></option>
+
+          <optgroup label="Авто-подбор цен">
+            <option value="all_products_normal_price">Все товары, обычная цена</option>
+            <option value="all_products_special_price">Все товары, спец цена</option>
+            <option value="this_products_normal_price">Эти товары, обычная цена</option>
+            <option value="this_products_special_price">Эти товары, спец цена</option>
+          </optgroup>
+
+          <optgroup label="Применить выбранные цены">
+            <option value="manual_normal_price">Обычная цена</option>
+            <option value="manual_special_price">Спец цена</option>
+          </optgroup>
+
+        </select>
+    </div>
+    <button class="btn rounded-3 btn-primary" type="submit">OK</button>
     <button class="btn rounded-3 btn-secondary" type="button" onclick="changeOptions('cancel')">Отмена</button>
   </div>
 

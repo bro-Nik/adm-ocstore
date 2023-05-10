@@ -11,10 +11,10 @@ from datetime import datetime, timedelta
 from transliterate import slugify
 
 from clim.app import app, db, redis, celery, login_manager
-from clim.models import Module, OtherShops, ProductImage, ProductVariant, RedirectManager, Review, SeoUrl, AttributeDescription, Category, \
+from clim.models import Module, OtherShops, ProductImage, ProductSpecial, ProductVariant, RedirectManager, Review, SeoUrl, AttributeDescription, Category, \
     CategoryDescription, Manufacturer, OptionValueDescription, \
     Product, ProductAttribute, ProductOptionValue, Option, OptionValue,\
-    OtherProduct, Attribute, StockStatus, product_to_category
+    OtherProduct, Attribute, SpecialOffer, StockStatus, product_to_category
 
 
 @app.route('/categories', methods=['GET', 'POST'])
@@ -205,7 +205,7 @@ def get_manufacturers(filter={}):
     return request_base.all()
 
 
-def get_filter(method, path=None):
+def get_filter(method=None, path=None):
     if method == 'POST':
         session['categories_ids'] = request.form.getlist('categories_ids')
         session['manufacturers_ids'] = request.form.getlist('manufacturers_ids')
@@ -581,38 +581,233 @@ def confirm_product_to_product():
     return redirect(url_for('products', path='comparison', page=page))
 
 
-@app.route('/confirm_prices', methods=['POST'])
+@app.route('/products/prices/settings', methods=['GET'])
 @login_required
-def confirm_prices():
+def products_prices_settings():
+    settings_in_base, settings = get_products_prices_settings()
+
+    special_offers = db.session.execute(db.select(SpecialOffer)).scalars()
+
+    options = db.session.execute(db.select(Option)).scalars()
+    categories = get_categories()
+
+    return render_template('products/prices_settings.html',
+                           settings=settings,
+                           special_offers=special_offers,
+                           options=options,
+                           categories=categories)
+
+
+def get_products_prices_settings():
+    settings_in_base = db.session.execute(
+        db.select(Module).filter_by(name='products_prices')).scalar()
+
+    settings = {}
+    if settings_in_base:
+        settings = json.loads(settings_in_base.value)
+
+    return settings_in_base, settings
+
+
+@app.route('/products/prices/settings_apply', methods=['POST'])
+@login_required
+def products_prices_settings_apply():
+    settings_in_base, settings = get_products_prices_settings()
+
+    fields = ['special_offer_id',
+              'stiker_text',
+              'price_delta']
+    for field in fields:
+        if request.form.get(field):
+            settings[field] = request.form.get(field)
+
+    if request.form.getlist('options_ids'):
+        settings['options_ids'] = request.form.getlist('options_ids')
+
+    if settings:
+        if settings_in_base:
+            settings_in_base.value = json.dumps(settings)
+        else:
+            products_prices_settings = Module(
+                name='products_prices',
+                value=json.dumps(settings)
+            )
+            db.session.add(products_prices_settings)
+
+        db.session.commit()
+
+    return redirect(url_for('products_prices_settings'))
+
+
+@app.route('/products/prices/action', methods=['POST'])
+@login_required
+def products_prices_action():
+    page = request.args.get('page')
+    action = str(request.form.get('action'))
+
+    settings_in_base, settings = get_products_prices_settings()
+    if not settings.get('special_offer_id'):
+        flash('Настройки специального предложения не заданны')
+        return redirect(url_for('products', path='prices', page=page))
+
+    if 'all_products_' in action:
+        change_prices.delay(price_type=action.replace('all_products_', ''),
+                            settings=settings)
+
+    elif 'this_products_' in action:
+        filter = get_filter(path='prices')
+        change_prices.delay(filter=filter,
+                            price_type=action.replace('this_products_', ''),
+                            settings=settings)
+
+    elif 'manual_' in action:
+        manual_confirm_prices(action.replace('manual_', ''),
+                              settings=settings)
+
+    return redirect(url_for('products', path='prices', page=page))
+
+
+def manual_confirm_prices(price_type, settings):
+    """ Ручное применение цен """
+    page = request.args.get('page')
+
+    options_ids = settings.get('options_ids')
+    options_ids = options_ids if options_ids else []
+
     count = 1
     products_count = request.form.get('products-count')
-    products_count = int(products_count)
+    products_count = int(products_count) if products_count else 0
 
     discount_products = get_discount_products()
 
     while count <= products_count:
-        next_checked = request.form.get('product-id-' + str(count))
-        if next_checked:
-            product = get_product(int(next_checked))
+        product_id = request.form.get('product-id-' + str(count))
+        new_price = request.form.get('price-' + str(count))
+        if not product_id or not new_price:
+            count += 1
+            continue
 
-            price = request.form.get('price-' + str(count))
-            if not price:
-                count += 1
-                continue
-
-            product.price = float(price)
-            product.quantity = 10
-            if product.product_id in discount_products:
-                for option in product.options:
-                    if option.option_id == 24:
-                        price = option.product_option_value.price + product.price
-                        product.ean = 'С устаовкой ' + str(price) + ' р.'
+        new_price = float(new_price)
+        product = get_product(int(product_id))
+        new_product_stiker(product, new_price, discount_products, settings)
+        product_new_price(product, new_price, price_type, settings)
 
         count += 1
     db.session.commit()
 
     page = request.args.get('page')
     return redirect(url_for('products', path='prices', page=page))
+
+
+def new_product_stiker(product, new_price, discount_products, settings):
+    if product.product_id in discount_products:
+        options_ids = settings.get('options_ids')
+        options_ids = options_ids if options_ids else []
+
+        for option in product.options:
+            if str(option.option_id) in options_ids:
+                price = option.product_option_value.price + new_price
+                text = settings.get('stiker_text')
+                if text:
+                    product.ean = text.replace('price', str(int(price)))
+
+
+def product_new_price(product, new_price, price_type, settings):
+    """ Записывает цену товара и удоляет лишние """
+    special_offer_id = settings.get('special_offer_id')
+
+    def get_product_special_offer():
+        if product.special_offers:
+            for special_offer in product.special_offers:
+                if special_offer.special_offer_id == int(special_offer_id):
+                    return special_offer
+        return None
+
+    product_special_offer = get_product_special_offer()
+
+    if price_type == 'normal_price':
+        product.price = new_price
+
+        if product_special_offer:
+            db.session.delete(product_special_offer)
+
+    elif price_type == 'special_price':
+
+        if product.price <= new_price:
+            product.price = new_price
+            if product_special_offer:
+                db.session.delete(product_special_offer)
+
+        elif product_special_offer:
+            product_special_offer.price = new_price
+            product_special_offer.date_start = datetime.now().date()
+            product_special_offer.date_end = 0
+
+        elif not product_special_offer:
+            special_offer = ProductSpecial(
+                customer_group_id=1,
+                priority=0,
+                price=float(new_price),
+                date_start=datetime.now().date(),
+                date_end=0,
+                special_offer_id=special_offer_id
+            )
+            product.special_offers.append(special_offer)
+
+
+@celery.task()
+def change_prices(filter={}, price_type='', settings={}):
+    delta = settings.get('price_delta')
+    delta = float(delta)/100 if delta else 0
+
+    special_offer_id = settings.get('special_offer_id')
+
+    products = tuple(get_products(pagination=False, filter=filter))
+
+    def convert_price(price):
+        try:
+            price = float(price)
+        except:
+            price = 0
+        return price
+
+    for product in products:
+        if not product.other_shop:
+            continue
+
+        def replace_price():
+            if abs(product.price - other_price) <= product.price * delta:
+                new_product_stiker(product, other_price,
+                                   get_discount_products(), settings)
+                product_new_price(product, other_price, price_type, settings)
+                return True
+            return False
+
+        # Одна цена конкурента
+        if len(product.other_shop) < 2:
+            other_price = convert_price(product.other_shop[0].price)
+            if not other_price:
+                continue
+
+            replace_price()
+            continue
+
+        # Несколько цен конкурентов
+        prices = []
+        for other_product in product.other_shop:
+            other_price = convert_price(other_product.price)
+            if other_price:
+                prices.append(other_price)
+
+        if product.price in prices:
+            continue
+
+        for other_price in sorted(prices):
+            if replace_price():
+                break
+
+    db.session.commit()
+    print('End')
 
 
 @app.route('/del_not_confirm_products', methods=['GET', 'POST'])
@@ -628,62 +823,6 @@ def del_not_confirm_products():
     page = request.args.get('page')
     return redirect(url_for('products', path='comparison', page=page))
 
-
-@app.route('/products/change_prices', methods=['GET'])
-@login_required
-def start_change_prices():
-    change_prices.delay()
-    page = request.args.get('page')
-    return redirect(url_for('products', path='prices', page=page))
-
-
-@celery.task()
-def change_prices():
-    delta = 0.3
-    products = tuple(db.session.execute(db.select(Product)).scalars())
-
-    def convert_price(price):
-        try:
-            price = float(price)
-        except:
-            price = 0
-        return price
-
-    for product in products:
-        if not product.other_shop:
-            continue
-
-        # Одна цена конкурента
-        if len(product.other_shop) < 2:
-            other_price = convert_price(product.other_shop[0].price)
-            if not other_price:
-                continue
-
-            if (other_price > product.price
-                    or other_price >= product.price - (product.price * delta)):
-                product.price = other_price
-                product.quantity = 10
-
-            continue
-
-        # Несколько цен конкурентов
-        prices = []
-        for other_product in product.other_shop:
-            other_price = convert_price(other_product.price)
-            if other_price:
-                prices.append(other_price)
-
-        if product.price in prices:
-            continue
-
-        for other_price in sorted(prices):
-            if abs(product.price - other_price) <= product.price * delta:
-                product.price = other_price
-                product.quantity = 10
-                break
-
-    db.session.commit()
-    print('End')
 
 
 # @app.route('/settings', methods=['GET', 'POST'])

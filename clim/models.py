@@ -31,6 +31,8 @@ class Product(db.Model):
                                 db.ForeignKey('oc_stock_status.stock_status_id'))
     stock_status = db.relationship('StockStatus',
                                    backref=db.backref('products', lazy=True))
+    special_offers = db.relationship('ProductSpecial',
+                              backref=db.backref('products', lazy=True))
 
 
 class ProductImage(db.Model):
@@ -54,6 +56,19 @@ class ProductVariant(db.Model):
     prodvar_id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer)
     prodvar_product_str_id = db.Column(db.Text)
+
+
+class ProductSpecial(db.Model):
+    __tablename__ = 'oc_product_special'
+    product_special_id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'),
+                           primary_key=True)
+    customer_group_id = db.Column(db.Integer)
+    priority = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    date_start = db.Column(db.Date)
+    date_end = db.Column(db.Date)
+    special_offer_id = db.Column(db.Integer)
 
 
 class Manufacturer(db.Model):
@@ -343,3 +358,36 @@ class StockStatus(db.Model):
     stock_status_id = db.Column(db.Integer, primary_key=True)
     language_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(32))
+
+
+class SpecialOffer(db.Model):
+    __tablename__ = 'oc_special_offer'
+    special_offer_id = db.Column(db.Integer, primary_key=True)
+    offer_type = db.Column(db.Integer)
+    list_customer_group_id = db.Column(db.String(255))
+    priority = db.Column(db.Integer)
+    date_start = db.Column(db.Date)
+    date_end = db.Column(db.Date)
+    gift_product_id = db.Column(db.Integer)
+    product_quantity = db.Column(db.Integer)
+    product_sum = db.Column(db.Float)
+    gift_quantity = db.Column(db.Integer)
+    percent = db.Column(db.Float)
+    timer_status = db.Column(db.Boolean)
+    free_shipping = db.Column(db.Boolean)
+    cycle_of_timer = db.Column(db.Integer)
+    offer_status = db.Column(db.Boolean)
+    selling_price = db.Column(db.Integer)
+    description = db.relationship('SpecialOfferDescription',
+                                  backref='offer', uselist=False)
+
+
+class SpecialOfferDescription(db.Model):
+    __tablename__ = 'oc_special_offer_description'
+    special_offer_id = db.Column(db.Integer,
+                                 db.ForeignKey('oc_special_offer.special_offer_id'),
+                                 primary_key=True)
+    language_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255))
+    description = db.Column(db.Text)
+    meta_title = db.Column(db.String(255))

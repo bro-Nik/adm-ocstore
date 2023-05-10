@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}  {% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block link %}
+{% endblock %}
+{% block content %}
+
+<!-- Container fluid -->
+<div class="container-fluid p-6">
+  <form id="" method="post"
+              action="{{ url_for('products_prices_settings_apply') }}">
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-12">
+        <!-- Page header -->
+        <div class="border-bottom pb-4 mb-4">              
+          <h3 class="mb-0 fw-bold">
+            <a href="">Цены товаров
+              </a> > Настройки
+            </h3>             
+        </div>
+      </div>
+    </div>
+    <div class="row mb-8">
+      <div class="col-xl-3 col-lg-4 col-md-12 col-12">
+        <div class="mb-4 mb-lg-0">
+          <h4 class="mb-1">Настройки</h4>
+          <p class="mb-0 fs-5 text-muted">Настройки категории </p>
+        </div>
+      </div>
+
+      <div class="col-xl-9 col-lg-8 col-md-12 col-12">
+        <!-- card -->
+        <div class="card">
+          <!-- card body -->
+          <div class="card-body">
+            <!-- col -->
+            <div>
+              <!-- border -->
+              <div class="mb-6">
+                <h4 class="mb-1">Основная информация</h4>
+              </div>
+            
+              <!-- row -->
+              <div class="mb-3 row">
+                
+                <div class="col-sm-3">
+                  <label for="url" class="form-label">
+                    Акция для специальных цен
+                  </label>
+                  <select class="form-select" name="special_offer_id">
+                    <option></option>
+                    {% for special_offer in special_offers %}
+                    {% set id = special_offer.special_offer_id %}
+                      <option {{ 'selected' if id|string == settings.get('special_offer_id') }}
+                        value="{{ id }}">
+                        {{ special_offer.description.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+
+              <!-- row -->
+              <div class="mb-3 row">
+                
+                <div class="col-sm-3">
+                  <label for="options_ids" class="form-label h7">Опции с установкой</label>
+                  <select class="selectpicker" data-width="100%" 
+                    data-none-selected-text = "" 
+                    multiple id="options_ids" name="options_ids">
+
+                    {% for option in options %}
+                      {% set id = option.option_id %}
+                      <option {{ 'selected' if settings.get('options_ids') and id|string in settings.get('options_ids') }} value="{{ id }}">{{ option.description.name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="col-sm-3 mb-3 mb-lg-0">
+                  <label class="form-label">Текст стикера (price-переменная)</label>
+                  <input type="text" class="form-control"
+                      name="stiker_text" value="{{ settings.get('stiker_text') if settings.get('stiker_text') }}">
+                </div>
+
+                <div class="col-sm-3 mb-3 mb-lg-0">
+                  <label class="form-label">Допустимое отклонение цены (%)</label>
+                  <input type="number" class="form-control"
+                      name="price_delta" value="{{ settings.get('price_delta') if settings.get('price_delta') }}">
+                </div>
+
+              </div>
+
+            </div>
+
+            </div>
+            <!-- row -->
+            <div class="row align-items-center">
+              <div class="offset-md-4 col-md-8 col-12 mt-4">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+
+<script>
+
+// Тестовый парсинг
+const url = 
+  {% if category %}
+    {{ url_for('get_other_products_test', category_id=category.other_category_id)|tojson }}
+  {% else %}
+    ''
+  {% endif %}
+const blockParsing = document.getElementById('testParsingBlock');
+var data = {}
+
+async function testParsing() {
+   await getDataRequest();
+   updatePage();
+//	$('html,body').animate({scrollTop: $('html,body').get(0).scrollHeight}, 1000);
+blockParsing.scrollIntoView();
+   }
+
+function updatePage() {
+  markup = `<div class="card-body">
+              <div class="mb-6">
+                <h4 class="mb-1">Тестовый парсинг</h4>
+              </div>
+              <div class="table-responsive mb-3">
+                <table class="table text-nowrap">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Название</th>
+                      <th>Цена</th>
+                      <th>Ссылка</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  `
+  let i = 0;
+  while (data[i]) { // выводит 0, затем 1, затем 2
+  markup += `<tr>
+              <td class="border-top-0">
+                ${data[i].name}
+              </td>
+              <td class="border-top-0">
+                ${data[i].price}
+              </td>
+              <td class="border-top-0">
+                ${data[i].link}
+              </td>
+            </tr>`;
+  i++;
+  }
+    
+  markup += `</tbody>
+          </table>
+        </div>
+      </div>`;
+   blockParsing.innerHTML = markup
+}
+
+function getDataRequest() {
+   return fetch(url, {
+      method: 'GET',
+      headers: {
+         "Content-type": "application/json; charset=UTF-8"
+      }
+   })
+   .then(res => res.json())
+   .then(data => window.data = data)
+}
+// Добавить "Копия" в названии при копировании категории
+function copyCategory() {
+  var name = document.getElementById('name');
+  name.value = name.value + ' (копия)'
+}
+</script>
+
+{% endblock %}
