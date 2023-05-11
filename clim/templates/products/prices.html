@@ -11,6 +11,7 @@
       <tr>
         <th scope="col" class="sticky-table">Название</th>
         <th scope="col">Цена</th>
+        <th scope="col">Ручная</th>
         {% for shop in other_shops %}
           <th scope="col"><input id="shop-{{ shop.shop_id }}" class="form-check-input me-1" type="checkbox" onclick="Check('{{ shop.shop_id }}')">{{ shop.name }}</th>
         {% endfor %}
@@ -43,6 +44,10 @@
 
           {% set var.product_count = var.product_count + 1 %}
 
+          <td class="col-1">
+            <input type="text" class="form-control form-control-sm"
+                name="stiker_text" value="">
+          </td>
           {% for shop in other_shops %}
             <td class="">
               {% if product.other_shop %}

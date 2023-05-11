@@ -1,7 +1,8 @@
 import json
 import os
 from copy import copy
-from flask import render_template, redirect, url_for, request, session, flash
+from flask import render_template, redirect, url_for, request, session, flash,\
+    send_from_directory
 from flask_login import login_required, current_user
 from flask_migrate import catch_errors
 from flask_sqlalchemy import query
@@ -9,6 +10,7 @@ from requests import delete
 from thefuzz import fuzz as f
 from datetime import datetime, timedelta
 from transliterate import slugify
+from werkzeug.utils import secure_filename
 
 from clim.app import app, db, redis, celery, login_manager
 from clim.models import Module, OtherShops, ProductImage, ProductSpecial, ProductVariant, RedirectManager, Review, SeoUrl, AttributeDescription, Category, \
@@ -377,7 +379,7 @@ def product_delete(product_id: int, action: str, redirect_to):
                 to_url=new_url,
                 response_code=301,
                 date_start=datetime.now().date(),
-                date_end=datetime.now().date() + timedelta(days=3652),
+                date_end=0,
                 times_used=0
             )
             db.session.add(redirect)
@@ -669,11 +671,6 @@ def products_prices_action():
 
 def manual_confirm_prices(price_type, settings):
     """ Ручное применение цен """
-    page = request.args.get('page')
-
-    options_ids = settings.get('options_ids')
-    options_ids = options_ids if options_ids else []
-
     count = 1
     products_count = request.form.get('products-count')
     products_count = int(products_count) if products_count else 0
@@ -1049,4 +1046,5 @@ def stock_statuses_action():
     db.session.commit()
 
     return redirect(url_for('stock_statuses'))
+
 
