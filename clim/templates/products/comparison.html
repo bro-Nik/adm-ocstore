@@ -63,7 +63,7 @@
                     <span class="other-product {{ 'text-primary' if not other_product.link_confirmed}}">
                       {{ other_product.name }}</span>
 
-                    {{ product.price|int }}
+                    {{ other_product.price|int }}
                     <a class="" target="_blank" href="{{ other_product.link }}">
                       <i class="icon-xxs" data-feather="external-link"></i>
                     </a>
