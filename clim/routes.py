@@ -35,21 +35,6 @@ def product_in_stock(product):
     return product.quantity > 1
 
 
-@app.route('/13', methods=['GET'])
-@login_required
-def cat12():
-    categories = db.session.execute(
-        db.select(Category)
-        .filter_by(parent_id=0)
-        .order_by(Category.sort_order)).scalars()
-    
-    ret = {}
-    for i in categories:
-        ret[i] = {}
-
-    return ret
-
-
 @app.route('/categories', methods=['GET', 'POST'])
 @login_required
 def categories():
@@ -60,7 +45,7 @@ def categories():
     # price_request = {}
 
     for category in tuple(categories):
-        if not category.description.products:
+        if not category.products:
             continue
 
         result[category.category_id] = {'in_stock': 0,
@@ -68,7 +53,7 @@ def categories():
                                         'price_request': 0,
                                         'not_in_stock': 0}
 
-        for product in category.description.products:
+        for product in category.products:
 
             if product_in_stock(product):
                 result[category.category_id]['in_stock'] += 1
@@ -1001,7 +986,7 @@ def work_plan():
     manufacturers = []
     all_manufacturers = []
 
-    for product in category.description.products:
+    for product in category.products:
         if not product.manufacturer:
             continue
 
@@ -1023,7 +1008,7 @@ def work_plan():
                            work_plan_fields=work_plan_fields)
 
 
-work_plan_fields = ['models', 'prices', 'stock']
+work_plan_fields = ['models', 'prices', 'stock', 'variants']
 
 
 @app.route('/work_plan_<int:category_id>_update', methods=['POST'])

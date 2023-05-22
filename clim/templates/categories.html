@@ -74,7 +74,7 @@
                     <td class="text-average">
                       <a href="">{{ category.description.name }}</a>
                     </td>
-                    <td class="text-average">{{ category.description.products|length }}</td>
+                    <td class="text-average">{{ category.products|length }}</td>
                   </tr>
                   {% for subcategory in categories|sort(attribute='sort_order') if subcategory.parent_id == category.category_id %}
                     <tr>
@@ -85,7 +85,7 @@
                       <td class="text-average">
                         <a href="" class="ms-5">{{ subcategory.description.name }}</a>
                       </td>
-                      <td class="text-average">{{ subcategory.description.products|length }}</td>
+                      <td class="text-average">{{ subcategory.products|length }}</td>
                       <td class="text-average">{{ result[subcategory.category_id]['in_stock'] }}</td>
                       <td class="text-average">{{ result[subcategory.category_id]['on_order'] }}</td>
                       <td class="text-average">{{ result[subcategory.category_id]['price_request'] }}</td>
