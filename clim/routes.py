@@ -19,32 +19,69 @@ from clim.models import Module, OtherShops, ProductImage, ProductSpecial, Produc
     OtherProduct, Attribute, SpecialOffer, StockStatus, product_to_category
 
 
+def product_price_request(product):
+    return product.price == 100001
+
+
+def product_not_in_stock(product):
+    return product.quantity < 1
+
+
+def product_on_order(product):
+    return product.quantity == 1
+
+
+def product_in_stock(product):
+    return product.quantity > 1
+
+
+@app.route('/13', methods=['GET'])
+@login_required
+def cat12():
+    categories = db.session.execute(
+        db.select(Category)
+        .filter_by(parent_id=0)
+        .order_by(Category.sort_order)).scalars()
+    
+    ret = {}
+    for i in categories:
+        ret[i] = {}
+
+    return ret
+
+
 @app.route('/categories', methods=['GET', 'POST'])
 @login_required
 def categories():
-    categories = tuple(db.session.execute(
-        db.select(Category).order_by(Category.sort_order)).scalars())
+    categories = tuple(get_categories())
 
-    not_in_stock = {}
-    price_request = {}
+    result = {}
+    # not_in_stock = {}
+    # price_request = {}
 
     for category in tuple(categories):
         if not category.description.products:
             continue
 
-        not_in_stock[category.category_id] = []
-        price_request[category.category_id] = []
+        result[category.category_id] = {'in_stock': 0,
+                                        'on_order': 0,
+                                        'price_request': 0,
+                                        'not_in_stock': 0}
 
         for product in category.description.products:
-            if product.quantity == 0:
-                not_in_stock[category.category_id].append(product.product_id)
-            if product.price == 100001:
-                price_request[category.category_id].append(product.product_id)
+
+            if product_in_stock(product):
+                result[category.category_id]['in_stock'] += 1
+            if product_on_order(product):
+                result[category.category_id]['on_order'] += 1
+            if product_price_request(product):
+                result[category.category_id]['price_request'] += 1
+            if product_not_in_stock(product):
+                result[category.category_id]['not_in_stock'] += 1
 
     return render_template('categories.html',
-                           categories=tuple(categories),
-                           price_request=price_request,
-                           not_in_stock=not_in_stock
+                           categories=categories,
+                           result=result
                            )
 
 
@@ -115,7 +152,7 @@ def get_products(pagination=True, filter={}):
     if filter.get('categories_ids'):
         categories_ids = filter.get('categories_ids')
         request_base = (request_base.join(Product.categories)
-                   .filter(CategoryDescription.category_id.in_(categories_ids)))
+                   .filter(Category.category_id.in_(categories_ids)))
 
     if filter.get('attribute_id'):
         attribute_id = filter.get('attribute_id')
@@ -202,7 +239,7 @@ def get_manufacturers(filter={}):
         categories_ids = filter.get('categories_ids')
         request_base = (request_base.join(Manufacturer.products)
                 .join(Product.categories)
-                .filter(CategoryDescription.category_id.in_(categories_ids)))
+                .filter(Category.category_id.in_(categories_ids)))
 
     return request_base.all()
 
@@ -281,6 +318,14 @@ def products_action():
                 clean_field(product_id, action.replace('clean_field_', ''))
             elif 'stock_status_' in action:
                 update_stock_status(product_id, action.replace('stock_status_', ''))
+            elif action == 'prodvar_update':
+                try:
+                    ids
+                except NameError:
+                    ids = []
+
+                if product_id not in ids:
+                    ids = update_product_variants(product_id)
 
         count += 1
 
@@ -462,6 +507,73 @@ def product_delete(product_id: int, action: str, redirect_to):
     db.session.delete(product)
     db.session.commit()
 
+
+def update_product_variants(product_id):
+    product = get_product(product_id)
+
+    main_category = db.session.execute(
+        db.select(product_to_category)
+        .filter_by(product_id=product_id, main_category=1)).one()
+
+    series = ''
+    for attribute in product.attributes:
+        if attribute.attribute_id == 134:
+            series = attribute.text
+            break
+
+    request_base = Product.query
+    request_base = (request_base.join(Product.categories)
+                    .filter(Category.category_id == main_category.category_id))
+
+    request_base = (request_base.join(Product.attributes)
+                    .where((ProductAttribute.attribute_id == 134)
+                           & (ProductAttribute.text == series)))
+    products = request_base.all()
+
+    for product in products:
+        for attribute in product.attributes:
+            if attribute.attribute_id == 55:
+                product.upc = round(float(attribute.text) / 500) * 5
+                break
+
+    title = '{"1":"Модельный ряд:"}'
+
+    product_ids_in_series = {}
+    for product in products:
+        for attribute in product.attributes:
+            if attribute.attribute_id != 134:
+                continue
+
+            product_ids_in_series[int(product.upc)] = product.product_id
+            break
+
+    product_ids_in_series = dict(sorted(product_ids_in_series.items()))
+    product_ids_in_series = list(product_ids_in_series.values())
+
+    for product_id in product_ids_in_series:
+
+        variants_in_base = db.session.execute(
+            db.select(ProductVariant)
+            .filter(ProductVariant.product_id == product_id)).scalar()
+        if variants_in_base:
+            variants_in_base.prodvar_title = title
+            variants_in_base.prodvar_product_str_id = ','.join(map(str, product_ids_in_series))
+        else:
+            new_variant = ProductVariant(
+                product_id=product_id,
+                prodvar_title=title,
+                prodvar_product_str_id=','.join(map(str, product_ids_in_series))
+            )
+            db.session.add(new_variant)
+
+    for product in products:
+        for attribute in product.attributes:
+            if attribute.attribute_id == 55:
+                product.upc = 'до ' + str(product.upc) + ' м²'
+                break
+
+    db.session.commit()
+    return product_ids_in_series
 
 
 @app.route('/comparison_products', methods=['POST'])

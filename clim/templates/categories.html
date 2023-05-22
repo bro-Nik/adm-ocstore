@@ -57,8 +57,8 @@
                   <th scope="col">Товаров</th>
                   <th scope="col">В наличии</th>
                   <th scope="col">Под заказ</th>
+                  <th scope="col">Запрос цены</th>
                   <th scope="col">Нет в наличии</th>
-                  <th scope="col"></th>
                 </tr>
               </thead>
               <tbody id="tab-categories">
@@ -86,15 +86,10 @@
                         <a href="" class="ms-5">{{ subcategory.description.name }}</a>
                       </td>
                       <td class="text-average">{{ subcategory.description.products|length }}</td>
-                      <td class="text-average">{{ subcategory.description.products|length
-                        - not_in_stock.get(subcategory.category_id)|length
-                        - price_request.get(subcategory.category_id)|length }}</td>
-                      <td class="text-average">
-                        {{ price_request.get(subcategory.category_id)|length }}
-                      </td>
-                      <td class="text-average">
-                        {{ not_in_stock.get(subcategory.category_id)|length }}
-                      </td>
+                      <td class="text-average">{{ result[subcategory.category_id]['in_stock'] }}</td>
+                      <td class="text-average">{{ result[subcategory.category_id]['on_order'] }}</td>
+                      <td class="text-average">{{ result[subcategory.category_id]['price_request'] }}</td>
+                      <td class="text-average">{{ result[subcategory.category_id]['not_in_stock'] }}</td>
                     </tr>
                   {% endfor %}
                 {% endfor %}

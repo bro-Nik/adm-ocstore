@@ -6,6 +6,8 @@ from flask_login import UserMixin
 class Product(db.Model):
     __tablename__ = 'oc_product'
     product_id = db.Column(db.Integer, primary_key=True)
+    sku = db.Column(db.String(64))
+    upc = db.Column(db.String(64))
     mpn = db.Column(db.String(64))
     ean = db.Column(db.String(64))
     image = db.Column(db.String(255))
@@ -33,6 +35,8 @@ class Product(db.Model):
                                    backref=db.backref('products', lazy=True))
     special_offers = db.relationship('ProductSpecial',
                               backref=db.backref('products', lazy=True))
+    variants = db.relationship('ProductVariant',
+                                  backref='product', uselist=False)
 
 
 class ProductImage(db.Model):
@@ -54,7 +58,8 @@ class ProductRelated(db.Model):
 class ProductVariant(db.Model):
     __tablename__ = 'oc_prodvar'
     prodvar_id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer)
+    product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'))
+    prodvar_title = db.Column(db.Text)
     prodvar_product_str_id = db.Column(db.Text)
 
 
@@ -86,7 +91,7 @@ class ProductDescription(db.Model):
 
 product_to_category = db.Table('oc_product_to_category',
     db.Column('product_id', db.Integer, db.ForeignKey('oc_product.product_id')),
-    db.Column('category_id', db.Integer, db.ForeignKey('oc_category_description.category_id')),
+    db.Column('category_id', db.Integer, db.ForeignKey('oc_category.category_id')),
     db.Column('main_category', db.Boolean)
 )
 
@@ -120,8 +125,17 @@ class Category(db.Model):
     category_id = db.Column(db.Integer, primary_key=True)
     parent_id = db.Column(db.Integer)
     sort_order = db.Column(db.Integer)
+    products = db.relationship('Product', secondary=product_to_category,
+        backref=db.backref('categories', lazy='dynamic'))
     description = db.relationship('CategoryDescription',
                                   backref='description', uselist=False)
+
+
+# class CategoryPath(db.Model):
+#     __tablename__ = 'oc_category_path'
+#     category_id = db.Column(db.Integer, primary_key=True)
+#     path_id = db.Column(db.Integer, primary_key=True)
+#     level = db.Column(db.Integer)
 
 
 class CategoryDescription(db.Model):
@@ -130,8 +144,6 @@ class CategoryDescription(db.Model):
                             db.ForeignKey('oc_category.category_id'),
                             primary_key=True)
     name = db.Column(db.String(255))
-    products = db.relationship('Product', secondary=product_to_category,
-        backref=db.backref('categories', lazy='dynamic'))
 
 
 class ProductAttribute(db.Model):
