@@ -1,0 +1,73 @@
+<div class="card h-100">
+
+  <!-- card header  -->
+  <div class="card-header bg-white py-4">
+    <h4 class="mb-0">Клиент</h4>
+  </div>
+
+  <!-- card -->
+  <div class="card">
+
+    <!-- card body -->
+    <div class="card-body">
+      <!-- border -->
+      <div class="mb-6">
+        <h4 class="mb-1">Основная информация</h4>
+      </div>
+
+      <!-- row -->
+      <div id="contact" class="mb-3 row d-grid gap-2">
+        <div id="contact_select" class="col-sm-4">
+          <label for="name" class="form-label">Контакт</label>
+
+          <select id="contact_select" class="selectpicker" data-width="100%" data-live-search="true"
+            data-none-selected-text="" data-none-results-text="<a onclick='ContactInfo({0})'>Создать новый контакт</a>"
+            name="contact_id">
+            <option></option>
+            {% for contact in contacts %}
+            <option value="{{ contact.contact_id }}" data-phone="{{ contact.phone }}" data-email="{{ contact.email }}"
+              {{ 'selected' if False }}>
+              {{ contact.name }}
+            </option>
+            {% endfor %}
+          </select>
+
+        </div>
+
+        <div class="col-sm-4 contact-info visually-hidden">
+          <label for="contact_name" class="form-label">Контакт</label>
+          <input type="text" class="form-control" placeholder="" id="contact_name" name="contact_name" required>
+        </div>
+
+        <div class="col-sm-4 contact-info visually-hidden">
+          <label for="contact_phone" class="form-label">Телефон</label>
+          <input type="phone" class="form-control" placeholder="" id="contact_phone" name="contact_phone">
+        </div>
+
+        <div class="col-sm-4 contact-info visually-hidden">
+          <label for="contact_email" class="form-label">E-mail</label>
+          <input type="email" class="form-control" placeholder="" id="contact_email" name="contact_email">
+        </div>
+
+      </div>
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 
+  function ContactInfo(name) {
+    var contact_select = document.querySelector('#contact_select')
+    contact_select.classList.add('visually-hidden');
+
+    var contact_name = document.querySelector('#contact input[name="contact_name"]')
+    contact_name.value = name
+
+    var ContactInfo = document.querySelectorAll('.contact-info')
+    ContactInfo.forEach(element => {
+      element.classList.remove("visually-hidden");
+    });
+  }
+
+</script>

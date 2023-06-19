@@ -1,0 +1,149 @@
+<!-- Nothing or Expenses  -->
+{% if deal and deal.posted and not deal.expenses %}
+{% include 'partials/nothing.html' %}
+{% else %}
+
+<!-- Expenses  -->
+<div class="card h-100">
+
+
+  <!-- table  -->
+  <div class="">
+    <table class="table text-nowrap table">
+      <thead class="">
+        <tr>
+          {% if not deal or not deal.posted %}
+          <th scope="col"></th>
+          {% endif %}
+          <th scope="col">Название</th>
+          <th scope="col">Стоимость</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody id="tabExpenses">
+
+        <tr id="newLineExpenses" class="visually-hidden">
+          {% if not deal or not deal.posted %}
+          <td class="main-tab-checkbox">
+            <input class="form-check-input to-check" type="checkbox" name="" value="">
+          </td>
+          {% endif %}
+          <td class="col-4">
+            <span class="expense_count"></span>
+            {% if deal and deal.posted %}
+            <span class="expense-name"></span>
+            {% else %}
+            <div class="d-inline-block w-100">
+              <input type="text" class="form-control expense-name" name="expense_name_">
+            </div>
+            {% endif %}
+          </td>
+
+          <td class="col-2">
+            {% if deal and deal.posted %}
+            <span class="expense-sum"></span>
+            {% else %}
+            <div class="input-group">
+              <input type="text" class="form-control expense-sum" name="expense_sum_" value="0">
+              <span class="input-group-text">₽</span>
+            </div>
+            {% endif %}
+          </td>
+          <td class="col-auto"></td>
+
+        </tr>
+
+        <input id="expenses_count" type="hidden" name="expenses-count" value="">
+
+      </tbody>
+    </table>
+    <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns">
+      {% if not deal or not deal.posted %}
+      <button class="btn rounded-3 btn-primary" type="button" onclick="newLineExpenses()">Добавить строку</button>
+      <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+<script>
+
+  var tabExpenses = document.getElementById('tabExpenses')
+  var expensesCount = document.getElementById('expenses_count')
+  var LineExpenses = document.getElementById('newLineExpenses');
+  var url_get_deal_expenses = "{{ (url_for('json_deal_expenses', deal_id=deal.deal_id)) if deal }}"
+  var expensesFirstStart = true;
+
+
+  // Start Deal Expenses
+  async function DealExpensesStart() {
+    if (expensesFirstStart) {
+      if (url_get_deal_consumables) {
+        await getDealExpenses();
+      }
+      addDealExpenses();
+      //await getProductsInStocks();
+      expensesFirstStart = false;
+    }
+  }
+
+  // Deal Expenses
+  var deal_expenses = {}
+
+  function getDealExpenses() {
+    return fetch(url_get_deal_expenses, {
+      method: 'GET',
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
+      .then(res => res.json())
+      .then(data => window.deal_expenses = data)
+  }
+  function addDealExpenses() {
+    if (deal_expenses.length > 0) {
+      for (let i = 0; i < deal_expenses.length; i++) {
+        newLineExpenses(deal_expenses[i])
+      }
+    }
+    else {
+      {% if not deal or not deal.posted %}
+      newLineExpenses();
+      {% endif %}
+    }
+  }
+
+
+  // Fields
+  function newLineExpenses(expense = '') {
+    var newLine = LineExpenses.cloneNode(true);
+    newLine.removeAttribute('class');
+    newLine.removeAttribute('id');
+
+    var next = $('tr.expense').length + 1;
+    expensesCount.value = next;
+
+    var Names = newLine.querySelectorAll('[name]');
+    Names.forEach(element => {
+      element.name = element.name + `${next}`
+    });
+
+    newLine.querySelector('.expense_count').textContent = `${next}` + '.';
+    newLine.classList.add('expense');
+
+    tabExpenses.appendChild(newLine);
+
+    if (expense) {
+      {% if deal and deal.posted %}
+      newLine.querySelector('.expense-name').textContent = expense.name;
+      newLine.querySelector('.expense-sum').textContent = expense.sum;
+      {% else %}
+      newLine.querySelector('.expense-name').value = expense.name;
+      newLine.querySelector('.expense-sum').value = expense.sum;
+      {% endif %}
+    }
+  }
+
+</script>

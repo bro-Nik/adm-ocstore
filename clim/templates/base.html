@@ -8,6 +8,8 @@
 
     <!-- <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}"> -->
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+<!-- Scripts -->
+{% include 'partials/scripts.html' %}
   <title>{% block title %}{% endblock %}</title>
   {% endblock %}
 </head>
@@ -17,7 +19,7 @@
     {% include 'partials/navbar-vertical.html' %}
     <!-- Page content -->
     <div id="page-content">
-      {% include 'partials/header.html' %}
+      {#{% include 'partials/header.html' %}#}
 
       {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -36,8 +38,9 @@
     </div>
 
   </div>
-<!-- Scripts -->
-{% include 'partials/scripts.html' %}
 
 </body>
+<script>
+  feather.replace();
+</script>
 </html>

@@ -1,0 +1,62 @@
+<!-- Nothing or Expenses  -->
+{% if not deal or not deal.posted %}
+{% include 'partials/nothing.html' %}
+{% else %}
+
+<!-- Expenses  -->
+<div class="card h-100">
+
+
+  <!-- table  -->
+  <div class="">
+    <table class="table text-nowrap table">
+      <thead class="">
+        <tr>
+          <th scope="col">Название</th>
+          <th scope="col">Стоимость</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+
+        {% for item in analytics %}
+        <tr>
+          <td class="col-4">
+            <span class="ana_count"></span>
+            <span class="">{{ item }}</span>
+          </td>
+
+          <td class="col-2">
+            <span class="">{{ analytics[item] }}</span>
+            <span class="">₽</span>
+          </td>
+          <td class="col-auto"></td>
+
+        </tr>
+        {% endfor %}
+
+        <input id="expenses_count" type="hidden" name="expenses-count" value="">
+
+      </tbody>
+    </table>
+
+  </div>
+</div>
+<div class="card h-100">
+  <div class="d-flex justify-content-end align-items-center m-3">
+    <table class="col-3">
+      <tbody>
+        <tr>
+          <td> <span class="fs-4 fw-bolder">Всего расходов:</span> </td>
+          <td> <span class="fs-4 fw-bolder">{{ deal.sum - deal.profit }} ₽</span> </td>
+        </tr>
+        <tr>
+          <td> <span class="fs-4 fw-bolder">Чистая прибыль:</span> </td>
+          <td> <span class="fs-4 fw-bolder">{{ deal.profit }} ₽</span> </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endif %}

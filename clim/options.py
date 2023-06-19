@@ -8,7 +8,7 @@ from clim.models import Attribute, AttributeDescription, Manufacturer, Option,\
     OptionDescription, OptionSetting, OptionValueSetting, OptionValue, \
     OptionValueDescription, ProductAttribute, ProductOption,\
     ProductOptionValue, Product, CategoryDescription
-from clim.routes import get_discount_products, get_products, get_categories,\
+from clim.routes import get_consumables, get_discount_products, get_products, get_categories,\
     get_product
 
 
@@ -182,6 +182,8 @@ def option_value_settings(option_id, value_id=None):
                 continue
 
             attribute_values.append(int(attribute_value.text))
+    
+    products = tuple(get_consumables())
 
     return render_template('options/value_settings.html',
                            option_id=option_id,
@@ -191,7 +193,8 @@ def option_value_settings(option_id, value_id=None):
                            settings=settings,
                            categories=tuple(categories),
                            attributes=attributes,
-                           attribute_values=attribute_values)
+                           attribute_values=attribute_values,
+                           products=products)
 
 
 @app.route('/options/<int:option_id>/add_value', methods=['POST'])
@@ -239,6 +242,32 @@ def option_value_add(option_id, value_id=None):
 
         db.session.add(option_value)
 
+    db.session.commit()
+
+    # Consumables
+    count = 1
+    products_count = request.form.get('products-count')
+    products_count = int(products_count) if products_count else 0
+
+    products = []
+
+    while count <= products_count:
+        product_id = request.form.get('product_id_' + str(count))
+        if not product_id:
+            count += 1
+            continue
+
+        product = {
+            'product_id': int(product_id),
+            'quantity': float(request.form.get('quantity_' + str(count)))
+        }
+
+        products.append(product)
+        count += 1
+
+    products = json.dumps(products)
+
+    option_value.settings.consumables = products
     db.session.commit()
 
     if request.args.get('action') == 'apply':

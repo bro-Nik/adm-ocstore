@@ -7,6 +7,7 @@ from flask_login import login_required, current_user
 from flask_migrate import catch_errors
 from flask_sqlalchemy import query
 from requests import delete
+from sqlalchemy.sql.operators import filter_op
 from thefuzz import fuzz as f
 from datetime import datetime, timedelta
 from transliterate import slugify
@@ -70,6 +71,14 @@ def categories():
                            )
 
 
+@app.route('/category_<int:category_id>/settings', methods=['GET', 'POST'])
+@login_required
+def category_settings(category_id):
+    category = db.session.execute(
+        db.select(Category).filter(Category.category_id == category_id)).scalar()
+
+    return render_template('category_settings.html', category=category)
+
 def get_discount_products():
     # Получем метки
     label = db.session.execute(
@@ -94,6 +103,19 @@ def get_product(product_id: int):
 def get_other_product(product_id: int):
     return db.session.execute(
         db.select(OtherProduct).filter_by(other_product_id=product_id)).scalar()
+
+
+def get_consumables():
+    """ Получить с расходные материалы """
+
+    request_base = Product.query
+
+    request_base = (request_base.join(Product.categories)
+               .filter(Category.category_id == 11900348))
+
+    request_base = request_base.order_by(Product.mpn)
+
+    return request_base.all()
 
 
 def get_products(pagination=True, filter={}):
@@ -173,6 +195,13 @@ def get_products(pagination=True, filter={}):
     elif filter.get('other_filter') == 'no_options':
         request_base = request_base.filter(Product.options is None)
 
+    if filter.get('products_ids'):
+        ids = filter.get('products_ids')
+        request_base = request_base.filter(Product.product_id.in_(ids))
+
+    if filter.get('new_products'):
+        request_base = request_base.filter(Product.date_added == 0)
+
     if filter.get('sort') == 'viewed':
         request_base = request_base.order_by(Product.viewed.desc())
     else:
@@ -235,6 +264,7 @@ def get_filter(method=None, path=None):
         session['manufacturers_ids'] = request.form.getlist('manufacturers_ids')
         session['stock'] = request.form.get('stock')
         session['field'] = request.form.get('field')
+        session['new_products'] = request.form.get('new_products')
         if path:
             session[path + '_other_filter'] = request.form.get('other_filter')
 
@@ -246,7 +276,8 @@ def get_filter(method=None, path=None):
         'manufacturers_ids': session.get('manufacturers_ids'),
         'stock': session.get('stock'),
         'field': session.get('field'),
-        'group_attribute': session.get('group_attribute')
+        'group_attribute': session.get('group_attribute'),
+        'new_products': session['new_products']
     }
 
     if path:
@@ -273,6 +304,13 @@ def products(path=None):
 
     products = get_products(filter=filter)
 
+    attributes_in_products = []
+    for product in products:
+        for attribute in product.attributes:
+            if attribute.main_attribute.description.name not in attributes_in_products:
+                attributes_in_products.append(attribute.main_attribute.description.name)
+
+
     page = ('products/' + path + '.html') if path else 'products/products.html'
 
     return render_template(page,
@@ -281,7 +319,8 @@ def products(path=None):
                            categories=tuple(categories),
                            stock_statuses=stock_statuses,
                            other_shops=tuple(other_shops),
-                           attributes=attributes)
+                           attributes=tuple(attributes),
+                           attributes_in_products=attributes_in_products)
 
 
 @app.route('/products/action', methods=['POST'])
@@ -584,7 +623,8 @@ def comparison_products(filter):
 
     other_products = tuple(db.session.execute(
         db.select(OtherProduct)
-        .filter(OtherProduct.link_confirmed is None)).scalars())
+        .filter(OtherProduct.link_confirmed == None)).scalars())
+        # .filter(OtherProduct.link_confirmed is None)).scalars())
 
     def matching_set(matching, product, other_product):
         id = other_product.other_product_id
@@ -620,6 +660,8 @@ def comparison_products(filter):
             elif (matching
                   > matching_list[other_product.other_product_id]['matching']):
                 matching_set(matching, product, other_product)
+            if 'Dahatsu GR-07H' in other_product.name:
+                print(other_product_name, ' - - ', matching)
 
     for x_id in list(matching_list.items()):
         for y_id in list(matching_list.items()):
@@ -1143,5 +1185,75 @@ def stock_statuses_action():
     db.session.commit()
 
     return redirect(url_for('stock_statuses'))
+
+
+@app.route('/new_products', methods=['GET'])
+@login_required
+def new_products():
+    other_shops = tuple(db.session.execute(db.select(OtherShops)).scalars())
+
+    products = db.session.execute(
+        db.select(Product).filter_by(date_added=0)).scalars()
+
+    return render_template('products/new.html', products=products,
+                           other_shops=other_shops)
+
+
+@app.route('/new_products_comp', methods=['GET'])
+@login_required
+def new_products_comp():
+    products = db.session.execute(
+        db.select(Product).filter_by(date_added=0)).scalars()
+    filter = {'products_ids': []}
+    for product in products:
+        filter['products_ids'].append(product.product_id)
+
+    print(filter)
+    comparison_products.delay(filter)
+    return redirect(url_for('new_products'))
+
+
+@app.route('/new_products', methods=['POST'])
+@login_required
+def new_products_post():
+    products_count = request.form.get('products-count')
+
+    count = 1
+
+    while count <= int(products_count):
+        name = request.form.get('name-' + str(count))
+        if not name:
+            count += 1
+            continue
+
+        new_product = Product(
+            mpn=name,
+            model='',
+            sku='',
+            upc='',
+            location='',
+            ean='',
+            price=0,
+            tax_class_id=0,
+            manufacturer_id=0,
+            isbn='',
+            jan='',
+            quantity=0,
+            viewed=0,
+            date_added=0,
+            date_modified=0,
+            cost=0,
+            suppler_code=1,
+            suppler_type=0,
+            stock_status_id=0
+
+        )
+        db.session.add(new_product)
+
+        count += 1
+    db.session.commit()
+    return 'OK'
+
+
 
 

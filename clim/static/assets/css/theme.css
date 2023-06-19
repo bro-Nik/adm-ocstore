@@ -4049,7 +4049,7 @@ textarea.form-control-lg {
 .input-group {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: stretch;
   width: 100%;
 }
@@ -4082,7 +4082,6 @@ textarea.form-control-lg {
   color: #637381;
   text-align: center;
   white-space: nowrap;
-  background-color: #F4F6F8;
   border: 1px solid #C4CDD5;
   border-radius: 0.375rem;
 }
@@ -4114,6 +4113,9 @@ textarea.form-control-lg {
 .input-group:not(.has-validation) > .dropdown-toggle:nth-last-child(n+3) {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+  border-right: none;
+  text-align: right;
+  padding: 0.5rem 0.5rem;
 }
 .input-group.has-validation > :nth-last-child(n+3):not(.dropdown-toggle):not(.dropdown-menu),
 .input-group.has-validation > .dropdown-toggle:nth-last-child(n+4) {
@@ -4124,6 +4126,7 @@ textarea.form-control-lg {
   margin-left: -1px;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
+  padding-left: 0;
 }
 
 .valid-feedback {
@@ -26314,7 +26317,8 @@ textarea.form-control-lg {
 }
 
 .nav-lt-tab {
-  border-top: 1px solid #DFE3E8;
+  border-bottom: 1px solid #DFE3E8;
+  border-radius: 0.375rem;
 }
 @media (max-width: 768px) {
   .nav-lt-tab {
@@ -26339,12 +26343,12 @@ textarea.form-control-lg {
 }
 .nav-lt-tab .nav-item .nav-link.active {
   background-color: transparent;
-  border-top: 2px solid #624BFF;
+  border-bottom: 2px solid #624BFF;
   color: #624BFF;
 }
 .nav-lt-tab .nav-item .nav-link:hover {
   background-color: transparent;
-  border-top: 2px solid #624BFF;
+  border-bottom: 2px solid #624BFF;
   color: #624BFF;
 }
 

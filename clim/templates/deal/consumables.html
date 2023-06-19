@@ -1,0 +1,275 @@
+<!-- Nothing or Consumables  -->
+{% if deal and deal.posted and not deal.consumables %}
+{% include 'partials/nothing.html' %}
+{% else %}
+
+<!-- Consumables  -->
+<div class="card h-100">
+
+  <!-- table  -->
+  <div class="">
+    <table class="table text-nowrap table">
+      <thead class="">
+        <tr>
+          {% if not deal or not deal.posted %}
+          <th scope="col"></th>
+          {% endif %}
+          <th scope="col">Название</th>
+          <th scope="col" class="col-1">Количество</th>
+          <th scope="col">Склад</th>
+          {% if not deal or not deal.posted %}
+          <th scope="col">Доступно</th>
+          {% endif %}
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody id="tabConsumables">
+
+
+        <tr id="newLineConsumables" class="visually-hidden">
+          {% if not deal or not deal.posted %}
+          <td class="main-tab-checkbox">
+            <input class="form-check-input to-check" type="checkbox" name="" value="">
+          </td>
+          {% endif %}
+          <td class="col-4">
+            <span class="consumable_count"></span>
+            {% if deal and deal.posted %}
+            <span class="posted-product-name"></span>
+            {% else %}
+            <select class="product-select" data-width="100%" data-live-search="true" data-none-selected-text=""
+              data-none-results-text="Не найдено {0}" name="consumable_id_">
+              <option></option>
+              {% for product in consumables %}
+              <option value="{{ product.product_id }}" data-price="{{ product.price }}">{{
+                product.description.name }}</option>
+              {% endfor %}
+            </select>
+            {% endif %}
+          </td>
+
+          <td class="col-1">
+            {% if deal and deal.posted %}
+            <span class="quantity"></span>
+            {% else %}
+            <div class="input-group">
+              <input type="text" class="form-control quantity" name="consumable_quantity_" value="0">
+              <span class="input-group-text quantity"></span>
+            </div>
+            {% endif %}
+          </td>
+
+          <td class="col-2">
+            {% if deal and deal.posted %}
+            <span class="posted-stock-name"></span>
+            {% else %}
+            <select class="stock-select" data-width="100%" data-live-search="true" data-none-selected-text=""
+              data-none-results-text="Не найдено {0}" name="consumable_stock_id_">
+            </select>
+            {% endif %}
+          </td>
+
+          {% if not deal or not deal.posted %}
+          <td class="col-2 align-middle">
+            <span class="available"></span>
+          </td>
+          {% endif %}
+          <td></td>
+
+        </tr>
+
+        <input id="consumables_count" type="hidden" name="consumables-count" value="">
+
+      </tbody>
+    </table>
+    <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns">
+      {% if not deal or not deal.posted %}
+      <button class="btn rounded-3 btn-primary" type="button" onclick="DealConsumablesFill()">Заполнить</button>
+      <button class="btn rounded-3 btn-primary" type="button" onclick="newLineConsumables()">Добавить строку</button>
+      <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+<script>
+
+  var tabConsumables = document.getElementById('tabConsumables')
+  var consumablesCount = document.getElementById('consumables_count')
+  var LineConsumables = document.getElementById('newLineConsumables');
+  var url_get_deal_consumables = "{{ (url_for('json_deal_consumables', deal_id=deal.deal_id)) if deal }}"
+  var consumablesFirstStart = true;
+
+
+  // Start Deal Consumables
+  async function DealConsumablesStart() {
+    if (!stocksGeted) {
+      await getProductsInStocks();
+      stocksGeted = true;
+    }
+    if (consumablesFirstStart) {
+      if (url_get_deal_consumables) {
+        await getDealConsumables();
+      }
+      addDealConsumables();
+      consumablesFirstStart = false;
+    }
+  }
+
+  // Deal Consumables
+  var deal_consumables = {}
+
+  function getDealConsumables() {
+    return fetch(url_get_deal_consumables, {
+      method: 'GET',
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
+      .then(res => res.json())
+      .then(data => window.deal_consumables = data)
+  }
+  function addDealConsumables() {
+    if (deal_consumables.length > 0) {
+      for (let i = 0; i < deal_consumables.length; i++) {
+        newLineConsumables(deal_consumables[i])
+      }
+    }
+    else {
+      {% if not deal or not deal.posted %}
+      newLineConsumables();
+      {% endif %}
+    }
+  }
+
+
+  // Change Trigers
+  $('#tabConsumables').on("change", 'select.stock-select', function () {
+    var tr = this.parentNode.parentNode.parentNode
+    $select = $(this)
+
+    ProductAvailable($select, tr)
+  })
+
+  $('#tabConsumables').on("change", 'select.product-select', function () {
+    var tr = this.parentNode.parentNode.parentNode
+    var index = $(tr).index() - 1
+    updateStocks('#tabConsumables', this.value, tr, index)
+
+    $option = $(this).find(':selected');
+
+    $available = $('#tabConsumables').find('tr').eq(index).find('select.stock-select').find(':selected').attr('data-subtext');
+
+    var quantity = tr.querySelector('.quantity').value
+
+    tr.querySelector('.available').textContent = $available;
+  })
+
+
+  // Fields
+  function newLineConsumables(product = '') {
+    var newLine = LineConsumables.cloneNode(true);
+    var tab = '#tabConsumables'
+    newLine.removeAttribute('class');
+    newLine.removeAttribute('id');
+
+    var next = $('tr.consumable').length + 1;
+    consumablesCount.value = next;
+
+    var Names = newLine.querySelectorAll('[name]');
+    Names.forEach(element => {
+      element.name = element.name + `${next}`
+    });
+
+    newLine.querySelector('.consumable_count').textContent = `${next}` + '.';
+    newLine.classList.add('consumable');
+
+    tabConsumables.appendChild(newLine);
+
+    {% if deal and deal.posted %}
+    if (product) {
+      newLine.querySelector('.posted-product-name').textContent = product.product_name;
+      newLine.querySelector('.quantity').textContent = product.quantity;
+      if (product.stock_id) {
+        newLine.querySelector('.posted-stock-name').textContent = product.stock_name;
+      }
+    }
+    {% else %}
+    if (product) {
+      updateStocks(tab, product.product_id, newLine, -1)
+
+      newLine.querySelector('.product-select').value = product.product_id;
+      newLine.querySelector('.quantity').value = product.quantity;
+      if (product.stock_id) {
+        newLine.querySelector('.stock-select').value = product.stock_id;
+      }
+    }
+    $('tr.consumable').eq(-1).find('select').selectpicker();
+
+    ProductAvailable($('#tabConsumables').find('tr').eq(-1).find('select.stock-select'), newLine)
+    {% endif %}
+
+
+  }
+
+  // Fill Consumables
+  var url_get_consumables_in_option = "{{ url_for('json_consumables_in_option') }}"
+
+  function DealConsumablesFill() {
+    $('#tabConsumables').find('tr.consumable').remove()
+
+    $('#tabBody').find('.product-type').each(function (index, element) {
+      if ($(element).val() === 'service') {
+        var tr = this.parentNode.parentNode
+        $option_quantity = $(tr).find('.quantity').val();
+        $option_value_id = $(tr).find('select.product-select').find(':selected').val();
+        url = url_get_consumables_in_option + '/' + $option_value_id
+
+        DealConsumablesFillAdd(url, $option_quantity);
+
+      }
+    });
+  }
+
+  async function DealConsumablesFillAdd(url, $option_quantity) {
+    await getConsumablesInOption(url);
+
+    if (consumables_in_option.length > 0) {
+      for (let i = 0; i < consumables_in_option.length; i++) {
+        var product_find = false
+
+        $('#tabConsumables').find('select.product-select').each(function (index, element) {
+          if (+$(element).val() === +consumables_in_option[i].product_id) {
+            alert('=')
+            var tr = this.parentNode.parentNode.parentNode
+            $quantity = $(tr).find('.quantity').val();
+            $quantity = +$quantity + +$option_quantity * +consumables_in_option[i].quantity;
+            $(tr).find('.quantity').val($quantity)
+
+            product_find = true
+          }
+
+        });
+        if (!product_find) {
+          consumables_in_option[i].quantity = +$option_quantity * +consumables_in_option[i].quantity
+          newLineConsumables(consumables_in_option[i])
+        }
+      }
+    }
+  }
+
+
+  var consumables_in_option = {}
+  function getConsumablesInOption(url) {
+    return fetch(url, {
+      method: 'GET',
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
+      .then(res => res.json())
+      .then(data => window.consumables_in_option = data)
+  }
+</script>

@@ -1,0 +1,436 @@
+<!-- Products  -->
+<div class="card h-100">
+
+  <!-- table  -->
+  <div class="">
+    <table id="Products" class="table text-nowrap table">
+      <thead class="">
+        <tr>
+          {% if not movement or not movement.posted %}
+          <th scope="col">
+            <input class="form-check-input check-all" type="checkbox">
+          </th>
+
+          {% endif %}
+          <th scope="col" class="col-4">Товар</th>
+          <th scope="col" class="col-1 {{ 'visually-hidden' if not movement_type == 'coming' }}">Закупочная цена</th>
+          <th scope="col" class="col-1">Количество</th>
+          <th scope="col" class="col-2">Склад</th>
+          {% if not movement or not movement.posted %}
+          <th scope="col" class="col-1">На складе</th>
+          {% endif %}
+          {% if movement_type == 'moving' %}
+          <th scope="col" class="col-2">Получатель</th>
+          {% if not movement or not movement.posted %}
+          <th scope="col" class="col-1">У получателя</th>
+          {% endif %}
+          {% endif %}
+          <th scope="col">Сумма</th>
+        </tr>
+      </thead>
+      <tbody id="tabProducts">
+
+
+        {% set var = namespace(sum=0, quantity=0, unit='', count=0) %}
+
+        {% set movement_products = movement.products|to_json %}
+
+        {% if not movement.posted and not movement_products %}
+        {% set movement_products = [{'product_id': '', 'purchase_price': 0, 'quantity': 0}] %}
+        {% endif %}
+
+        {% for movement_product in movement_products %}
+        {% set var.count = var.count + 1 %}
+
+        <tr class="product">
+
+          {% if not movement or not movement.posted %}
+          <td class="main-tab-checkbox">
+            <input class="form-check-input to-check" type="checkbox" value="{{ movement_product.product_id }}">
+          </td>
+          {% endif %}
+
+          <td class="col-4">
+            <span class="product_count">{{ var.count }}.</span>
+
+            {% if movement and movement.posted %}
+            <span class="posted-product-name">{{ movement_product.name }}</span>
+            {% else %}
+            <select class="product-select" data-width="100%" data-live-search="true" data-none-selected-text=""
+              data-none-results-text="Не найдено {0}">
+              <option value="">-- Выберите товар --</option>
+              {% for product in products %}
+              <option value="{{ product.product_id }}" data-product-unit="{{ product.unit_class.description.unit }}"
+                {{ 'selected' if product.product_id==movement_product.product_id }}>
+                {{ product.mpn }}</option>
+              {% endfor %}
+            </select>
+            {% endif %}
+          </td>
+          <td class="col-xxl-2 col-xl-3 {{ 'visually-hidden' if not movement_type == 'coming' }}">
+            {% if movement and movement.posted %}
+            <span class="purchase-price">{{ movement_product.purchase_price }}</span>
+            <span class="">₽</span>
+            {% else %}
+            <div class="input-group">
+              <input type="number" class="form-control purchase-price" value="{{ movement_product.purchase_price }}">
+              <span class="input-group-text">₽</span>
+            </div>
+            {% endif %}
+          </td>
+          <td class="col-1">
+            {% if movement and movement.posted %}
+            <span class="quantity"></span>
+            <span class="quantity-unit"></span>
+            {% else %}
+            <div class="input-group">
+              <input type="number" class="form-control quantity" value="{{ movement_product.quantity }}">
+              <span class="input-group-text quantity">шт</span>
+            </div>
+            {% endif %}
+          </td>
+          <td class="col-2">
+            {% if movement and movement.posted %}
+            <span class="posted-stock-name"></span>
+            {% else %}
+            <select class="stock-select" data-width="100%" data-live-search="true" data-none-selected-text=""
+              data-none-results-text="Не найдено {0}">
+              {% for stock in stocks %}
+              <option value="{{ stock.stock_id }}" {{ 'selected' if stock.stock_id==movement_product.stock_id }}>
+                {{ stock.name }}</option>
+              {% endfor %}
+            </select>
+            {% endif %}
+          </td>
+          {% if not movement or not movement.posted %}
+          <td class="align-middle">
+            <span class="available"></span>
+          </td>
+          {% endif %}
+          {% if movement_type == 'moving' %}
+          <td class="col-2">
+            {% if movement and movement.posted %}
+            <span class="posted-stock2-name"></span>
+            {% else %}
+            <select class="stock2-select" data-width="100%" data-live-search="true" data-none-selected-text=""
+              data-none-results-text="Не найдено {0}">
+              {% for stock in stocks %}
+              <option value="{{ stock.stock_id }}" {{ 'selected' if stock.stock_id==movement_product.stock2_id }}>
+                {{ stock.name }}</option>
+              {% endfor %}
+              {% endif %}
+            </select>
+          </td>
+          {% if not movement or not movement.posted %}
+          <td class="align-middle">
+            <span class="available2"></span>
+          </td>
+          {% endif %}
+          {% endif %}
+          <td class="align-middle">
+            <span class="sum">{{ movement_product.purchase_price * movement_product.quantity }}</span>
+            <span class="">₽</span>
+          </td>
+        </tr>
+        {% endfor %}
+
+        <input type="hidden" name="products_data">
+
+      </tbody>
+    </table>
+
+    <div class="d-flex">
+      <div>
+        <div class="m-3 gap-2 justify-content-start actions">
+          <span class="">Отмеченно: </span>
+          <span class="checks-count"></span>
+        </div>
+        <div class="m-3 gap-2 d-flex justify-content-start actions">
+          <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
+        </div>
+      </div>
+      <div class="m-3 ms-auto gap-2">
+        {% if not movement or not movement.posted %}
+        <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
+        <button class="btn rounded-3 " type="button">Отмена</button>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="card h-100">
+  <div class="d-flex justify-content-end align-items-center m-3">
+    <table class="col-3">
+      <tbody>
+        <tr class="">
+          <td class="">
+            <span class="fs-4 fw-bolder">Общая сумма:</span>
+          </td>
+          <td class="">
+            <span id="all_sum" class="fs-4 fw-bolder"></span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+<script>
+
+  var url_get_products_in_stocks = "{{url_for('json_products_in_stocks') }}"
+  var stocks = {}
+  var default_stock = {{stocks[0].stock_id}}
+
+  // Start
+  async function MovementStart() {
+    await getProductsInStocks();
+    $('#tabProducts').find('tr.product').each(function () {
+      ProductAvailable(this)
+    });
+    $('tr.product').find('select').selectpicker();
+    $('#pills-product').removeClass('visually-hidden');
+  }
+  MovementStart()
+
+  // Products in stocks
+  function getProductsInStocks() {
+    return fetch(url_get_products_in_stocks, {
+      method: 'GET',
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
+      .then(res => res.json())
+      .then(data => window.stocks = data)
+  }
+
+  function ProductAvailable(tr) {
+    available = 0;
+    $option = $(tr).find('select.product-select').find(':selected');
+    if ($option.val()) {
+      product_id = $option.val()
+      unit = $option.attr('data-product-unit')
+      $select = $(tr).find('select.stock-select')
+      stock_id = $($select).find(':selected').val();
+
+      if (stocks[product_id]) {
+        for (let i = 0; i < (stocks[product_id]).length; i++) {
+          if (+stocks[product_id][i].stock_id === +stock_id) {
+            available = stocks[product_id][i].quantity;
+          }
+        }
+      }
+      tr.querySelector('.available').textContent = available + ' ' + unit;
+
+    }
+  }
+
+  function UpdateSum(tr) {
+    quantity = $(tr).find('.quantity').val()
+    price = $(tr).find('.purchase-price').val()
+    tr.querySelector('.sum').textContent = price * quantity
+  }
+
+  // Change Trigers
+  $('#tabProducts').on("change", 'select.product-select', function () {
+    var tr = this.parentNode.parentNode.parentNode
+    $option = $(this).find(':selected');
+    unit = $option.attr('data-product-unit')
+    $(tr).find('.input-group-text.quantity').text(unit)
+
+    product_id = $(this).val()
+    $purchase_price = $(tr).find('.purchase-price')
+    if (stocks[product_id]) {
+      $purchase_price.val(stocks[product_id][0].purchase_price)
+    } else {
+      $purchase_price.val('0')
+    }
+
+    UpdateSum(tr)
+    ProductAvailable(tr)
+  })
+
+  $('#tabProducts').on("change", 'select.stock-select', function () {
+    ProductAvailable(this.parentNode.parentNode.parentNode)
+  })
+
+  $('#tabProducts').on("change", 'input.quantity', function () {
+    UpdateSum(this.parentNode.parentNode.parentNode)
+  })
+
+  $('#tabProducts').on("change", 'input.purchase-price', function () {
+    UpdateSum(this.parentNode.parentNode.parentNode)
+  })
+
+  // Fields
+  function newLine($new_line = '') {
+    if ($new_line === '') {
+      var $line = $('tr.product').eq(-1);
+      $line.find('select').selectpicker('destroy')
+      var $new_line = $($line).clone();
+      $new_line.appendTo("#tabProducts");
+    }
+
+    var count = $('tr.product').length;
+    $new_line.find('.to-check').prop('checked', false);
+    $new_line.find('.to-check').trigger('change');
+    $new_line.find('.product_count').text(count + '.');
+    $new_line.find('.purchase-price').val(0);
+    $new_line.find('.quantity').val(0);
+    $new_line.find('.input-group-text').text(' шт');
+    $new_line.find('.available').text('');
+    $new_line.find('.available2').text('');
+    $new_line.find('.sum').text('0');
+    $new_line.find('select.product-select').val('')
+    $new_line.find('select.stock-select').val(default_stock)
+
+    $line.find('select').selectpicker()
+    $new_line.find('select').selectpicker()
+    CheckCount();
+  }
+
+  $('#tabProducts').bind('DOMSubtreeModified', '.sum', function () {
+    var all_sum = 0
+    $('#tabProducts').find('.sum').each(function () {
+      all_sum += +this.innerHTML
+    });
+    $('#all_sum').text(all_sum + ' ₽')
+  })
+
+  {% if movement_type == 'coming' %}
+
+  // Products Data To Server
+  $('#movementInfo').submit(function () {
+    var data = '[';
+    $('tr.product').each(function () {
+      if ($(this).find('select.product-select').val()) {
+        var item = '{"product_id": ' + $(this).find('select.product-select').val() +
+          ', "purchase_price": ' + parseFloat($(this).find('.purchase-price').val()) +
+          ', "quantity": ' + parseFloat($(this).find('.quantity').val()) +
+          ', "stock_id": ' + $(this).find('select.stock-select').val() + '},'
+
+        data += item;
+      }
+    });
+    data += ']';
+    if (data !== '[]') {
+      $('[name=products_data]').val(JSON.stringify(data));
+    }
+  })
+
+  // For movement type moving
+  {% elif movement_type == 'moving' %}
+
+  function ProductAvailable2(tr) {
+    available = 0;
+    $option = $(tr).find('select.product-select').find(':selected');
+    if ($option.val()) {
+      product_id = $option.val()
+      unit = $option.attr('data-product-unit')
+      $select = $(tr).find('select.stock2-select')
+      stock_id = $($select).find(':selected').val();
+
+      if (stocks[product_id]) {
+        for (let i = 0; i < (stocks[product_id]).length; i++) {
+          if (+stocks[product_id][i].stock_id === +stock_id) {
+            available = stocks[product_id][i].quantity;
+          }
+        }
+      }
+      tr.querySelector('.available2').textContent = available + ' ' + unit;
+    }
+  }
+
+  function ChangeStock2(tr) {
+    var $stock1 = $(tr).find('select.stock-select')
+    var $stock2 = $(tr).find('select.stock2-select')
+    stock_id = $($stock1).find(':selected').val();
+
+    $($stock1).find('option').each(function () {
+      if ($(this).val() !== stock_id) {
+        $($stock2).val($(this).val())
+      }
+    });
+
+    $($stock2).selectpicker('destroy');
+    $($stock2).selectpicker();
+  }
+
+  $('#tabProducts').on("change", 'select.product-select', function () {
+    var tr = this.parentNode.parentNode.parentNode
+    ChangeStock2(tr)
+    ProductAvailable2(tr)
+  })
+  $('#tabProducts').on("change", 'select.stock2-select', function () {
+    ProductAvailable2(this.parentNode.parentNode.parentNode)
+  })
+  $('#tabProducts').on("change", 'select.stock-select', function () {
+    ChangeStock2(this.parentNode.parentNode.parentNode)
+  })
+
+  $('#tabProducts').bind('DOMSubtreeModified', '.available', function () {
+    ProductAvailable2(this.parentNode)
+  })
+
+  // Products Data To Server
+  $('#movementInfo').submit(function () {
+    var data = '[';
+    $('tr.product').each(function () {
+      if ($(this).find('select.product-select').val()) {
+        var item = '{"product_id": ' + $(this).find('select.product-select').val() +
+          ', "quantity": ' + parseFloat($(this).find('.quantity').val()) +
+          ', "purchase_price": ' + parseFloat($(this).find('.purchase-price').val()) +
+          ', "stock_id": ' + $(this).find('select.stock-select').val() +
+          ', "stock2_id": ' + $(this).find('select.stock2-select').val() + '},'
+
+        data += item;
+      }
+    });
+    data += ']';
+    if (data !== '[]') {
+      $('[name=products_data]').val(JSON.stringify(data));
+    }
+  })
+
+  {% endif %}
+
+  // Checks
+
+  // Check All
+  $('.check-all').on("change", function () {
+    $('.to-check').prop('checked', $(this).is(':checked'));
+  })
+
+  // Show buttons
+  $('#Products').on("change", ':checkbox', function () {
+    var $checked_count = $('.to-check:checked').length;
+    if ($('tr.product').length > 1) {
+      $('.actions .btn').prop('disabled', !$checked_count > 0);
+    }
+    CheckCount();
+  })
+
+  // Check Count
+  CheckCount();
+
+  function CheckCount() {
+    var $checked_count = $('.to-check:checked').length;
+    var $all_count = $('.to-check').length;
+    $('.checks-count').text($checked_count + ' / ' + $all_count);
+  }
+
+  // Delete line
+  $('.delete-product').on("click", function () {
+    $('.to-check:checked').each(function () {
+      if ($('tr.product').length > 1) {
+        $(this.parentNode.parentNode).remove()
+      } else {
+        newLine(this.parentNode.parentNode)
+      }
+    });
+    CheckCount();
+  })
+
+</script>

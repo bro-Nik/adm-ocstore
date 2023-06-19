@@ -6,12 +6,15 @@ from flask_login import UserMixin
 class Product(db.Model):
     __tablename__ = 'oc_product'
     product_id = db.Column(db.Integer, primary_key=True)
+    model = db.Column(db.String(64))
     sku = db.Column(db.String(64))
     upc = db.Column(db.String(64))
     mpn = db.Column(db.String(64))
+    location = db.Column(db.String(128))
     ean = db.Column(db.String(64))
     image = db.Column(db.String(255))
     price = db.Column(db.Float(15.4))
+    tax_class_id = db.Column(db.Integer)
     images = db.relationship('ProductImage',
                              backref=db.backref('product', lazy=True))
     related_products = db.relationship('ProductRelated',
@@ -27,16 +30,25 @@ class Product(db.Model):
     jan = db.Column(db.String(64))
     quantity = db.Column(db.Integer)
     viewed = db.Column(db.Integer)
+    date_added = db.Column(db.Date)
+    date_modified = db.Column(db.Date)
+    cost = db.Column(db.Float)
+    suppler_code = db.Column(db.Integer)
+    suppler_type = db.Column(db.Integer)
     attributes = db.relationship('ProductAttribute',
                                    backref='product', lazy=True)
     stock_status_id = db.Column(db.Integer,
                                 db.ForeignKey('oc_stock_status.stock_status_id'))
     stock_status = db.relationship('StockStatus',
-                                   backref=db.backref('products', lazy=True))
+            backref=db.backref('products', lazy=True))
     special_offers = db.relationship('ProductSpecial',
                               backref=db.backref('products', lazy=True))
     variants = db.relationship('ProductVariant',
                                   backref='product', uselist=False)
+    weight_class_id = db.Column(db.Integer,
+                                db.ForeignKey('oc_weight_class.weight_class_id'))
+    unit_class = db.relationship('WeightClass',
+                                   backref=db.backref('products', lazy=True))
 
 
 class ProductImage(db.Model):
@@ -151,7 +163,9 @@ class ProductAttribute(db.Model):
     product_id = db.Column(db.Integer,
                            db.ForeignKey('oc_product.product_id'),
                            primary_key=True)
-    attribute_id = db.Column(db.Integer, primary_key=True)
+    attribute_id = db.Column(db.Integer,
+                           db.ForeignKey('oc_attribute.attribute_id'),
+                           primary_key=True)
     text = db.Column(db.Text)
 
 
@@ -218,6 +232,7 @@ class OptionValueSetting(db.Model):
                           primary_key=True)
     price = db.Column(db.Float(15.4))
     settings = db.Column(db.Text)
+    consumables = db.Column(db.Text)
 
 
 class ProductOption(db.Model):
@@ -263,6 +278,8 @@ class Attribute(db.Model):
     sort_order = db.Column(db.Integer)
     description = db.relationship('AttributeDescription',
                                   backref='description', uselist=False)
+    product_attributes = db.relationship('ProductAttribute',
+                                  backref='main_attribute', uselist=False)
 
 
 class AttributeDescription(db.Model):
@@ -271,6 +288,23 @@ class AttributeDescription(db.Model):
                              db.ForeignKey('oc_attribute.attribute_id'),
                              primary_key=True)
     name = db.Column(db.String(256))
+
+
+class WeightClass(db.Model):
+    __tablename__ = 'oc_weight_class'
+    weight_class_id = db.Column(db.Integer, primary_key=True)
+    description = db.relationship('WeightClassDescription',
+                                  backref='weight_class', uselist=False)
+
+
+class WeightClassDescription(db.Model):
+    __tablename__ = 'oc_weight_class_description'
+    weight_class_id = db.Column(db.Integer,
+                                db.ForeignKey('oc_weight_class.weight_class_id'),
+                                primary_key=True)
+    language_id = db.Column(db.Integer)
+    title = db.Column(db.String(32))
+    unit = db.Column(db.String(4))
 
 
 class OtherShops(db.Model):
@@ -403,3 +437,90 @@ class SpecialOfferDescription(db.Model):
     name = db.Column(db.String(255))
     description = db.Column(db.Text)
     meta_title = db.Column(db.String(255))
+
+
+class Stock(db.Model):
+    __tablename__ = 'adm_stock'
+    stock_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64))
+    sort = db.Column(db.Integer)
+    products = db.relationship('StockProduct',
+                              backref=db.backref('stock', lazy=True))
+
+
+class StockProduct(db.Model):
+    __tablename__ = 'adm_stock_product'
+    product_id = db.Column(db.Integer,
+                           db.ForeignKey('adm_stock_product_info.product_id'),
+                           db.ForeignKey('oc_product.product_id'),
+                           primary_key=True)
+    stock_id = db.Column(db.Integer,
+                         db.ForeignKey('adm_stock.stock_id'),
+                         primary_key=True)
+    quantity = db.Column(db.Float)
+    info = db.relationship('StockProductInfo',
+                            backref=db.backref('stock_product', uselist=False))
+    product = db.relationship('Product',
+                              backref=db.backref('stocks', lazy=True))
+
+
+class StockProductInfo(db.Model):
+    __tablename__ = 'adm_stock_product_info'
+    product_id = db.Column(db.Integer,
+                           db.ForeignKey('oc_product.product_id'),
+                           primary_key=True)
+    purchase_price = db.Column(db.Float)
+    main_product = db.relationship('Product',
+                              backref=db.backref('stock_product', lazy=True))
+
+
+class Deal(db.Model):
+    __tablename__ = 'adm_deal'
+    deal_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128))
+    contact_id = db.Column(db.Integer)
+    stage_id = db.Column(db.Integer, db.ForeignKey('adm_deal_stage.stage_id'))
+    adress = db.Column(db.String(128))
+    products = db.Column(db.Text)
+    consumables = db.Column(db.Text)
+    expenses = db.Column(db.Text)
+    posted = db.Column(db.Boolean)
+    date_add = db.Column(db.Date)
+    date_end = db.Column(db.Date)
+    sum = db.Column(db.Float(15.4))
+    analytics = db.Column(db.Text)
+    profit = db.Column(db.Float(15.4))
+
+
+class DealStage(db.Model):
+    __tablename__ = 'adm_deal_stage'
+    stage_id = db.Column(db.Integer, primary_key=True,)
+    name = db.Column(db.String(128))
+    type = db.Column(db.String(64))
+    deals = db.relationship('Deal',
+                            backref=db.backref('stage', lazy=True))
+
+
+class Contact(db.Model):
+    __tablename__ = 'adm_contact'
+    contact_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128))
+    phone = db.Column(db.String(64))
+    email = db.Column(db.String(64))
+
+
+class StockMovement(db.Model):
+    __tablename__ = 'adm_stock_movement'
+    movement_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64))
+    date = db.Column(db.Date)
+    posted = db.Column(db.Boolean)
+    products = db.Column(db.Text)
+    movement_type = db.Column(db.String(32))
+    details = db.Column(db.Text)
+
+
+class StockCategory(db.Model):
+    __tablename__ = 'adm_stock_category'
+    stock_category_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64))

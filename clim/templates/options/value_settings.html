@@ -139,6 +139,61 @@
                 </div>
 
               </div>
+            </div>
+
+
+            <!-- card body -->
+            <div class="card-body">
+              <!-- border -->
+              <div class="mb-6">
+                <h4 class="mb-1">Расходные материалы</h4>
+              </div>
+              
+              <!-- row -->
+              <div class="mb-3 row">
+
+                <table class="table text-nowrap table">
+                  <thead class="">
+                    <tr>
+                      <th scope="col"></th>
+                      <th scope="col">Товар</th>
+                      <th scope="col" class="col-1">Количество</th>
+                    </tr>
+                  </thead>
+
+                  <tbody id="tabBody">
+                    <tr id="newLine" class="visually-hidden">
+                      <td class="main-tab-checkbox">
+                        <input class="form-check-input to-check" type="checkbox" name="" value="">
+                      </td>
+                      <td class="">
+                        <span class="product_count"></span>
+                        <select class="product-select" data-width="100%" data-live-search="true" data-none-selected-text=""
+                          data-none-results-text="Не найдено {0}" name="product_id_">
+                          <option></option>
+                          {% for product in products %}
+                            <option value="{{ product.product_id }}">{{
+                              product.description.name }}</option>
+                          {% endfor %}
+                        </select>
+                      </td>
+                      <td class="col-2">
+                        <input type="text" class="form-control quantity" name="quantity_">
+                      </td>
+                    </tr>
+
+                    <input id="products_count" type="hidden" name="products-count" value="">
+
+                  </tbody>
+                </table>
+                
+                <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns">
+                  <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
+                  <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
+                </div>
+
+              </div>
+
               <button id="submit" type="submit" class="btn btn-primary">Сохранить</button>
               <button id="submit" type="submit" class="btn btn-primary"
                 formaction="{{ url_for('option_value_add', option_id=option_id, value_id=value_id, action='apply') }}">Применить</button>
@@ -153,8 +208,70 @@
 </div>
 
 <script>
+  var productsCount = 0;
+  var tabBody = document.getElementById('tabBody')
+  var productsCount = document.getElementById('products_count')
+  var Line = document.getElementById('newLine');
+  var url_get_consumables = "{{ (url_for('json_consumables_in_option', option_value_id=value_id)) if value_id }}"
+
+  DealConsumablesStart()
+
+  // Start Consumables
+  async function DealConsumablesStart() {
+    if (url_get_consumables) {
+      await getDealConsumables();
+      addDealConsumables();
+    }
+  }
+
+  // Deal Products
+  var consumables = {}
+
+  function getDealConsumables() {
+    return fetch(url_get_consumables, {
+      method: 'GET',
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
+      .then(res => res.json())
+      .then(data => window.consumables = data)
+  }
+  function addDealConsumables() {
+    if (consumables.length > 0) {
+      for (let i = 0; i < consumables.length; i++) {
+        newLine(consumables[i])
+      }
+    }
+  }
+
+  // Fields
+  function newLine(product = '') {
+    var newLine = Line.cloneNode(true);
+    newLine.removeAttribute('class');
+    newLine.removeAttribute('id');
+
+    var next = $('tr.product').length + 1;
+    productsCount.value = next;
+
+    var Names = newLine.querySelectorAll('[name]');
+    Names.forEach(element => {
+      element.name = element.name + `${next}`
+    });
+
+    newLine.querySelector('.product_count').textContent = `${next}` + '.';
+    newLine.classList.add("product");
+
+    tabBody.appendChild(newLine);
+
+    if (product) {
+      newLine.querySelector('.product-select').value = product.product_id;
+      newLine.querySelector('.quantity').value = product.quantity;
+    }
+
+    $('tr.product').eq(-1).find('select').selectpicker();
 
 
-
+  }
 </script>
 {% endblock %}

@@ -3,49 +3,37 @@
   <div class="nav-scroller">
     <!-- Brand logo -->
     <a class="navbar-brand" href="">
-        <img src="" alt="" />
+      <img src="" alt="" />
     </a>
     <!-- Navbar nav -->
     <ul class="navbar-nav flex-column" id="sideNavbar">
-      <li class="nav-item">
-        <a class="nav-link has-arrow " href="">
-          <i data-feather="home" class="nav-icon icon-xs me-2"></i>  Dashboard 
-        </a>
-      </li>
-
 
       <!-- Nav item -->
       <li class="nav-item">
-        <div class="navbar-heading">Layouts & Pages</div>
-      </li>
-
-
-      <!-- Nav item -->
-      <li class="nav-item">
-        <a class="nav-link has-arrow @@if (context.page_group !== 'pages') { collapsed }"
-            href="#!" data-bs-toggle="collapse" data-bs-target="#navPages" aria-expanded="false" aria-controls="navPages">
-          <i data-feather="layers" class="nav-icon icon-xs me-2"></i>
-          Каталог
+        <a class="nav-link has-arrow {{ 'collapsed' if '/site/' not in request.path }}" href="#!"
+          data-bs-toggle="collapse" data-bs-target="#navPages" aria-expanded="false" aria-controls="navPages">
+          <i data-feather="layout" class="nav-icon icon-xs me-2"></i>
+          Сайт
         </a>
 
-        <div id="navPages" class="collapse @@if (context.page_group === 'pages') { show }" data-bs-parent="#sideNavbar">
+        <div id="navPages" class="collapse {{ 'show' if '/site/' in request.path }}" data-bs-parent="#sideNavbar">
           <ul class="nav flex-column">
             <li class="nav-item">
               <a class="nav-link has-arrow {{ 'active' if url_for('options') in request.path }}"
-                  href="{{ url_for('options') }}">
+                href="{{ url_for('options') }}">
                 Опции
               </a>
             </li>
 
             <li class="nav-item">
               <a class="nav-link has-arrow {{ 'active' if url_for('categories') == request.path }}"
-                  href="{{ url_for('categories') }}">
+                href="{{ url_for('categories') }}">
                 Категории
               </a>
             </li>
 
             <li class="nav-item">
-              <a class="nav-link has-arrow " href="@@webRoot/pages/settings.html" >
+              <a class="nav-link has-arrow " href="@@webRoot/pages/settings.html">
                 Настройки
               </a>
             </li>
@@ -53,17 +41,17 @@
 
             <li class="nav-item">
               <a class="nav-link {{ 'active' if request.path == url_for('other_shops') }}"
-                  href="{{ url_for('other_shops') }}">
+                href="{{ url_for('other_shops') }}">
                 Другие магазины
               </a>
             </li>
 
             <li class="nav-item">
               <a class="nav-link" href="">
-                Склад 
+                Склад
               </a>
             </li>
-              
+
             <li class="nav-item">
               <a class="nav-link has-arrow collapsed" href="#!" data-bs-toggle="collapse"
                 data-bs-target="#navMenuLevelSecond" aria-expanded="false" aria-controls="navMenuLevelSecond">
@@ -74,27 +62,31 @@
                 <ul class="nav flex-column">
                   <li class="nav-item">
                     <a class="nav-link {{ 'active' if request.path == url_for('products') }}"
-                        href="{{ url_for('products') }}">
-                      Товары 
+                      href="{{ url_for('products') }}">
+                      Товары
                     </a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link {{ 'active' if request.path == url_for('products', path='comparison') }}"
-                        href="{{ url_for('products', path='comparison') }}">
-                      Сопоставление 
+                      href="{{ url_for('products', path='comparison') }}">
+                      Сопоставление
                     </a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link {{ 'active' if request.path == url_for('products', path='prices') }}"
-                        href="{{ url_for('products', path='prices') }}">
+                      href="{{ url_for('products', path='prices') }}">
                       Цены
                     </a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link {{ 'active' if request.path == url_for('work_plan') }}"
-                        href="{{ url_for('work_plan') }}">
+                      href="{{ url_for('work_plan') }}">
                       План работ
                     </a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link {{ 'active' if url_for('viewed_products') in request.path }}"
+                      href="{{ url_for('viewed_products') }}">Просмотренные (отчет)</a>
                   </li>
                 </ul>
               </div>
@@ -105,85 +97,28 @@
 
       <!-- Nav item -->
       <li class="nav-item">
-        <a class="nav-link has-arrow collapsed"
-            href="#" data-bs-toggle="collapse" data-bs-target="#navReports"
-            aria-expanded="false" aria-controls="navReports">
-          <i data-feather="activity" class="nav-icon icon-xs me-2"></i>
-          Отчеты
+        <a class="nav-link has-arrow {{ 'collapsed' if '/crm/' not in request.path }}" href="#!"
+          data-bs-toggle="collapse" data-bs-target="#navCrm" aria-expanded="false" aria-controls="navCrm">
+          <i data-feather="clipboard" class="nav-icon icon-xs me-2"></i>
+          Crm
         </a>
 
-        <div id="navReports" class="collapse {{ 'show' if url_for('viewed_products') in request.path }}" data-bs-parent="#sideNavbar">
+        <div id="navCrm" class="collapse {{ 'show' if '/crm/' in request.path }}" data-bs-parent="#sideNavbar">
           <ul class="nav flex-column">
             <li class="nav-item">
-              <a class="nav-link {{ 'active' if url_for('viewed_products') in request.path }}"
-                href="{{ url_for('viewed_products') }}">Просмотренные</a>
+              <a class="nav-link {{ 'active' if 'deals' in request.path }}" href="{{ url_for('deals') }}">
+                Сделки
+              </a>
             </li>
 
-          </ul>
-        </div>
-      </li>
-
-      <!-- Nav item -->
-      <li class="nav-item">
-        <a class="nav-link has-arrow {{ 'collapsed' if False }}"
-            href="#!" data-bs-toggle="collapse" data-bs-target="#navAuthentication"
-            aria-expanded="false" aria-controls="navAuthentication">
-          <i data-feather="lock" class="nav-icon icon-xs me-2"></i>
-          Authentication
-        </a>
-
-        <div id="navAuthentication" class="collapse {{ 'show' if request.path == 'be' }}" data-bs-parent="#sideNavbar">
-          <ul class="nav flex-column">
             <li class="nav-item">
-              <a class="nav-link @@if (context.page === 'signin') { active }"
-                href="@@webRoot/pages/sign-in.html"> Sign In</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link @@if (context.page === 'signup') { active } "
-                href="@@webRoot/pages/sign-up.html"> Sign Up</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link @@if (context.page === 'forgetpassword') { active }"
-                href="@@webRoot/pages/forget-password.html">
-                Forget Password
+              <a class="nav-link {{ 'active' if 'stock' in request.path }}" href="{{ url_for('stock_products') }}">
+                Склад
               </a>
             </li>
 
           </ul>
         </div>
-      </li>
-
-      <!-- Nav item -->
-      <li class="nav-item">
-        <div class="navbar-heading">UI Components</div>
-      </li>
-
-      <!-- Nav item -->
-      <li class="nav-item">
-        <a class="nav-link has-arrow " href="@@webRoot/docs/accordions.html" >
-          <i data-feather="package" class="nav-icon icon-xs me-2" ></i>
-          Components
-        </a>
-      </li>
-
-      <!-- Nav item -->
-      <li class="nav-item">
-        <div class="navbar-heading">Documentation</div>
-      </li>
-
-      <!-- Nav item -->
-      <li class="nav-item">
-        <a class="nav-link has-arrow " href="@@webRoot/docs/index.html" >
-          <i data-feather="clipboard" class="nav-icon icon-xs me-2" ></i>
-          Docs
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link has-arrow " href="@@webRoot/docs/changelog.html" >
-          <i data-feather="git-pull-request" class="nav-icon icon-xs me-2" ></i>
-          Changelog
-        </a>
       </li>
 
     </ul>

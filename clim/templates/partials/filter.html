@@ -136,6 +136,17 @@
             </div>
           </div>
 
+          {% set new_products = session.get('new_products') %}
+          <div class="col-md-2">
+            <div class="mb-1">
+              <label for="new_products" class="form-label h7">Новые товары</label>
+              <select class="selectpicker" data-width="100%" id="new_products" name="new_products">
+                <option value="">Нет</option>
+                <option {{ 'selected' if new_products }} value="yes">Да</option>
+              </select>
+            </div>
+          </div>
+
           {% set per_page = session.get('results_per_page') %}
           <div class="col-md-1">
             <div class="mb-1">

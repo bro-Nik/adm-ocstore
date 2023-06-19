@@ -72,7 +72,8 @@
                       <input class="form-check-input to-check" type="checkbox" name="{{ 'category-' + category_count.counter|string }}" value="{{ category.other_category_id }}">
                     </td>
                     <td class="text-average">
-                      <a href="">{{ category.description.name }}</a>
+                      <a href="{{ url_for('category_settings', category_id=category.category_id) }}">
+                        {{ category.description.name }}</a>
                     </td>
                     <td class="text-average">{{ category.products|length }}</td>
                   </tr>
@@ -83,7 +84,8 @@
                         <input class="form-check-input to-check" type="checkbox" name="{{ 'category-' + category_count.counter|string }}" value="{{ category.other_category_id }}">
                       </td>
                       <td class="text-average">
-                        <a href="" class="ms-5">{{ subcategory.description.name }}</a>
+                        <a href="{{ url_for('category_settings', category_id=subcategory.category_id) }}" class="ms-5">
+                          {{ subcategory.description.name }}</a>
                       </td>
                       <td class="text-average">{{ subcategory.products|length }}</td>
                       <td class="text-average">{{ result[subcategory.category_id]['in_stock'] }}</td>

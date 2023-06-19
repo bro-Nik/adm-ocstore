@@ -1,0 +1,115 @@
+<div class="card h-100">
+
+  <!-- card -->
+  <div class="card">
+
+    <!-- card body -->
+    <div class="card-body">
+
+      <div class="mb-3 row d-grid gap-2">
+        <div class="">
+          <label for="deal_name" class="fs-6">Название</label>
+          <input type="text" class="form-control" placeholder="" id="deal_name" name="deal_name"
+            value="{{ deal.name if deal }}">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- contact  -->
+<div class="card h-100">
+
+  <!-- card header  -->
+  <div class="card-header bg-white py-3">
+    <span class="fs-6 text-dark text-uppercase">Клиент</span>
+  </div>
+
+  <!-- card -->
+  <div class="card">
+
+    <!-- card body -->
+    <div class="card-body">
+
+      <!-- row -->
+      <div id="contact" class="mb-3 row d-grid gap-2">
+        <div id="contact_select">
+          <label for="name" class="fs-6">Контакт</label>
+
+          <select id="contact_select" class="selectpicker" data-width="100%" data-live-search="true"
+            data-none-selected-text="" data-none-results-text="<a onclick='ContactInfo({0})'>Создать новый контакт</a>"
+            name="contact_id">
+            <option></option>
+            {% for contact in contacts %}
+            <option value="{{ contact.contact_id }}" data-phone="{{ contact.phone }}" data-email="{{ contact.email }}"
+              {{ 'selected' if deal and deal.contact_id==contact.contact_id }}>
+              {{ contact.name }}
+            </option>
+            {% endfor %}
+          </select>
+
+        </div>
+
+        <div class="contact-info visually-hidden">
+          <label for="contact_name" class="fs-6">Контакт</label>
+          <input type="text" class="form-control" placeholder="" id="contact_name" name="contact_name">
+        </div>
+
+        <div class="contact-info visually-hidden">
+          <label for="contact_phone" class="fs-6">Телефон</label>
+          <input type="phone" class="form-control" placeholder="" id="contact_phone" name="contact_phone">
+        </div>
+
+        <div class="contact-info visually-hidden">
+          <label for="contact_email" class="fs-6">E-mail</label>
+          <input type="email" class="form-control" placeholder="" id="contact_email" name="contact_email">
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- deal  -->
+<div class="card h-100">
+
+  <!-- card header  -->
+  <div class="card-header bg-white py-3">
+    <span class="fs-6 text-dark text-uppercase">Услуги</span>
+  </div>
+
+  <!-- card -->
+  <div class="card">
+
+    <!-- card body -->
+    <div class="card-body">
+
+      <!-- row -->
+      <div class="mb-3 row d-grid gap-2">
+
+        <div class="">
+          <label for="adress" class="fs-6">Адрес</label>
+          <input type="text" class="form-control" placeholder="" id="adress" name="adress"
+            value="{{ deal.adress if deal }}">
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  // 
+  function ContactInfo(name) {
+    var contact_select = document.querySelector('#contact_select')
+    contact_select.classList.add('visually-hidden');
+
+    var contact_name = document.querySelector('#contact input[name="contact_name"]')
+    contact_name.value = name
+
+    var ContactInfo = document.querySelectorAll('.contact-info')
+    ContactInfo.forEach(element => {
+      element.classList.remove("visually-hidden");
+    });
+  }
+
+</script>
