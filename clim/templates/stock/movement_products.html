@@ -84,7 +84,7 @@
           <div class="input-group">
             <input type="number" step="any" class="form-control quantity"
               value="{{ movement_product.quantity|smart_int if movement_product.quantity }}" placeholder="0">
-            <span class="input-group-text quantity">шт</span>
+            <span class="input-group-text quantity">{{ movement_product.unit if movement_product else 'шт'}}</span>
           </div>
           {% endif %}
         </td>
@@ -322,10 +322,13 @@
     var data = '[';
     $('tr.product').each(function () {
       if ($(this).find('select.product-select').val()) {
+        var cost = $(this).find('.cost').val() ? parseFloat($(this).find('.cost').val()) : 0;
+        var quantity = $(this).find('.quantity').val() ? parseFloat($(this).find('.quantity').val()) : 0;
         var item = '{"product_id": ' + $(this).find('select.product-select').val() +
-          ', "cost": ' + parseFloat($(this).find('.cost').val()) +
-          ', "quantity": ' + parseFloat($(this).find('.quantity').val()) +
-          ', "stock_id": ' + $(this).find('select.stock-select').val() + '},'
+          ', "cost": ' + cost +
+          ', "quantity": ' + quantity +
+          ', "unit": "' + $(this).find('select.product-select').find(':selected').attr('data-product-unit') +
+          '", "stock_id": ' + $(this).find('select.stock-select').val() + '},'
 
         data += item;
       }
