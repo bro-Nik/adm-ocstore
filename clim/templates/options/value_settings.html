@@ -8,270 +8,453 @@
 {% block content %}
 
 <!-- Container fluid -->
-<div class="bg-primary pt-10 pb-21"></div>
-<div class="container-fluid mt-n22 px-6">
+<form id="OptionValueSettings" method="post" action="{{ url_for('option_value_add', option_id=option_id, value_id=value_id) }}">
+  <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
-  {% include 'options/option_header.html' %}
-
-  <!-- row  -->
-  <div class="row mt-6 mb-6">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <div class="card h-100">
-
-        <!-- card header  -->
-        <div class="card-header bg-white py-4">
-          <h4 class="mb-0">{{ 'Настройки' if value_id else 'Новое значение опции' }}</h4>
-        </div>
-
-        <!-- card -->
-        <div class="card">
-          <form id="parsingTab" method="post"
-                                action="{{ url_for('option_value_add', option_id=option_id, value_id=value_id) }}">
-
-            <!-- card body -->
-            <div class="card-body">
-              <!-- border -->
-              <div class="mb-6">
-                <h4 class="mb-1">Основная информация</h4>
-              </div>
-              
-              <!-- row -->
-              <div class="mb-3 row">
-                <div class="col-sm-4 mb-3 mb-lg-0">
-                  <label for="name" class="form-label">Название</label>
-                  <input type="text" class="form-control"
-                      id="name" name="name" value="{{ value.description.name if value }}" required>
-                </div>
-                
-                <div class="col-sm-4">
-                  <label for="sort" class="form-label">Порядок сортировки</label>
-                  <input type="number" class="form-control" placeholder=""
-                      id="sort" name="sort" value="{{ value.sort_order if value }}">
-                </div>
-                
-                <div class="col-sm-4">
-                  <label for="price" class="form-label">Цена</label>
-                  <input type="number" class="form-control" placeholder=""
-                      id="price" name="price" value="{{ value.settings.price if value }}">
-                </div>
-              </div>
-
-              <!-- row -->
-              <div class="mb-3 row">
-                <div class="col-md-4">
-                  <div class="mb-1">
-                    <label for="categories_ids" class="form-label">Категория</label>
-                    <select class="selectpicker" data-width="100%" data-live-search="true"
-                      data-none-selected-text = "Все" data-none-results-text="Не найдено {0}" 
-                      id="categories_ids" name="categories_ids">
-                      <option></option>
-
-                      {% for category in categories %}
-                        {% set id = category.category_id %}
-                        {% if not category.parent_id %} 
-                          <optgroup label="{{ category.description.name }}">
-
-                          {% for subcategory in categories %}
-                            {% set id = subcategory.category_id %}
-                            {% if subcategory.parent_id == category.category_id %}
-                              <option {{ 'selected' if settings and id|string in settings.get('categories_ids') }} value="{{ id }}">
-                                {{ subcategory.description.name }}
-                              </option>
-
-                              {% for subsubcategory in categories %}
-                                {% set id = subsubcategory.category_id %}
-                                {% if subsubcategory.parent_id == subcategory.category_id %}
-                                  <option {{ 'selected' if settings and id|string in settings.get('categories_ids') }} value="{{ id }}">
-                                    - {{ subsubcategory.description.name }}
-                                  </option>
-                                {% endif %}
-                              {% endfor %}
-
-                            {% endif %}
-                          {% endfor %}
-                            
-                        {% endif %}
-                      {% endfor %}
-                    </select>
-                  </div>
-                </div>
-
-                <div class="col-sm-4">
-                  <label for="attribute_id" class="form-label">Атрибут сопоставления</label>
-                  <select class="selectpicker" data-width="100%" data-live-search="true"
-                    data-none-selected-text = "Нет" data-none-results-text="Не найдено {0}"
-                    id="attribute_id" name="attribute_id">
-                      <option></option>
-                    {% for attribute in attributes if attribute.description.name %}
-                      <option {{ 'selected' if settings and attribute.attribute_id == settings.get('attribute_id')|int }}
-                        value="{{ attribute.attribute_id }}">{{ attribute.description.name }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                <div class="col-sm-4">
-                  <label for="attribute_values" class="form-label">Значения атрибута</label>
-                  <select class="selectpicker" data-width="100%" data-live-search="true"
-                    data-none-selected-text = "Нет" data-none-results-text="Не найдено {0}" multiple
-                    id="attribute_values" name="attribute_values">
-                    {% for attribute_value in attribute_values|sort if attribute_values %}
-                      <option 
-                        value="{{ attribute_value }}" {{ 'selected' if settings and attribute_value|string in settings.get('attribute_values') }}>
-                        {{ attribute_value }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                
-              </div>
-
-              <!-- row -->
-              <div class="mb-3 row">
-
-                <div class="col-sm-4">
-                  <label for="stock" class="form-label">Наличие товара</label>
-                  <select class="selectpicker" data-width="100%" id="stock" name="stock">
-                    <option value="">Все</option>
-                    <option {{ 'selected' if settings and settings.get('stock') == 'in stock on order' }}
-                      value="in stock on order">В наличии и под заказ</option>
-                    <option {{ 'selected' if settings and settings.get('stock') == 'in stock' }}
-                      value="in stock">Только в наличии</option>
-                  </select>
-                </div>
-
-              </div>
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-12">
+        <!-- Page header -->
+        <div>
+          <div class="d-flex align-items-center">
+            <div class="mb-2 mb-lg-0">
+              <h3 class="mb-0">
+                <a href="" class="">Варианты опции</a>
+                | {{ 'Настройки' if value_id else 'Новое значение опции' }}
+              </h3>
             </div>
-
-
-            <!-- card body -->
-            <div class="card-body">
-              <!-- border -->
-              <div class="mb-6">
-                <h4 class="mb-1">Расходные материалы</h4>
-              </div>
-              
-              <!-- row -->
-              <div class="mb-3 row">
-
-                <table class="table text-nowrap table">
-                  <thead class="">
-                    <tr>
-                      <th scope="col"></th>
-                      <th scope="col">Товар</th>
-                      <th scope="col" class="col-1">Количество</th>
-                    </tr>
-                  </thead>
-
-                  <tbody id="tabBody">
-                    <tr id="newLine" class="visually-hidden">
-                      <td class="main-tab-checkbox">
-                        <input class="form-check-input to-check" type="checkbox" name="" value="">
-                      </td>
-                      <td class="">
-                        <span class="product_count"></span>
-                        <select class="product-select" data-width="100%" data-live-search="true" data-none-selected-text=""
-                          data-none-results-text="Не найдено {0}" name="product_id_">
-                          <option></option>
-                          {% for product in products %}
-                            <option value="{{ product.product_id }}">{{
-                              product.description.name }}</option>
-                          {% endfor %}
-                        </select>
-                      </td>
-                      <td class="col-2">
-                        <input type="text" class="form-control quantity" name="quantity_">
-                      </td>
-                    </tr>
-
-                    <input id="products_count" type="hidden" name="products-count" value="">
-
-                  </tbody>
-                </table>
-                
-                <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns">
-                  <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
-                  <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
-                </div>
-
-              </div>
-
+            <div class="ms-auto d-flex gap-2">
               <button id="submit" type="submit" class="btn btn-primary">Сохранить</button>
               <button id="submit" type="submit" class="btn btn-primary"
                 formaction="{{ url_for('option_value_add', option_id=option_id, value_id=value_id, action='apply') }}">Применить</button>
               <a class="btn btn-primary" href="">Товары</a>
             </div>
-          </form>
+          </div>
         </div>
       </div>
+    </div>
 
+    <div class="row align-items-center">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+        <!-- nav -->
+        <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail" role="tab"
+              aria-controls="pills-detail" aria-selected="true">Общие</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" id="pills-consumables-tab" data-bs-toggle="pill" data-bs-target="#pills-consumables"
+              role="tab" aria-controls="pills-consumables" aria-selected="false">Расходные
+              материалы</a>
+          </li>
+
+        </ul>
+      </div>
+    </div>
+
+    <!-- row  -->
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+
+        <div class="tab-content" id="pills-tabContent">
+          <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
+            <div class="col-12 d-grid gap-3">
+
+              <div class="card h-100">
+
+                <!-- card -->
+                <div class="card">
+
+                  <!-- card body -->
+                  <div class="card-body">
+                    
+                    <!-- row -->
+                    <div class="mb-3 row">
+                      <div class="col-sm-4 mb-3 mb-lg-0">
+                        <label for="name" class="form-label">Название</label>
+                        <input type="text" class="form-control"
+                            id="name" name="name" value="{{ value.description.name if value }}" required>
+                      </div>
+                      
+                      <div class="col-sm-4">
+                        <label for="sort" class="form-label">Порядок сортировки</label>
+                        <input type="number" class="form-control" placeholder=""
+                            id="sort" name="sort" value="{{ value.sort_order if value }}">
+                      </div>
+                      
+                      <div class="col-sm-4">
+                        <label for="price" class="form-label">Цена</label>
+                        <input type="number" class="form-control" placeholder=""
+                            id="price" name="price" value="{{ value.settings.price if value }}">
+                      </div>
+                    </div>
+
+                    <!-- row -->
+                    <div class="mb-3 row">
+                      <div class="col-md-4">
+                        <div class="mb-1">
+                          <label for="categories_ids" class="form-label">Категория</label>
+                          <select class="selectpicker" data-width="100%" data-live-search="true"
+                            data-none-selected-text = "Все" data-none-results-text="Не найдено {0}" 
+                            id="categories_ids" name="categories_ids">
+                            <option></option>
+
+                            {% for category in categories %}
+                              {% set id = category.category_id %}
+                              {% if not category.parent_id %} 
+                                <optgroup label="{{ category.description.name }}">
+
+                                {% for subcategory in categories %}
+                                  {% set id = subcategory.category_id %}
+                                  {% if subcategory.parent_id == category.category_id %}
+                                    <option {{ 'selected' if settings and id|string in settings.get('categories_ids') }} value="{{ id }}">
+                                      {{ subcategory.description.name }}
+                                    </option>
+
+                                    {% for subsubcategory in categories %}
+                                      {% set id = subsubcategory.category_id %}
+                                      {% if subsubcategory.parent_id == subcategory.category_id %}
+                                        <option {{ 'selected' if settings and id|string in settings.get('categories_ids') }} value="{{ id }}">
+                                          - {{ subsubcategory.description.name }}
+                                        </option>
+                                      {% endif %}
+                                    {% endfor %}
+
+                                  {% endif %}
+                                {% endfor %}
+                                  
+                              {% endif %}
+                            {% endfor %}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="col-sm-4">
+                        <label for="attribute_id" class="form-label">Атрибут сопоставления</label>
+                        <select class="selectpicker" data-width="100%" data-live-search="true"
+                          data-none-selected-text = "Нет" data-none-results-text="Не найдено {0}"
+                          id="attribute_id" name="attribute_id">
+                            <option></option>
+                          {% for attribute in attributes if attribute.description.name %}
+                            <option {{ 'selected' if settings and attribute.attribute_id == settings.get('attribute_id')|int }}
+                              value="{{ attribute.attribute_id }}">{{ attribute.description.name }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+
+                      <div class="col-sm-4">
+                        <label for="attribute_values" class="form-label">Значения атрибута</label>
+                        <select class="selectpicker" data-width="100%" data-live-search="true"
+                          data-none-selected-text = "Нет" data-none-results-text="Не найдено {0}" multiple
+                          id="attribute_values" name="attribute_values">
+                          {% for attribute_value in attribute_values|sort if attribute_values %}
+                            <option 
+                              value="{{ attribute_value }}" {{ 'selected' if settings and attribute_value|string in settings.get('attribute_values') }}>
+                              {{ attribute_value }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      
+                    </div>
+
+                    <!-- row -->
+                    <div class="mb-3 row">
+
+                      <div class="col-sm-4">
+                        <label for="stock" class="form-label">Наличие товара</label>
+                        <select class="selectpicker" data-width="100%" id="stock" name="stock">
+                          <option value="">Все</option>
+                          <option {{ 'selected' if settings and settings.get('stock') == 'in stock on order' }}
+                            value="in stock on order">В наличии и под заказ</option>
+                          <option {{ 'selected' if settings and settings.get('stock') == 'in stock' }}
+                            value="in stock">Только в наличии</option>
+                        </select>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="pills-consumables" role="tabpanel" aria-labelledby="pills-consumables-tab" tabindex="0">
+            <div class="col-12 d-grid gap-3">
+                    
+              <!-- row -->
+              <div id="tabConsumables" class="card h-100">
+
+                <table class="table text-nowrap table">
+                  <thead class="">
+                    <tr>
+                      <th scope="col" class="main-tab-checkbox">
+                        <input class="form-check-input check-all" type="checkbox">
+                      </th>
+                      <th scope="col">Товар</th>
+                      <th scope="col" class="col-1">Количество</th>
+                      <th scope="col"></th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    {% set var = namespace(count=0) %}
+
+                    {% set option_value_consumables = value.settings.consumables|to_json %}
+
+                    {% if not option_value_consumables %}
+                    {% set option_value_consumables = [{}] %}
+                    {% endif %}
+
+                    {% for consumable in option_value_consumables %}
+                    {% set var.count = var.count + 1 %}
+
+                    <tr class="product">
+                      <td class="main-tab-checkbox">
+                        <input class="form-check-input to-check" type="checkbox" name="" value="">
+                      </td>
+                      <td class="col-4">
+                        <span class="line-count">{{ var.count }}.</span>
+                        <select class="product-select selectpicker" data-width="100%" data-live-search="true" data-none-selected-text=""
+                          data-none-results-text="Не найдено {0}">
+                          <option value="">-- Выберите товар --</option>
+                          {% for product in products %}
+                          <option value="{{ product.product_id }}" {{ 'selected' if product.product_id == consumable.product_id }}>{{
+                            product.description.name }}</option>
+                          {% endfor %}
+                        </select>
+                      </td>
+                      <td class="col-2">
+                        <input type="text" class="form-control quantity" value="{{ consumable.quantity|smart_int }}">
+                      </td>
+                      <td></td>
+                    </tr>
+                    {% endfor %}
+
+                  </tbody>
+                </table>
+                
+                <div class="d-flex">
+                  <div>
+                    <div class="m-3 gap-2 justify-content-start actions">
+                      <span class="">Отмеченно: </span>
+                      <span class="checks-count"></span>
+                    </div>
+                    <div class="m-3 gap-2 d-flex justify-content-start actions">
+                      <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
+                    </div>
+                  </div>
+                  <div class="m-3 ms-auto gap-2">
+                      <select class="selectpicker product-select consumables-ids" data-width="" data-live-search="true" data-none-selected-text=""
+                        data-none-results-text="Не найдено {0}" multiple>
+                        <option></option>
+                        {% for product in products %}
+                          <option value="{{ product.product_id }}">{{
+                            product.description.name }}</option>
+                        {% endfor %}
+                      </select>
+
+                    <button class="btn rounded-3 btn-light" type="button" onclick="FillProducts()">Сформировать</button>
+                    <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
+                    <button class="btn rounded-3 btn-outline-secondary open-modal-product" type="button" data-bs-toggle="modal" data-bs-target="#ProductInfoModal">Создать товар</button>
+                    <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <input type="hidden" name="consumables_data">
+</form>
+
+<!-- Modal -->
+<div class="modal fade" id="ProductInfoModal" tabindex="-1" role="dialog" aria-labelledby="ProductInfoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen w-90" role="document">
+    <div class="modal-content bg-light">
+      <div class="modal-close-label">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"> </div>
     </div>
   </div>
 </div>
 
 <script>
-  var productsCount = 0;
-  var tabBody = document.getElementById('tabBody')
-  var productsCount = document.getElementById('products_count')
-  var Line = document.getElementById('newLine');
-  var url_get_consumables = "{{ (url_for('json_consumables_in_option', option_value_id=value_id)) if value_id }}"
 
-  DealConsumablesStart()
+  // Fields
+  function newLine($new_line = '', product_id = '') {
+    if ($new_line === '') {
+      var $line = $('#tabConsumables').find('tr.product').eq(-1);
+      $line.find('select').selectpicker('destroy')
+      var $new_line = $($line).clone();
+      $new_line.appendTo($('#tabConsumables').find('tbody'));
+      $line.find('select').selectpicker()
+    } else {
+      $new_line.find('select').selectpicker('destroy')
+    }
 
-  // Start Consumables
-  async function DealConsumablesStart() {
-    if (url_get_consumables) {
-      await getDealConsumables();
-      addDealConsumables();
+    var count = $('#tabConsumables').find('tr.product').length;
+    $new_line.find('input').val('');
+    $new_line.find('.to-check').prop('checked', false);
+    $new_line.find('.to-check').trigger('change');
+    $new_line.find('.line-count').text(count + '.');
+    if (product_id) {
+      $new_line.find('select').val(product_id)
+    } else {
+      $new_line.find('select').val('')
+    }
+
+    $new_line.find('select').selectpicker()
+  }
+
+  // Fill products
+  function FillProducts() {
+    var ids = $('select.consumables-ids').val()
+      for (let i = 0; i < ids.length; i++) {
+      newLine('', product_id=ids[i])
+      }
+  }
+
+  // Data To Server
+  $('#OptionValueSettings').submit(function () {
+
+    var consumables = '[';
+    $('#tabConsumables').find('tr.product').each(function () {
+      if ($(this).find('select.product-select').val()) {
+        var item = '{"product_id": ' + $(this).find('select.product-select').val() +
+          ', "quantity": ' + parseFloat($(this).find('.quantity').val()) + '},'
+
+        consumables += item;
+      }
+    });
+    consumables += ']';
+    if (consumables !== '[]') {
+      $('[name=consumables_data]').val(JSON.stringify(consumables));
+    }
+    alert(consumables)
+  })
+
+  // Checks
+  CheckCount();
+
+  function CheckCount() {
+    var $checked_count = $('#tabConsumables').find('.to-check:checked').length;
+    var $all_count = $('#tabConsumables').find('.to-check').length;
+    $("#tabConsumables").find('.checks-count').text($checked_count + ' / ' + $all_count);
+  }
+
+  // Check All
+  $('.check-all').on("change", function () {
+    var tab = $(this).closest('div[id]');
+    $(tab).find('.to-check').prop('checked', $(this).is(':checked'));
+    $(tab).find('.to-check').trigger('change');
+  })
+
+  // Show buttons
+  $('#tabConsumables').on('change', 'input.to-check', function () {
+    var tab = $(this).closest('div[id]');
+    var $checked_count = $(tab).find('.to-check:checked').length;
+    var $btns = $(tab).find('.actions .btn')
+    if ($(tab).find('tr.product').length > 1) {
+      $($btns).prop('disabled', !$checked_count > 0);
+    } else {
+      $($btns).prop('disabled', true);
+    }
+    $(tab).find('.check-all').prop('checked', $checked_count > 0);
+    CheckCount();
+  })
+
+  // Delete line
+  $('.delete-product').on("click", function () {
+    var tab = $(this).closest('div[id]');
+    $(tab).find('.to-check:checked').each(function () {
+      if ($(tab).find('tr.product').length > 1) {
+        $(this).closest('tr').remove();
+      } else {
+        newLine(tab, $(this).closest('tr'));
+      }
+    });
+    CheckCount();
+    LineCount();
+  })
+
+  // Line Count
+  function LineCount() {
+    var count = 1;
+    $('#tabConsumables').find('tr.product').each(function () {
+      $(this).find('.line-count').text(count + '.');
+      count += 1;
+    });
+  }
+
+  // Open Modal
+  $('.open-modal-product').on("click", function () {
+    $('#ProductInfoModal').find('.modal-body').load("{{ url_for('stock_product', product_id=None) }}");
+  })
+
+  // Placeholder
+  function Placeholder(action) {
+    if (action === 'start') {
+      $('#tabConsumables').find('tr.product').addClass('visually-hidden');
+
+      var count_tr = $('#tabConsumables').find('tr.product').length;
+      var count_td = $('#tabConsumables').find('tr.product').eq(-1).find('td').length;
+
+      var line = '<tr class="placeholder-del">'
+      for (let i = 0; i < count_td; i++) {
+        line += '<td class="placeholder-glow"><span class="placeholder placeholder-glow col-12 placeholder-lg"></span></td>'
+      }
+      line += '</tr>'
+
+      for (let i = 0; i < count_tr; i++) {
+        $('#tabConsumables').find('tbody').append(line)
+      }
+    } else {
+      $('#tabConsumables').find('tr.product').removeClass('visually-hidden');
+      $('#tabConsumables').find('tr.placeholder-del').remove();
     }
   }
 
-  // Deal Products
-  var consumables = {}
+  // Get Products to select
+  var products = [];
 
-  function getDealConsumables() {
-    return fetch(url_get_consumables, {
+  async function UpdateProductsSelect() {
+    Placeholder('start')
+    await getProducts();
+
+    $('body').find('select.product-select').each(function () {
+      var $select = $(this);
+      var id = +$select.val()
+      $select.empty();
+      $select.selectpicker('destroy');
+
+      for (let i = 0; i < products.length; i++) {
+        var newOption = new Option(`${products[i].name}`, `${products[i].id}`);
+        if (+products[i].id === id) {
+          $(newOption).prop('selected', true);
+        }
+        $select.append(newOption);
+      }
+
+      $select.selectpicker();
+    });
+    Placeholder('end')
+  }
+
+  function getProducts() {
+    return fetch('{{ url_for('json_consumables') }}', {
       method: 'GET',
       headers: {
         "Content-type": "application/json; charset=UTF-8"
       }
     })
       .then(res => res.json())
-      .then(data => window.consumables = data)
-  }
-  function addDealConsumables() {
-    if (consumables.length > 0) {
-      for (let i = 0; i < consumables.length; i++) {
-        newLine(consumables[i])
-      }
-    }
-  }
-
-  // Fields
-  function newLine(product = '') {
-    var newLine = Line.cloneNode(true);
-    newLine.removeAttribute('class');
-    newLine.removeAttribute('id');
-
-    var next = $('tr.product').length + 1;
-    productsCount.value = next;
-
-    var Names = newLine.querySelectorAll('[name]');
-    Names.forEach(element => {
-      element.name = element.name + `${next}`
-    });
-
-    newLine.querySelector('.product_count').textContent = `${next}` + '.';
-    newLine.classList.add("product");
-
-    tabBody.appendChild(newLine);
-
-    if (product) {
-      newLine.querySelector('.product-select').value = product.product_id;
-      newLine.querySelector('.quantity').value = product.quantity;
-    }
-
-    $('tr.product').eq(-1).find('select').selectpicker();
-
-
+      .then(data => window.products = data)
   }
 </script>
 {% endblock %}

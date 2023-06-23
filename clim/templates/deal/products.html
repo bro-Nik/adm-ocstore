@@ -2,129 +2,149 @@
 {% if deal and deal.posted and not deal.products %}
 {% include 'partials/nothing.html' %}
 {% else %}
-<!-- contact  -->
-<div class="card h-100">
+
+<div id="tabProducts" class="card h-100">
 
   <!-- table  -->
-  <div class="">
-    <table class="table text-nowrap table">
-      <thead class="">
-        <tr>
-          {% if not deal or not deal.posted %}
-          <th scope="col"></th>
+  <table class="table text-nowrap table">
+    <thead class="">
+      <tr>
+        {% if not deal or not deal.posted %}
+        <th scope="col">
+          <input class="form-check-input check-all" type="checkbox">
+        </th>
+        {% endif %}
+        <th scope="col">Товар</th>
+        <th scope="col" class="col-1">Цена</th>
+        <th scope="col" class="col-1">Количество</th>
+        <th scope="col">Склад</th>
+        {% if not deal or not deal.posted %}
+        <th scope="col">Доступно</th>
+        {% endif %}
+        <th scope="col">Сумма</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      {% set var = namespace(count=0, all_sum=0) %}
+
+      {% set deal_products = deal.products|to_json %}
+
+      {% if not deal.posted and not deal_products %}
+      {% set deal_products = [{'product_id': '', 'unit': 'шт'}] %}
+      {% endif %}
+
+      {% for deal_product in deal_products %}
+      {% set var.count = var.count + 1 %}
+
+      <tr class="product">
+        {% if not deal or not deal.posted %}
+        <td class="main-tab-checkbox">
+          <input class="form-check-input to-check" type="checkbox" value="{{ deal_product.product_id }}">
+        </td>
+        {% endif %}
+        <td class="col-4">
+          <span class="line-count">{{ var.count }}.</span>
+
+          {% if deal and deal.posted %}
+          <span>{{ deal_product.product_name }}</span>
+          {% else %}
+          <select class="product-select" data-width="100%" data-live-search="true" data-none-selected-text=""
+            data-none-results-text="Не найдено {0}">
+            <option value="">-- Выберите товар или услугу --</option>
+            {% for product in products %}
+            <option value="{{ product.product_id }}" data-price="{{ product.price|smart_int }}"
+              data-product-type="product" {{ 'selected' if product.product_id==deal_product.product_id }}>
+              {{ product.mpn }}</option>
+            {% endfor %}
+
+            {% for option in options %}
+            {% for value in option.values %}
+            <option value="{{ value.option_value_id }}" data-price="{{ value.settings.price|smart_int }}"
+              data-product-type="service" {{ value.description.name }} {{ 'selected' if
+              value.option_value_id==deal_product.product_id }}>
+              {{ value.description.name }}
+            </option>
+            {% endfor %}
+            {% endfor %}
+
+          </select>
           {% endif %}
-          <th scope="col">Товар</th>
-          <th scope="col" class="col-1">Цена</th>
-          <th scope="col" class="col-1">Количество</th>
-          <th scope="col">Склад</th>
-          {% if not deal or not deal.posted %}
-          <th scope="col">Доступно</th>
+        </td>
+        <td class="col-xxl-2 col-xl-3">
+          {% if deal and deal.posted %}
+          <span class="money">{{ deal_product.price|money }} ₽</span>
+          {% else %}
+          <div class="input-group">
+            <input type="number" step="any" class="form-control price"
+              value="{{ deal_product.price|smart_int if deal_product.price }}" placeholder="0">
+            <span class="input-group-text">₽</span>
+          </div>
           {% endif %}
-          <th scope="col">Сумма</th>
-        </tr>
-      </thead>
-      <tbody id="tabBody">
-
-        {% set var = namespace(count=0) %}
-
-        {% set deal_products = deal.products|to_json %}
-
-        {% if not deal.posted and not deal_products %}
-        {% set deal_products = [{'product_id': '', 'quantity': 0, 'price': 0}] %}
+        </td>
+        <td class="col-1">
+          {% if deal and deal.posted %}
+          <span>{{ deal_product.quantity|smart_int }} {{ deal_product.unit if deal_product.unit else 'шт' }}</span>
+          {% else %}
+          <div class="input-group">
+            <input type="number" class="form-control quantity"
+              value="{{ deal_product.quantity|smart_int if deal_product.quantity }}" placeholder="0">
+            <span class="input-group-text quantity">{{ deal_product.unit if deal_product.unit else 'шт' }}</span>
+          </div>
+          {% endif %}
+        </td>
+        <td class="col-2">
+          {% if deal and deal.posted %}
+          <span>{{ deal_product.stock_name }}</span>
+          {% else %}
+          <select class="stock-select {{ 'visually-hidden' if deal_product.type == 'service' }}" data-width="100%"
+            data-live-search="true" data-none-selected-text="" data-none-results-text="Не найдено {0}">
+            {% for stock in stocks %}
+            <option value="{{ stock.stock_id }}" {{ 'selected' if stock.stock_id==deal_product.stock_id }}>
+              {{ stock.name }}</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+        </td>
+        {% if not deal or not deal.posted %}
+        <td class="col-2 align-middle">
+          <span class="available"></span>
+        </td>
         {% endif %}
 
-        {% for deal_product in deal_products %}
-        {% set var.count = var.count + 1 %}
+        {% set var.all_sum = var.all_sum + ( deal_product.price * deal_product.quantity) if deal_product.price %}
+        <td class="col-2 align-middle">
+          <span class="sum">{{ (deal_product.price * deal_product.quantity)|money if deal_product.price else 0 }}</span>
+          <span class="">₽</span>
+        </td>
+      </tr>
+      {% endfor %}
 
-        <tr class="product">
-          {% if not deal or not deal.posted %}
-          <td class="main-tab-checkbox">
-            <input class="form-check-input to-check" type="checkbox" value="{{ deal_product.product_id }}">
-          </td>
-          {% endif %}
-          <td class="col-4">
-            <span class="product_count">{{ var.count }}.</span>
+      <input type="hidden" name="products_data">
+    </tbody>
+  </table>
 
-            {% if deal and deal.posted %}
-            <span class="posted-product-name">{{ deal_product.name }}</span>
-            {% else %}
-            <select class="product-select" data-width="100%" data-live-search="true" data-none-selected-text=""
-              data-none-results-text="Не найдено {0}" name="product_id_">
-              <option value="">-- Выберите товар или услугу --</option>
-              {% for product in products %}
-              <option value="{{ product.product_id }}" data-price="{{ product.price }}" data-product-type="product"
-                {{ 'selected' if product.product_id==deal_product.product_id }}>
-                {{ product.mpn }}</option>
-              {% endfor %}
-
-              {% for option in options %}
-              {% for value in option.values %}
-              <option value="{{ value.option_value_id }}" data-price="{{ value.settings.price }}"
-                data-product-type="service" {{ value.description.name }}</option>
-                {{ 'selected' if value.option_value_id==deal_product.product_id }}>
-                {{ value.description.name }}
-              </option>
-              {% endfor %}
-              {% endfor %}
-
-            </select>
-            {% endif %}
-          </td>
-          <td class="col-xxl-2 col-xl-3">
-            {% if deal and deal.posted %}
-            <span class="price">{{ deal_product.price|smart_int }} ₽</span>
-            {% else %}
-            <div class="input-group">
-              <input type="number" class="form-control price" value="{{ deal_product.price|smart_int }}">
-              <span class="input-group-text">₽</span>
-            </div>
-            {% endif %}
-          </td>
-          <td class="col-1">
-            {% if deal and deal.posted %}
-            <span class="quantity">{{ deal_product.quantity|smart_int }}</span>
-            {% else %}
-            <div class="input-group">
-              <input type="number" class="form-control quantity" value="{{ deal_product.quantity|smart_int }}">
-              <span class="input-group-text quantity">{{ deal_product.unit }}</span>
-            </div>
-            {% endif %}
-          </td>
-          <td class="col-2">
-            {% if deal and deal.posted %}
-            <span class="posted-stock-name"></span>
-            {% else %}
-            <select class="stock-select" data-width="100%" data-live-search="true" data-none-selected-text=""
-              data-none-results-text="Не найдено {0}">
-              {% for stock in stocks %}
-              <option value="{{ stock.stock_id }}" {{ 'selected' if stock.stock_id==deal_product.stock_id }}>
-                {{ stock.name }}</option>
-              {% endfor %}
-            </select>
-            {% endif %}
-          </td>
-          {% if not deal or not deal.posted %}
-          <td class="col-2 align-middle">
-            <span class="available"></span>
-          </td>
-          {% endif %}
-          <td class="col-2 align-middle">
-            <span class="sum">0</span>
-            <span class="">₽</span>
-          </td>
-        </tr>
-        {% endfor %}
-
-      </tbody>
-    </table>
-    <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns">
+  {% if not deal or not deal.posted %}
+  <div class="d-flex">
+    <div>
+      <div class="m-3 gap-2 justify-content-start actions">
+        <span class="">Отмеченно: </span>
+        <span class="checks-count"></span>
+      </div>
+      <div class="m-3 gap-2 d-flex justify-content-start actions">
+        <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
+      </div>
+    </div>
+    <div class="m-3 ms-auto gap-2">
       {% if not deal or not deal.posted %}
-      <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
-      <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
+      <button class="btn rounded-3 btn-primary" type="button" onclick="newLine('#tabProducts')">Добавить
+        строку</button>
+      <button class="btn rounded-3 " type="button">Отмена</button>
       {% endif %}
     </div>
-
   </div>
+  {% endif %}
+
 </div>
 
 <div class="card h-100">
@@ -136,7 +156,7 @@
             <span class="fs-4 fw-bolder">Общая сумма:</span>
           </td>
           <td class="">
-            <span id="all_sum" class="fs-4 fw-bolder"></span>
+            <span class="fs-4 fw-bolder all-sum">{{ var.all_sum|money }} ₽</span>
           </td>
         </tr>
       </tbody>
@@ -145,218 +165,3 @@
 
 </div>
 {% endif %}
-<script>
-
-  // var tabBody = document.getElementById('tabBody')
-  // var productsCount = document.getElementById('products_count')
-  // var Line = document.getElementById('newLine');
-  // var url_get_deal_products = "{{ (url_for('json_deal_products', deal_id=deal.deal_id)) if deal }}"
-  var url_get_products_in_stocks = "{{url_for('json_products_in_stocks') }}"
-  // var productsFirstStart = true;
-  // var stocksGeted = false;
-  var stocks = {}
-
-  // Start
-  async function DealProductsStart() {
-    // if (!stocksGeted) {
-    await getProductsInStocks();
-    $('tr.product').find('select').selectpicker();
-    //   stocksGeted = true;
-    // }
-    // if (productsFirstStart) {
-    //   if (url_get_deal_products) {
-    //     await getDealProducts();
-    //   }
-    //   addDealProducts();
-    UpdateAllSum()
-    // productsFirstStart = false;
-  }
-
-
-  // Deal Products
-  // var deal_products = {}
-  //
-  // function getDealProducts() {
-  //   return fetch(url_get_deal_products, {
-  //     method: 'GET',
-  //     headers: {
-  //       "Content-type": "application/json; charset=UTF-8"
-  //     }
-  //   })
-  //     .then(res => res.json())
-  //     .then(data => window.deal_products = data)
-  // }
-  // function addDealProducts() {
-  //   if (deal_products.length > 0) {
-  //     for (let i = 0; i < deal_products.length; i++) {
-  //       newLine(deal_products[i])
-  //     }
-  //   }
-  //   else {
-  //     {% if not deal or not deal.posted %}
-  //     newLine();
-  //     {% endif %}
-  //   }
-  // }
-
-  // Deal Products in stocks
-
-  function getProductsInStocks() {
-    return fetch(url_get_products_in_stocks, {
-      method: 'GET',
-      headers: {
-        "Content-type": "application/json; charset=UTF-8"
-      }
-    })
-      .then(res => res.json())
-      .then(data => window.stocks = data)
-  }
-
-  function updateStocks(tab, product_id, tr, lineIndex) {
-    $select = $(tab).find('tr').eq(lineIndex).find('select.stock-select')
-    $select.empty();
-    $select.selectpicker('destroy');
-
-    if (stocks[product_id]) {
-
-      for (let i = 0; i < (stocks[product_id]).length; i++) {
-        var newOption = new Option(`${stocks[product_id][i].stock_name}`, `${stocks[product_id][i].stock_id}`);
-        newOption.setAttribute('data-subtext', `${stocks[product_id][i].quantity}` + ` ${stocks[product_id][i].unit}`);
-        $select.append(newOption);
-        ($(tr).find('.input-group-text.quantity')).text(stocks[product_id][i].unit)
-
-      }
-      $select.prop('disabled', false);
-    }
-    else {
-      $select.prop('disabled', true);
-    }
-
-    if (lineIndex !== -1) $select.selectpicker();
-
-    //$('select.stock-select').trigger("change");
-  };
-
-  function ProductAvailable($select, tr) {
-    $quantity = $select.find(':selected').attr('data-subtext');
-    tr.querySelector('.available').textContent = $quantity;
-  }
-
-  // Change Trigers
-  $('#tabBody').on("change", 'select.stock-select', function () {
-    var tr = this.parentNode.parentNode.parentNode
-    $select = $(this)
-
-    ProductAvailable($select, tr)
-  })
-
-  $('#tabBody').on("change", 'select.product-select', function () {
-    var tr = this.parentNode.parentNode.parentNode
-    var index = $(tr).index() - 1
-    updateStocks('#tabBody', this.value, tr, index)
-
-    $option = $(this).find(':selected');
-
-    $price = $option.attr('data-price')
-    $type = $option.attr('data-product-type')
-    $available = $('#tabBody').find('tr').eq(index).find('select.stock-select').find(':selected').attr('data-subtext');
-
-    var quantity = tr.querySelector('.quantity').value
-
-
-    tr.querySelector('.price').value = $price
-    tr.querySelector('.sum').textContent = $price * quantity
-    tr.querySelector('.product-type').value = $type
-    tr.querySelector('.available').textContent = $available;
-
-    if ($type === 'service') {
-      tr.querySelector('.stock-select').classList.add('visually-hidden');
-    } else {
-      tr.querySelector('.stock-select').classList.remove('visually-hidden');
-    }
-
-    UpdateAllSum()
-  })
-
-  $('#tabBody').on("change", 'input.quantity', function () {
-    var quantity = this.value
-    var tr = this.parentNode.parentNode.parentNode
-    var price = tr.querySelector('.price').value
-    tr.querySelector('.sum').textContent = price * quantity
-
-    UpdateAllSum()
-  })
-
-  $('#tabBody').on("change", 'input.price', function () {
-    var price = this.value
-    var tr = this.parentNode.parentNode.parentNode
-    var quantity = tr.querySelector('.quantity').value
-    tr.querySelector('.sum').textContent = price * quantity
-
-    UpdateAllSum()
-  })
-
-  // Fields
-  function newLine(product = '') {
-    var newLine = Line.cloneNode(true);
-    var tab = '#tabBody'
-    newLine.removeAttribute('class');
-    newLine.removeAttribute('id');
-
-    var next = $('tr.product').length + 1;
-    productsCount.value = next;
-
-    var Names = newLine.querySelectorAll('[name]');
-    Names.forEach(element => {
-      element.name = element.name + `${next}`
-    });
-
-    newLine.querySelector('.product_count').textContent = `${next}` + '.';
-    newLine.classList.add("product");
-
-    tabBody.appendChild(newLine);
-
-    {% if deal and deal.posted %}
-    if (product) {
-      newLine.querySelector('.posted-product-name').textContent = product.product_name;
-      newLine.querySelector('.posted-stock-name').textContent = product.stock_name;
-      newLine.querySelector('.price').textContent = product.price;
-      newLine.querySelector('.quantity').textContent = product.quantity;
-      newLine.querySelector('.sum').textContent = product.price * product.quantity
-    }
-    {% else %}
-    if (product) {
-      updateStocks(tab, product.product_id, newLine, -1)
-
-      newLine.querySelector('.product-select').value = product.product_id;
-      newLine.querySelector('.stock-select').value = product.stock_id;
-      newLine.querySelector('.product-type').value = product.product_type;
-      newLine.querySelector('.price').value = product.price;
-      newLine.querySelector('.quantity').value = product.quantity;
-      newLine.querySelector('.sum').textContent = product.price * product.quantity
-
-      if (product.product_type === 'service') {
-        newLine.querySelector('.stock-select').classList.add('visually-hidden');
-      }
-    }
-    $('tr.product').eq(-1).find('select').selectpicker();
-
-    ProductAvailable($('#tabBody').find('tr').eq(-1).find('select.stock-select'), newLine)
-    {% endif %}
-
-
-  }
-
-  function UpdateAllSum() {
-    var AllSum = document.querySelector('#all_sum');
-
-    var all_sum = 0
-
-    var Sums = tabBody.querySelectorAll('.sum');
-    Sums.forEach(sum => {
-      all_sum = all_sum + Number(sum.innerHTML)
-    });
-    AllSum.textContent = all_sum + ' ₽'
-    $('#dealInfo').find('.deal-sum').val(all_sum)
-  }
-</script>

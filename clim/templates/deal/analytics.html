@@ -27,7 +27,7 @@
           </td>
 
           <td class="col-2">
-            <span class="">{{ analytics[item] }}</span>
+            <span class="">{{ analytics[item]|money }}</span>
             <span class="">₽</span>
           </td>
           <td class="col-auto"></td>
@@ -48,11 +48,11 @@
       <tbody>
         <tr>
           <td> <span class="fs-4 fw-bolder">Всего расходов:</span> </td>
-          <td> <span class="fs-4 fw-bolder">{{ deal.sum - deal.profit }} ₽</span> </td>
+          <td> <span class="fs-4 fw-bolder">{{ (deal.sum - deal.profit)|money }} ₽</span> </td>
         </tr>
         <tr>
           <td> <span class="fs-4 fw-bolder">Чистая прибыль:</span> </td>
-          <td> <span class="fs-4 fw-bolder">{{ deal.profit }} ₽</span> </td>
+          <td> <span class="fs-4 fw-bolder">{{ deal.profit|money }} ₽</span> </td>
         </tr>
       </tbody>
     </table>

@@ -17,7 +17,7 @@ from clim.app import app, db, redis, celery, login_manager
 from clim.models import Module, OtherShops, ProductImage, ProductSpecial, ProductVariant, RedirectManager, Review, SeoUrl, AttributeDescription, Category, \
     CategoryDescription, Manufacturer, OptionValueDescription, \
     Product, ProductAttribute, ProductOptionValue, Option, OptionValue,\
-    OtherProduct, Attribute, SpecialOffer, StockStatus, product_to_category
+    OtherProduct, Attribute, SpecialOffer, StockStatus
 
 
 def product_price_request(product):
@@ -1052,6 +1052,9 @@ def work_plan():
 
 work_plan_fields = ['models', 'prices', 'stock', 'variants']
 
+def get_module(name):
+    return db.session.execute(
+        db.select(Module).filter_by(name=name)).scalar()
 
 @app.route('/work_plan_<int:category_id>_update', methods=['POST'])
 @login_required

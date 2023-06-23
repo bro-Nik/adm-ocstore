@@ -1,11 +1,6 @@
 <div class="card h-100">
-
-  <!-- card -->
   <div class="card">
-
-    <!-- card body -->
     <div class="card-body">
-
       <div class="mb-3 row d-grid gap-2">
         <div class="">
           <label for="deal_name" class="fs-6">Название</label>
@@ -97,6 +92,20 @@
     </div>
   </div>
 </div>
+
+<div class="card h-100">
+  <div class="card">
+    <div class="card-body">
+      <div class="mb-3 row d-grid gap-2">
+        <div class="">
+          <label class="fs-6">Дата завершения</label>
+          <input type="date" class="form-control" name="date_end" value="{{ deal.date_end if deal }}">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   // 
   function ContactInfo(name) {

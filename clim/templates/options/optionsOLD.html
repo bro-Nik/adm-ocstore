@@ -7,68 +7,61 @@
 {% endblock %}
 {% block content %}
 
-<div class="container-fluid px-6 d-grid gap-3 mt-3">
-
-  {% include 'stock/header.html' %}
+<!-- Container fluid -->
+<div class="bg-primary pt-10 pb-21"></div>
+<div class="container-fluid mt-n22 px-6">
+  <!-- row filter  -->
   <div class="row">
     <div class="col-lg-12 col-md-12 col-12">
       <!-- Page header -->
       <div>
         <div class="d-flex align-items-center">
           <div class="mb-2 mb-lg-0">
-            <h3 class="mb-0">Склады</h3>
+            <h3 class="mb-0  text-white">Опции</h3>
           </div>
           <div class="ms-auto d-flex gap-2">
-            <a class="btn btn-primary" href="{{ url_for('stock_settings') }}">Добавить</a>
+            <a class="btn btn-white" href="{{ url_for('option_settings') }}">Добавить</a>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
+  </div>
   <!-- row  -->
-  <div class="row">
+  <div class="row mt-6 mb-6">
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
       <div class="card h-100">
 
+        <!-- card header  -->
+        <div class="card-header bg-white py-4">
+        </div>
         <!-- table  -->
-        <form class="" id="shops"  method="post" action="">
+        <form class="" id="shops"  method="post" action="{{ url_for('options_delete') }}">
           <div class="table-responsive">
             <table class="table text-nowrap">
-              <thead class="">
+              <thead class="table-light">
                 <tr>
-                  <th class="main-tab-checkbox">
-                    <input class="form-check-input check-all" type="checkbox">
-                  </th>
+                  <th scope="col"><!-- <input id="check" class="form-check-input" type="checkbox" onclick="Check()"> --></th>
                   <th scope="col">Название</th>
-                  <th scope="col">Товаров на сумму</th>
-                  <th scope="col">Сортировка</th>
                 </tr>
               </thead>
               <tbody>
-                {% set var = namespace(count=0, sum=0) %}
+                {% set option_count = namespace(counter=false) %}
+                {% set option_count.counter = 0 %}
 
-                {% for stock in stocks %}
-                  {% set var.sum = 0 %}
+                {% for option in options %}
                     <tr>
-                      <td class="text-average main-tab-checkbox">
-                        {% set var.count = var.count + 1 %}
-                        <input class="form-check-input to-check" type="checkbox" name="{{ 'stock-' + var.count|string }}" value="{{ stock.stock_id }}">
+                      <td class="text-average">
+                        {% set option_count.counter = option_count.counter + 1 %}
+                        <input class="form-check-input to-check" type="checkbox" name="{{ 'option-' + option_count.counter|string }}" value="{{ option.option_id }}">
                       </td>
-                      <td class=""><a href="{{ url_for('stock_settings', stock_id=stock.stock_id) }}">{{ stock.name }}</a></td>
-                      <td class="">
-                        {% for product in stock.products %}
-                          {% set var.sum = var.sum + product.quantity * product.main_product.cost %}
-                        {% endfor %}
-                        {{ var.sum|money }} ₽
-                      </td>
-                      <td class="">{{ stock.sort }}</td>
+                      <td class=""><a href="{{ url_for('option_values', option_id=option.option_id) }}">{{ option.description.name }}</a></td>
                     </tr>
                 {% endfor %}
 
               </tbody>
             </table>
-          <input type="hidden" name="shops-count" value="{{ var.count }}">
+          <input type="hidden" name="options-count" value="{{ option_count.counter }}">
           <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns visually-hidden">
             <button class="btn rounded-3 btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#deleteModal">Удалить</button>
             <button class="btn rounded-3 btn-secondary" type="button" onclick="showButtons(false)">Отмена</button>
@@ -96,5 +89,14 @@
 </div>
 
 <script>
+// Клик по чекбоксам
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains('to-check')) {
+  var Buttons = document.querySelector('.hidden-btns');
+  if (e.target.checked === true){
+    Buttons.classList.remove("visually-hidden");
+  };
+  }
+});
 </script>
 {% endblock %}

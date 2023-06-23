@@ -22,7 +22,8 @@
         {'url': url_for('stock_products'), 'name': 'Остатки'},
         {'url': url_for('stock_movements', movement_type='coming'), 'name': 'Приход'},
         {'url': url_for('stock_movements', movement_type='moving'), 'name': 'Перемещение'},
-        {'url': url_for('stock_stocks'), 'name': 'Склады'}
+        {'url': url_for('stock_stocks'), 'name': 'Склады'},
+        {'url': url_for('crm_stock_settings'), 'name': 'Настройки'}
         ] %}
 
         {% for item in menu %}

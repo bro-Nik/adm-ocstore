@@ -78,7 +78,7 @@
                         <span class="fs-6">{{ deal.date_add.strftime('%d.%m.%Y') }}</span>
                       </td>
                       <td class="">
-                        <span class="fs-6">{{ deal.sum|int }} ₽</span>
+                        <span class="fs-6">{{ deal.sum|money }} ₽</span>
                       </td>
                     </tr>
                 {% endfor %}

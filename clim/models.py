@@ -12,8 +12,9 @@ class Product(db.Model):
     mpn = db.Column(db.String(64))
     location = db.Column(db.String(128))
     ean = db.Column(db.String(64))
+    jan = db.Column(db.String(64))
+    isbn = db.Column(db.String(64))
     image = db.Column(db.String(255))
-    price = db.Column(db.Float(15.4))
     tax_class_id = db.Column(db.Integer)
     images = db.relationship('ProductImage',
                              backref=db.backref('product', lazy=True))
@@ -23,16 +24,32 @@ class Product(db.Model):
                                    backref=db.backref('products', lazy=True))
     manufacturer_id = db.Column(db.Integer,
                                 db.ForeignKey('oc_manufacturer.manufacturer_id'))
-    description = db.relationship('ProductDescription',
-                                  backref='product', uselist=False)
-    other_shop = db.relationship('OtherProduct', backref='product', lazy=True)
-    isbn = db.Column(db.String(64))
-    jan = db.Column(db.String(64))
-    quantity = db.Column(db.Integer)
+    shipping = db.Column(db.Boolean)
+    options_buy = db.Column(db.Boolean)
+    price = db.Column(db.Float(15.4))
+    points = db.Column(db.Integer)
+    tax_class_id = db.Column(db.Integer)
+    date_available = db.Column(db.Date)
+    weight = db.Column(db.Float(15.4))
+    weight_class_id = db.Column(db.Integer,
+                                db.ForeignKey('oc_weight_class.weight_class_id'))
+    length = db.Column(db.Float(15.4))
+    width = db.Column(db.Float(15.4))
+    height = db.Column(db.Float(15.4))
+    length_class_id = db.Column(db.Integer)
+    subtract = db.Column(db.Boolean)
+    minimum = db.Column(db.Integer)
+    sort_order = db.Column(db.Integer)
+    status = db.Column(db.Boolean)
     viewed = db.Column(db.Integer)
     date_added = db.Column(db.Date)
     date_modified = db.Column(db.Date)
+    noindex = db.Column(db.Boolean)
     cost = db.Column(db.Float)
+    description = db.relationship('ProductDescription',
+                                  backref='product', uselist=False)
+    other_shop = db.relationship('OtherProduct', backref='product', lazy=True)
+    quantity = db.Column(db.Integer)
     suppler_code = db.Column(db.Integer)
     suppler_type = db.Column(db.Integer)
     attributes = db.relationship('ProductAttribute',
@@ -45,8 +62,6 @@ class Product(db.Model):
                               backref=db.backref('products', lazy=True))
     variants = db.relationship('ProductVariant',
                                   backref='product', uselist=False)
-    weight_class_id = db.Column(db.Integer,
-                                db.ForeignKey('oc_weight_class.weight_class_id'))
     unit_class = db.relationship('WeightClass',
                                    backref=db.backref('products', lazy=True))
 
@@ -98,14 +113,32 @@ class ProductDescription(db.Model):
     __tablename__ = 'oc_product_description'
     product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'),
                            primary_key=True)
+    language_id = db.Column(db.Integer)
     name = db.Column(db.String(255))
+    description = db.Column(db.Text)
+    short_description = db.Column(db.Text)
+    tag = db.Column(db.Text)
+    meta_title = db.Column(db.String(255))
+    meta_description = db.Column(db.String(255))
+    meta_keyword = db.Column(db.String(255))
+    meta_h1 = db.Column(db.String(255))
 
 
-product_to_category = db.Table('oc_product_to_category',
-    db.Column('product_id', db.Integer, db.ForeignKey('oc_product.product_id')),
-    db.Column('category_id', db.Integer, db.ForeignKey('oc_category.category_id')),
-    db.Column('main_category', db.Boolean)
-)
+class ProductToCategory(db.Model):
+    __tablename__ = 'oc_product_to_category'
+    product_id = db.Column(db.Integer,
+                           db.ForeignKey('oc_product.product_id'),
+                           primary_key=True)
+    category_id = db.Column(db.Integer,
+                            db.ForeignKey('oc_category.category_id'),
+                            primary_key=True)
+    main_category = db.Column(db.Boolean)
+
+# product_to_category = db.Table('oc_product_to_category',
+#     db.Column('product_id', db.Integer, db.ForeignKey('oc_product.product_id')),
+#     db.Column('category_id', db.Integer, db.ForeignKey('oc_category.category_id')),
+#     db.Column('main_category', db.Boolean)
+# )
 
 
 product_to_download = db.Table('oc_product_to_download',
@@ -137,7 +170,7 @@ class Category(db.Model):
     category_id = db.Column(db.Integer, primary_key=True)
     parent_id = db.Column(db.Integer)
     sort_order = db.Column(db.Integer)
-    products = db.relationship('Product', secondary=product_to_category,
+    products = db.relationship('Product', secondary='oc_product_to_category',
         backref=db.backref('categories', lazy='dynamic'))
     description = db.relationship('CategoryDescription',
                                   backref='description', uselist=False)
@@ -451,27 +484,14 @@ class Stock(db.Model):
 class StockProduct(db.Model):
     __tablename__ = 'adm_stock_product'
     product_id = db.Column(db.Integer,
-                           db.ForeignKey('adm_stock_product_info.product_id'),
                            db.ForeignKey('oc_product.product_id'),
                            primary_key=True)
     stock_id = db.Column(db.Integer,
                          db.ForeignKey('adm_stock.stock_id'),
                          primary_key=True)
     quantity = db.Column(db.Float)
-    info = db.relationship('StockProductInfo',
-                            backref=db.backref('stock_product', uselist=False))
-    product = db.relationship('Product',
-                              backref=db.backref('stocks', lazy=True))
-
-
-class StockProductInfo(db.Model):
-    __tablename__ = 'adm_stock_product_info'
-    product_id = db.Column(db.Integer,
-                           db.ForeignKey('oc_product.product_id'),
-                           primary_key=True)
-    purchase_price = db.Column(db.Float)
     main_product = db.relationship('Product',
-                              backref=db.backref('stock_product', lazy=True))
+                              backref=db.backref('stocks', lazy=True))
 
 
 class Deal(db.Model):

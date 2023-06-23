@@ -4,146 +4,111 @@
 {% else %}
 
 <!-- Expenses  -->
-<div class="card h-100">
-
+<div id="tabExpenses" class="card h-100">
 
   <!-- table  -->
-  <div class="">
-    <table class="table text-nowrap table">
-      <thead class="">
-        <tr>
-          {% if not deal or not deal.posted %}
-          <th scope="col"></th>
+  <table class="table text-nowrap table">
+    <thead class="">
+      <tr>
+        {% if not deal or not deal.posted %}
+        <th scope="col">
+          <input class="form-check-input check-all" type="checkbox">
+        </th>
+        {% endif %}
+        <th scope="col">Название</th>
+        <th scope="col">Стоимость</th>
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody>
+
+      {% set var = namespace(count=0, all_sum=0) %}
+
+      {% set deal_expenses = deal.expenses|to_json %}
+
+      {% if not deal.posted and not deal_expenses %}
+      {% set deal_expenses = [{}] %}
+      {% endif %}
+
+      {% for deal_expense in deal_expenses %}
+      {% set var.count = var.count + 1 %}
+
+      <tr class="product">
+        {% if not deal or not deal.posted %}
+        <td class="main-tab-checkbox">
+          <input class="form-check-input to-check" type="checkbox" value="">
+        </td>
+        {% endif %}
+        <td class="col-4">
+          <span class="line-count">{{ var.count }}.</span>
+          {% if deal and deal.posted %}
+          <span>{{ deal_expense.name }}</span>
+          {% else %}
+          <div class="d-inline-block w-100">
+            <input type="text" class="form-control expense-name" value="{{ deal_expense.name }}">
+          </div>
           {% endif %}
-          <th scope="col">Название</th>
-          <th scope="col">Стоимость</th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody id="tabExpenses">
+        </td>
 
-        <tr id="newLineExpenses" class="visually-hidden">
-          {% if not deal or not deal.posted %}
-          <td class="main-tab-checkbox">
-            <input class="form-check-input to-check" type="checkbox" name="" value="">
-          </td>
+        {% set var.all_sum = var.all_sum + deal_expense.sum if deal and deal.expenses %}
+        <td class="col-2">
+          {% if deal and deal.posted %}
+          <span>{{ deal_expense.sum|money }} ₽</span>
+          {% else %}
+          <div class="input-group">
+            <input type="number" class="form-control expense-sum" value="{{ deal_expense.sum }}" placeholder="0">
+            <span class="input-group-text">₽</span>
+          </div>
           {% endif %}
-          <td class="col-4">
-            <span class="expense_count"></span>
-            {% if deal and deal.posted %}
-            <span class="expense-name"></span>
-            {% else %}
-            <div class="d-inline-block w-100">
-              <input type="text" class="form-control expense-name" name="expense_name_">
-            </div>
-            {% endif %}
-          </td>
+        </td>
+        <td class="col-auto"></td>
 
-          <td class="col-2">
-            {% if deal and deal.posted %}
-            <span class="expense-sum"></span>
-            {% else %}
-            <div class="input-group">
-              <input type="text" class="form-control expense-sum" name="expense_sum_" value="0">
-              <span class="input-group-text">₽</span>
-            </div>
-            {% endif %}
-          </td>
-          <td class="col-auto"></td>
+      </tr>
+      {% endfor %}
 
-        </tr>
+      <input type="hidden" name="expenses_data">
+    </tbody>
+  </table>
 
-        <input id="expenses_count" type="hidden" name="expenses-count" value="">
-
-      </tbody>
-    </table>
-    <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns">
+  {% if not deal or not deal.posted %}
+  <div class="d-flex">
+    <div>
+      <div class="m-3 gap-2 justify-content-start actions">
+        <span class="">Отмеченно: </span>
+        <span class="checks-count"></span>
+      </div>
+      <div class="m-3 gap-2 d-flex justify-content-start actions">
+        <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
+      </div>
+    </div>
+    <div class="m-3 ms-auto gap-2">
       {% if not deal or not deal.posted %}
-      <button class="btn rounded-3 btn-primary" type="button" onclick="newLineExpenses()">Добавить строку</button>
-      <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
+      {% if not deal or not deal.posted %}
+      <button class="btn rounded-3 btn-primary" type="button" onclick="newLine('#tabExpenses')">Добавить строку</button>
+      <button class="btn rounded-3 " type="button">Отмена</button>
+      {% endif %}
       {% endif %}
     </div>
-
   </div>
+  {% endif %}
+
+</div>
+
+<div class="card h-100">
+  <div class="d-flex justify-content-end align-items-center m-3">
+    <table class="col-3">
+      <tbody>
+        <tr class="">
+          <td class="">
+            <span class="fs-4 fw-bolder">Общая сумма:</span>
+          </td>
+          <td class="">
+            <span class="fs-4 fw-bolder all-sum">{{ var.all_sum|money }} ₽</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
 </div>
 {% endif %}
-
-<script>
-
-  var tabExpenses = document.getElementById('tabExpenses')
-  var expensesCount = document.getElementById('expenses_count')
-  var LineExpenses = document.getElementById('newLineExpenses');
-  var url_get_deal_expenses = "{{ (url_for('json_deal_expenses', deal_id=deal.deal_id)) if deal }}"
-  var expensesFirstStart = true;
-
-
-  // Start Deal Expenses
-  async function DealExpensesStart() {
-    if (expensesFirstStart) {
-      if (url_get_deal_consumables) {
-        await getDealExpenses();
-      }
-      addDealExpenses();
-      //await getProductsInStocks();
-      expensesFirstStart = false;
-    }
-  }
-
-  // Deal Expenses
-  var deal_expenses = {}
-
-  function getDealExpenses() {
-    return fetch(url_get_deal_expenses, {
-      method: 'GET',
-      headers: {
-        "Content-type": "application/json; charset=UTF-8"
-      }
-    })
-      .then(res => res.json())
-      .then(data => window.deal_expenses = data)
-  }
-  function addDealExpenses() {
-    if (deal_expenses.length > 0) {
-      for (let i = 0; i < deal_expenses.length; i++) {
-        newLineExpenses(deal_expenses[i])
-      }
-    }
-    else {
-      {% if not deal or not deal.posted %}
-      newLineExpenses();
-      {% endif %}
-    }
-  }
-
-
-  // Fields
-  function newLineExpenses(expense = '') {
-    var newLine = LineExpenses.cloneNode(true);
-    newLine.removeAttribute('class');
-    newLine.removeAttribute('id');
-
-    var next = $('tr.expense').length + 1;
-    expensesCount.value = next;
-
-    var Names = newLine.querySelectorAll('[name]');
-    Names.forEach(element => {
-      element.name = element.name + `${next}`
-    });
-
-    newLine.querySelector('.expense_count').textContent = `${next}` + '.';
-    newLine.classList.add('expense');
-
-    tabExpenses.appendChild(newLine);
-
-    if (expense) {
-      {% if deal and deal.posted %}
-      newLine.querySelector('.expense-name').textContent = expense.name;
-      newLine.querySelector('.expense-sum').textContent = expense.sum;
-      {% else %}
-      newLine.querySelector('.expense-name').value = expense.name;
-      newLine.querySelector('.expense-sum').value = expense.sum;
-      {% endif %}
-    }
-  }
-
-</script>

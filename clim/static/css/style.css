@@ -260,3 +260,42 @@ td.sticky-table {
 .btn-check:checked+.stage-item.end-bad {
     background-color: #f14343c9;
 }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none; // Yeah, yeah everybody write about it
+}
+
+input[type='number'],
+input[type="number"]:hover,
+input[type="number"]:focus {
+    appearance: none;
+    -moz-appearance: textfield;
+}
+.modal-fullscreen {
+    width: 90%;
+    float: right;
+}
+.modal-close-label {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    left: 0;
+    top: 17px;
+    transform: translateX(-100%);
+    transition: all 300ms ease;
+    min-width: 37px;
+    height: 38px;
+    margin-bottom: 10px;
+    background: #5340d9;
+    border-top-left-radius: 19px;
+    border-bottom-left-radius: 19px;
+    white-space: nowrap;
+    overflow: hidden;
+    box-shadow: inset -6px 0 8px -10px rgba(0,0,0,0.95);
+    z-index: 1;
+    cursor: pointer;
+    justify-content: center;
+}
+.modal-close-label .btn-close {
+    width: 100%;
+}

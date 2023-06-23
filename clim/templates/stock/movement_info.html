@@ -73,7 +73,7 @@
           </div>
         </div>
 
-        <div class="tab-pane fade show active visually-hidden" id="pills-product" role="tabpanel" aria-labelledby="pills-product-tab" tabindex="0">
+        <div class="tab-pane fade show active {{ 'visually-hidden' if not movement or not movement.posted }}" id="pills-product" role="tabpanel" aria-labelledby="pills-product-tab" tabindex="0">
           <div class="col-12 d-grid gap-3">
             {% include 'stock/movement_products.html' %}
           </div>
@@ -84,6 +84,18 @@
   </div>
 </div>
 </form>
+
+<!-- Modal -->
+<div class="modal fade" id="ProductInfoModal" tabindex="-1" role="dialog" aria-labelledby="ProductInfoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen w-90" role="document">
+    <div class="modal-content bg-light">
+      <div class="modal-close-label">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"> </div>
+    </div>
+  </div>
+</div>
 
 {% include 'deal/modals.html' %}
 {% endblock %}

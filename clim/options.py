@@ -148,8 +148,8 @@ def option_values(option_id):
                            other_prices=other_prices)
 
 
-@app.route('/options/<int:option_id>/new_value', methods=['GET'])
-@app.route('/options/<int:option_id>/value_<int:value_id>/settings', methods=['GET'])
+@app.route('/site/options/<int:option_id>/new_value', methods=['GET'])
+@app.route('/site/options/<int:option_id>/value_<int:value_id>/settings', methods=['GET'])
 @login_required
 def option_value_settings(option_id, value_id=None):
     """ Добавить или изменить вариант опции """
@@ -245,29 +245,13 @@ def option_value_add(option_id, value_id=None):
     db.session.commit()
 
     # Consumables
-    count = 1
-    products_count = request.form.get('products-count')
-    products_count = int(products_count) if products_count else 0
+    consumables = request.form.get('consumables_data')
+    if consumables:
+        consumables = json.loads(consumables.replace(',]', ']'))
+        option_value.settings.consumables = consumables
+    else:
+        option_value.settings.consumables = None
 
-    products = []
-
-    while count <= products_count:
-        product_id = request.form.get('product_id_' + str(count))
-        if not product_id:
-            count += 1
-            continue
-
-        product = {
-            'product_id': int(product_id),
-            'quantity': float(request.form.get('quantity_' + str(count)))
-        }
-
-        products.append(product)
-        count += 1
-
-    products = json.dumps(products)
-
-    option_value.settings.consumables = products
     db.session.commit()
 
     if request.args.get('action') == 'apply':

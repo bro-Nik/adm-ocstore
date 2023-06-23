@@ -58,32 +58,32 @@
 
                 {% for product in products %}
                   {% set var.quantity = 0 %}
-                  {% set var.unit = product.main_product.unit_class.description.unit %}
+                  {% set var.unit = product.unit_class.description.unit %}
                   {% set var.count = var.count + 1 %}
 
                     <tr>
                       <td class="">
                         <span class="product_count">{{ var.count }}.</span>
-                        {{ product.main_product.mpn }}
+                        {{ product.description.name }}
                       </td>
                       {% set var.quantity = 0 %}
-                      {% set var.unit = product.main_product.unit_class.description.unit %}
+                      {% set var.unit = product.unit_class.description.unit %}
 
-                      <td class="">{{ product.purchase_price|smart_int }} ₽</td>
+                      <td class="">{{ product.cost|money }} ₽</td>
 
                       {% for stock in stocks %}
                         {% for product_in_stock in stock.products if product_in_stock.product_id == product.product_id %}
                         {% set var.quantity = var.quantity + product_in_stock.quantity %}
                         {% endfor %}
                       {% endfor %}
-                      {% set var.sum = var.sum + var.quantity * product.purchase_price %}
+                      {% set var.sum = var.sum + var.quantity * product.cost %}
                       <td class="">{{ var.quantity|smart_int }} {{ var.unit }}</td>
 
                       {% for stock in stocks %}
                         {% for product_in_stock in stock.products if product_in_stock.product_id == product.product_id %}
                           <td class="">{{ product_in_stock.quantity|smart_int }} {{ var.unit }}</td>
                         {% else %}
-                          <td class="">0</td>
+                          <td class="">0 {{ var.unit }}</td>
                         {% endfor %}
                       {% endfor %}
 
@@ -104,7 +104,7 @@
                   <span class="fs-4 fw-bolder">Общая сумма:</span>
                 </td>
                 <td class="">
-                  <span id="all_sum" class="fs-4 fw-bolder">{{ var.sum|smart_int }} ₽</span>
+                  <span id="all_sum" class="fs-4 fw-bolder">{{ var.sum|money }} ₽</span>
                 </td>
               </tr>
             </tbody>

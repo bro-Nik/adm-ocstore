@@ -55,6 +55,7 @@
                 </th>
                 <th scope="col">Название</th>
                 <th scope="col">Статус</th>
+                <th scope="col">Склады</th>
               </tr>
             </thead>
             <tbody>
@@ -80,6 +81,12 @@
                       {% else %}
                         <span class="badge bg-secondary text-uppercase">Черновик</span>
                       {% endif %}
+                    </td>
+                    <td>
+                      {% set stocks = movement.products|to_json %}
+                      {{ stocks[0].get('stock_name') }}
+                      {{ (', ' + stocks[0].get('stock2_name')) if stocks[0].get('stock2_name') }}
+
                     </td>
                   </tr>
               {% endfor %}

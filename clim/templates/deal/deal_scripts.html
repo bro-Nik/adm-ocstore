@@ -1,0 +1,361 @@
+<script>
+
+  var url_get_products_in_stocks = "{{url_for('json_products_in_stocks') }}"
+  var stocks = {}
+
+  // Start
+  async function DealStart() {
+    await getProductsInStocks();
+    $('tr.product').each(function () {
+      updateStocks(this);
+      ProductAvailable(this);
+      $(this).find('select').selectpicker()
+    });
+  }
+  {% if not deal or not deal.posted %}
+  DealStart();
+  {% endif %}
+
+  // Products in stocks
+
+  function getProductsInStocks() {
+    return fetch(url_get_products_in_stocks, {
+      method: 'GET',
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
+      .then(res => res.json())
+      .then(data => window.stocks = data)
+  }
+
+  function updateStocks(tr) {
+    $select = $(tr).find('select.stock-select')
+    stock_id = $select.val()
+    $select.empty();
+    $select.selectpicker('destroy');
+    product_id = $(tr).find('select.product-select').find(':selected').val();
+
+    if (stocks[product_id]) {
+
+      for (let i = 0; i < (stocks[product_id]).length; i++) {
+        var newOption = new Option(`${stocks[product_id][i].stock_name}`, `${stocks[product_id][i].stock_id}`);
+        newOption.setAttribute('data-subtext', `${stocks[product_id][i].quantity}` + ` ${stocks[product_id][i].unit}`);
+        if (+stocks[product_id][i].stock_id === +stock_id) {
+          $(newOption).prop('selected', true);
+        }
+        $select.append(newOption);
+        ($(tr).find('.input-group-text.quantity')).text(stocks[product_id][i].unit)
+      }
+      $select.prop('disabled', false);
+    }
+    else {
+      $select.prop('disabled', true);
+    }
+    $select.selectpicker();
+  };
+
+  function ProductAvailable(tr) {
+    $(tr).find('.available').text('');
+    $product_select = $(tr).find('select.product-select').find(':selected');
+    if ($product_select.val()) {
+      available = $(tr).find('select.stock-select').find(':selected').attr('data-subtext');
+      $(tr).find('.available').text(available);
+    }
+  }
+
+  function UpdateSum(tr) {
+    quantity = $(tr).find('.quantity').val()
+    price = $(tr).find('.price').val()
+    var sum = price * quantity;
+    $(tr).find('.sum').text(ToMoney(sum))
+    UpdateAllSum($(tr).closest('div[id]'))
+  }
+
+  function UpdateAllSum(tab) {
+    var all_sum = 0
+    $(tab).find('.sum').each(function () {
+      all_sum += FromMoney(this.innerHTML)
+    });
+    all_sum = ToMoney(all_sum);
+    $(tab).parent().find('.all-sum').text(all_sum + ' ₽')
+  }
+
+  function ToMoney(number) {
+    if (parseInt(number) === number) {number = parseInt(number)}
+    return Intl.NumberFormat("ru", {currency: "RUB"}).format(number);
+  }
+
+  function FromMoney(string) {
+    string = string.replace('&nbsp;', '')
+    string = string.replace(' ', '')
+    string = string.replace(',', '.')
+    return parseFloat(string)
+  }
+
+  // Change Trigers
+  $('body').on('change', 'select.product-select', function () {
+    var tr = $(this).closest('tr')
+    updateStocks(tr)
+    ProductAvailable(tr)
+
+    $option = $(this).find(':selected');
+    price = $option.attr('data-price')
+    type = $option.attr('data-product-type')
+    quantity = $(tr).find('.quantity').val()
+
+    $(tr).find('.price').val(price)
+    $(tr).find('.sum').text(price * quantity)
+    $(tr).find('.product-type').val(type)
+
+    if (type === 'service') {
+      $(tr).find('.stock-select').addClass('visually-hidden');
+    } else {
+      $(tr).find('.stock-select').removeClass('visually-hidden');
+    }
+  })
+
+  $('body').on('change', 'select.stock-select', function () {
+    ProductAvailable($(this).closest('tr'))
+  })
+
+  $('body').on('change', 'input.quantity', function () {
+    UpdateSum($(this).closest('tr'))
+
+  })
+
+  $('#tabProducts').on("change", 'input.price', function () {
+    UpdateSum($(this).closest('tr'))
+  })
+
+  // Fields
+  function newLine(tab, $new_line = '') {
+    if ($new_line === '') {
+      var $line = $(tab).find('tr.product').eq(-1);
+      $line.find('select').selectpicker('destroy')
+      var $new_line = $($line).clone();
+      $new_line.appendTo($(tab).find('tbody'));
+      $line.find('select').selectpicker()
+    } else {
+      $new_line.find('select').selectpicker('destroy')
+    }
+
+    var count = $(tab).find('tr.product').length;
+    $new_line.find('input').val('');
+    $new_line.find('.to-check').prop('checked', false);
+    $new_line.find('.to-check').trigger('change');
+    $new_line.find('.line-count').text(count + '.');
+    $new_line.find('.input-group-text.quantity').text(' шт');
+    $new_line.find('.available').text('');
+    $new_line.find('.sum').text('0');
+    $new_line.find('select.product-select').val('')
+    $new_line.find('select.stock-select').empty();
+    $new_line.find('select.stock-select').prop('disabled', true)
+    // $new_line.find('.expense-name').val('');
+    // $new_line.find('.expense-sum').val('');
+    // $new_line.find('.quantity').val(0);
+    // $new_line.find('.price').val(0);
+
+    $new_line.find('select').selectpicker()
+    CheckCount(tab);
+  }
+
+
+  // Data To Server
+  $('#dealInfo').submit(function () {
+    var deal_sum = $('#pills-product').find('.all-sum').text()
+    $('[name=deal_sum]').val(FromMoney(deal_sum))
+
+    var products = '[';
+    $('#tabProducts').find('tr.product').each(function () {
+      if ($(this).find('select.product-select').val()) {
+        $option = $(this).find(':selected');
+        type = $option.attr('data-product-type')
+        var item = '{"product_id": ' + $(this).find('select.product-select').val() +
+          ', "type": "' + type +
+          '", "price": ' + parseFloat($(this).find('.price').val()) +
+          ', "quantity": ' + parseFloat($(this).find('.quantity').val()) +
+          ', "stock_id": ' + $(this).find('select.stock-select').val() + '},'
+
+        products += item;
+      }
+    });
+    products += ']';
+    if (products !== '[]') {
+      $('[name=products_data]').val(JSON.stringify(products));
+    }
+
+    var consumables = '[';
+    $('#tabConsumables').find('tr.product').each(function () {
+      if ($(this).find('select.product-select').val()) {
+        var item = '{"product_id": ' + $(this).find('select.product-select').val() +
+          ', "price": ' + parseFloat($(this).find('.price').val()) +
+          ', "quantity": ' + parseFloat($(this).find('.quantity').val()) +
+          ', "stock_id": ' + $(this).find('select.stock-select').val() + '},'
+
+        consumables += item;
+      }
+    });
+    consumables += ']';
+    if (consumables !== '[]') {
+      $('[name=consumables_data]').val(JSON.stringify(consumables));
+    }
+
+    var expenses = '[';
+    $('#tabExpenses').find('tr.product').each(function () {
+      if ($(this).find('input.expense-name').val()) {
+        var item = '{"name": "' + $(this).find('input.expense-name').val() +
+          '", "sum": ' + $(this).find('input.expense-sum').val() + '},'
+
+        expenses += item;
+      }
+    });
+    expenses += ']';
+    if (expenses !== '[]') {
+      $('[name=expenses_data]').val(JSON.stringify(expenses));
+    }
+  })
+
+
+  // Checks
+
+  // Check All
+  $('.check-all').on("change", function () {
+    var tab = $(this).closest('div[id]');
+    $(tab).find('.to-check').prop('checked', $(this).is(':checked'));
+    $(tab).find('.to-check').trigger('change');
+  })
+
+  // Show buttons
+  //$('input.to-check').on('change', function () {
+  $('body').on('change', 'input.to-check', function () {
+    var tab = $(this).closest('div[id]');
+    var $checked_count = $(tab).find('.to-check:checked').length;
+    var $btns = $(tab).find('.actions .btn')
+    if ($(tab).find('tr.product').length > 1) {
+      $($btns).prop('disabled', !$checked_count > 0);
+    } else {
+      $($btns).prop('disabled', true);
+    }
+    $(tab).find('.check-all').prop('checked', $checked_count > 0);
+    CheckCount(tab);
+  })
+
+  // Check Count
+  CheckCount('#tabProducts');
+  CheckCount('#tabConsumables');
+  CheckCount('#tabExpenses');
+
+  function CheckCount(tab) {
+    var $checked_count = $(tab).find('.to-check:checked').length;
+    var $all_count = $(tab).find('.to-check').length;
+    $(tab).find('.checks-count').text($checked_count + ' / ' + $all_count);
+  }
+
+  // Delete line
+  $('.delete-product').on("click", function () {
+    var tab = $(this).closest('div[id]');
+    $(tab).find('.to-check:checked').each(function () {
+      if ($(tab).find('tr.product').length > 1) {
+        $(this).closest('tr').remove();
+      } else {
+        newLine(tab, $(this).closest('tr'));
+      }
+    });
+    CheckCount(tab);
+    LineCount(tab);
+  })
+
+  // Line Count
+  function LineCount(tab) {
+    var count = 1;
+    $(tab).find('tr.product').each(function () {
+      $(this).find('.line-count').text(count + '.');
+      count += 1;
+    });
+  }
+
+  // Fill Consumables
+  var url_get_consumables_in_option = "{{ url_for('json_consumables_in_option') }}"
+
+  function DealConsumablesFill() {
+    $('#tabConsumables').find('tr.product').each(function () {
+      var tab = $(this).closest('div[id]');
+      if ($(tab).find('tr.product').length > 1) {
+        $(this).closest('tr').remove();
+      } else {
+        newLine(tab, $(this).closest('tr'));
+      }
+    });
+
+    $('#tabProducts').find('select.product-select').each(function (index, element) {
+      type = $(this).find(':selected').attr('data-product-type')
+      if (type === 'service') {
+        var tr = $(this).closest('tr')
+        $option_quantity = $(tr).find('.quantity').val();
+        $option_value_id = $(tr).find('select.product-select').find(':selected').val();
+        url = url_get_consumables_in_option + '/' + $option_value_id
+
+        DealConsumablesFillAdd(url, $option_quantity);
+      }
+    });
+  }
+
+  async function DealConsumablesFillAdd(url, $option_quantity) {
+    await getConsumablesInOption(url);
+
+    if (consumables_in_option.length > 0) {
+      var first_line = true;
+      for (let i = 0; i < consumables_in_option.length; i++) {
+        var product_find = false
+
+        $('#tabConsumables').find('select.product-select').each(function (index, element) {
+          if (+$(element).val() === +consumables_in_option[i].product_id) {
+            var tr = $(this).closest('tr')
+            $quantity = $(tr).find('.quantity').val();
+            $quantity = +$quantity + +$option_quantity * +consumables_in_option[i].quantity;
+            $(tr).find('.quantity').val($quantity)
+
+            product_find = true
+          }
+
+        });
+        if (!product_find) {
+          consumables_in_option[i].quantity = +$option_quantity * +consumables_in_option[i].quantity
+
+          if (first_line !== true) {
+            newLine('#tabConsumables')
+          } else first_line = false;
+          var tr = $('#tabConsumables').find('tr.product').eq(-1)
+          $(tr).find('select.product-select').val(consumables_in_option[i].product_id);
+          $(tr).find('.quantity').val(consumables_in_option[i].quantity);
+          var price = 0
+          if (stocks[consumables_in_option[i].product_id]) {
+            price = stocks[consumables_in_option[i].product_id][0].cost
+          }
+          $(tr).find('.price').val(price);
+        }
+      }
+
+      $('#tabConsumables').find('tr.product').each(function () {
+        $(this).find('select').selectpicker('destroy')
+        updateStocks(this);
+        ProductAvailable(this);
+        UpdateSum(this)
+        $(this).find('select').selectpicker()
+      });
+    }
+  }
+
+  var consumables_in_option = {}
+  function getConsumablesInOption(url) {
+    return fetch(url, {
+      method: 'GET',
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
+      .then(res => res.json())
+      .then(data => window.consumables_in_option = data)
+  }
+</script>
