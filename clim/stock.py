@@ -352,8 +352,8 @@ def json_products_in_stocks(product_id=None):
         products[product.product_id].append(
             {'stock_id': product.stock_id,
              'stock_name': product.stock.name,
-             'cost': product.main_product.cost,
-             'unit': product.main_product.unit_class.description.unit,
+             # 'cost': product.main_product.cost,
+             # 'unit': product.main_product.unit_class.description.unit,
              'quantity': product.quantity}
         )
 
@@ -413,8 +413,9 @@ def json_all_products():
     result = []
     products = get_products(pagination=False)
     for product in products:
-        result.append({'product_id': product.product_id,
+        result.append({'id': product.product_id,
                        'name': product.description.name,
+                       'cost': product.cost,
                        'unit': product.unit_class.description.unit})
 
     return json.dumps(result)

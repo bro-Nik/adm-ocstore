@@ -59,7 +59,8 @@
             <option value="">-- Выберите товар --</option>
             {% for product in products %}
             <option value="{{ product.product_id }}" data-product-unit="{{ product.unit_class.description.unit }}"
-              {{ 'selected' if product.product_id==movement_product.product_id }}>
+              data-product-cost="{{ product.cost|smart_int }}" {{ 'selected' if
+              product.product_id==movement_product.product_id }}>
               {{ product.description.name }}</option>
             {% endfor %}
           </select>
@@ -144,7 +145,7 @@
   {% if not movement or not movement.posted %}
   <div class="d-flex">
     <div>
-      <div class="m-3 gap-2 justify-content-start actions">
+      <div class="m-3 gap-2 justify-content-start">
         <span class="">Отмеченно: </span>
         <span class="checks-count"></span>
       </div>
@@ -152,7 +153,7 @@
         <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
       </div>
     </div>
-    <div class="m-3 ms-auto gap-2">
+    <div class="m-3 ms-auto buttons">
       {% if not movement or not movement.posted %}
       <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
       {% if movement_type == 'coming' %}
@@ -217,12 +218,12 @@
 
   function ProductAvailable(tr) {
     available = 0;
-    $option = $(tr).find('select.product-select').find(':selected');
-    var product_id = $option.val();
+    $product_select = $(tr).find('select.product-select').find(':selected');
+    var product_id = $product_select.val();
     if (product_id) {
-      unit = $option.attr('data-product-unit')
-      $select = $(tr).find('select.stock-select')
-      stock_id = $($select).find(':selected').val();
+      unit = $product_select.attr('data-product-unit')
+      $stock_select = $(tr).find('select.stock-select')
+      stock_id = $($stock_select).find(':selected').val();
 
       if (stocks[product_id]) {
         for (let i = 0; i < (stocks[product_id]).length; i++) {
@@ -237,21 +238,15 @@
 
   // Change Trigers
   $('#tabProducts').on("change", 'select.product-select', function () {
-    var tr = $(this).closest('tr')
-    $option = $(this).find(':selected');
-    unit = $option.attr('data-product-unit')
-    $(tr).find('.input-group-text.quantity').text(unit)
+    var $tr = $(this).closest('tr')
+    var $option = $(this).find(':selected');
+    var unit = $option.attr('data-product-unit')
+    var cost = $option.attr('data-product-cost')
+    $tr.find('.cost').val(cost)
+    $tr.find('.input-group-text.quantity').text(unit)
 
-    product_id = $(this).val()
-    $cost = $(tr).find('.cost')
-    if (stocks[product_id]) {
-      $cost.val(stocks[product_id][0].cost)
-    } else {
-      $cost.val('0')
-    }
-
-    UpdateSum(tr)
-    ProductAvailable(tr)
+    UpdateSum($tr)
+    ProductAvailable($tr)
   })
 
   $('#tabProducts').on("change", 'select.stock-select', function () {
@@ -348,11 +343,13 @@
 
   // Placeholder
   function Placeholder(action) {
+    var $tab = $('#tabProducts')
     if (action === 'start') {
-      $('#Products').find('tr.product').addClass('visually-hidden');
+      // lines
+      $tab.find('tr.product').addClass('visually-hidden show-after-placeholder');
 
-      var count_tr = $('#Products').find('tr.product').length;
-      var count_td = $('#Products').find('tr.product').eq(-1).find('td').length;
+      var count_tr = $tab.find('tr.product').length;
+      var count_td = $tab.find('tr.product').eq(-1).find('td').length;
 
       var line = '<tr class="placeholder-del">'
       for (let i = 0; i < count_td; i++) {
@@ -361,11 +358,20 @@
       line += '</tr>'
 
       for (let i = 0; i < count_tr; i++) {
-        $('#Products').find('tbody').append(line)
+        $tab.find('tbody').append(line)
       }
+
+      // buttons
+      var bts = ''
+      $('#movementInfo').find('.btn').each(function () {
+        $(this).parent().append('<a class="me-1 disabled placeholder placeholder-del ' + $(this).attr('class') + '" style="width: ' + $(this).width() + 'px;"></a>')
+        $(this).addClass('visually-hidden show-after-placeholder');
+      });
+
+
     } else {
-      $('#Products').find('tr.product').removeClass('visually-hidden');
-      $('#Products').find('tr.placeholder-del').remove();
+      $('#movementInfo').find('.visually-hidden.show-after-placeholder').removeClass('visually-hidden show-after-placeholder');
+      $('#movementInfo').find('.placeholder-del').remove();
     }
   }
 
@@ -384,6 +390,8 @@
 
       for (let i = 0; i < products.length; i++) {
         var newOption = new Option(`${products[i].name}`, `${products[i].id}`);
+        newOption.setAttribute('data-product-cost', products[i].cost);
+        newOption.setAttribute('data-product-unit', products[i].unit);
         if (+products[i].id === id) {
           $(newOption).prop('selected', true);
         }
