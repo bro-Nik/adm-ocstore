@@ -9,7 +9,7 @@
 
 <!-- Container fluid -->
 <form id="dealInfo" method="post" action="{{ url_for('deal_info_update', deal_id=deal.deal_id if deal else None) }}">
-<div class="container-fluid px-6 d-grid gap-3 mt-3">
+<div class="container-fluid px-6 d-grid gap-3 mt-3 pb-80">
 
   {% include 'deal/deal_header.html' %}
 
@@ -56,10 +56,18 @@
     </div>
   </div>
 </div>
+
+<div class="sticky-bottom-box">
+  <div class="sticky-bottom actions bg-white">
+    <button type="submit" form="dealInfo" class="btn btn-salato">Сохранить</button>
+    <button class="btn btn-transparent rounded-3" type="reset">Отмена</button>
+  </div>
+</div>
+
 <input type="hidden" class="posting" name="posting">
 <input type="hidden" class="old-stage" name="old_stage">
-<input type="hidden" name="deal_sum">
 </form>
+
 
 {% include 'deal/modals.html' %}
 {% include 'deal/deal_scripts.html' %}

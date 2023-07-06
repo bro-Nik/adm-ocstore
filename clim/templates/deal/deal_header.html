@@ -5,12 +5,16 @@
       <div class="d-flex align-items-center">
         <div class="mb-2 mb-lg-0">
           <h3 class="mb-0">
-            <a href="{{ url_for('deals') }}" class="">Сделки</a>
-            | {{ deal.name if deal else 'Добавление сделки' }}
+            <a href="{{ url_for('deals', view=session.get('crm_view')) }}" class="">Сделки</a>
+            {% if deal %}
+            <span class="deal-info-title">| {{ deal.name }}</span>
+            <input type="text" class="deal-info-title-input visually-hidden to-show" name="deal_name"
+              value="{{ deal.name }}">
+            {% else %}
+            | Добавление сделки
+            {% endif %}
+
           </h3>
-        </div>
-        <div class="ms-auto d-flex gap-2">
-          <button type="submit" form="dealInfo" class="btn btn-primary">Сохранить</button>
         </div>
       </div>
     </div>
@@ -18,33 +22,39 @@
 </div>
 
 <div class="col-12 d-flex gap-2">
+  {% set active_stage = False %}
   {% for stage in stages if not 'end_' in stage.type %}
-  <div class="stage">
+  <div class="stage" style="{{ '--deal-stage-color: ' + stage.color + ';' if stage.color }}">
     <input type="radio" class="btn-check" name="stages" id="stage_{{ stage.stage_id }}" {{ 'checked' if
       stage.stage_id==deal.stage_id }} {{ 'checked' if not deal and stage.type=='start' }} value="{{ stage.stage_id }}">
     <label class="stage-item fs-6" for="stage_{{ stage.stage_id }}">
       {{ stage.name }}
     </label>
+    <div class="deal-stage-line"></div>
   </div>
   {% endfor %}
 
-  <div class="stage">
-    {% if not deal or not 'end_' in deal.stage.type %}
-    <button type="button" class="stage-item fs-6" data-bs-toggle="modal" data-bs-target="#closeDeal">
+  {% if not deal or not 'end_' in deal.stage.type %}
+  <div class="stage" style="--deal-stage-color: #56c31e;">
+    <label class="stage-item fs-6" data-bs-toggle="modal" data-bs-target="#closeDeal">
       Завершить сделку
-    </button>
-    {% else %}
+    </label>
+    <div class="deal-stage-line"></div>
+  </div>
+  {% else %}
 
+  <div class="stage" style="{{ '--deal-stage-color: ' + deal.stage.color + ';' if deal.stage.color }}">
     <input type="radio" class="btn-check" name="stages" id="stage_{{ deal.stage_id }}" checked
       value="{{ deal.stage_id }}" data-bs-toggle="modal" data-bs-target="#closeDeal">
     <label class="stage-item fs-6 {{ 'end-good' if deal.stage.type == 'end_good' else 'end-bad' }}"
       for="stage_{{ deal.stage_id }}">
       {{ deal.stage.name }}
     </label>
-
-    {% endif %}
-
+    <div class="deal-stage-line"></div>
   </div>
+
+  {% endif %}
+
 
 </div>
 

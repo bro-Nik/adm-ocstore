@@ -106,7 +106,8 @@
         <div id="navCrm" class="collapse {{ 'show' if '/crm/' in request.path }}" data-bs-parent="#sideNavbar">
           <ul class="nav flex-column">
             <li class="nav-item">
-              <a class="nav-link {{ 'active' if 'deals' in request.path }}" href="{{ url_for('deals') }}">
+              <a class="nav-link {{ 'active' if 'deals' in request.path }}"
+                href="{{ url_for('deals', view=session.get('crm_view')) }}">
                 Сделки
               </a>
             </li>

@@ -64,10 +64,10 @@
                     <tr>
                       <td class="">
                         <span class="product_count">{{ var.count }}.</span>
-                        {{ product.description.name }}
+                        <a href="" class="open-modal-product" data-product-id="{{ product.product_id }}" data-bs-toggle="modal" data-bs-target="#ProductInfoModal">
+                          {{ product.description.name }}
+                        </a>
                       </td>
-                      {% set var.quantity = 0 %}
-                      {% set var.unit = product.unit_class.description.unit %}
 
                       <td class="">{{ product.cost|money }} ₽</td>
 
@@ -116,7 +116,25 @@
     </div>
   </div>
 </div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="ProductInfoModal" tabindex="-1" role="dialog" aria-labelledby="ProductInfoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen w-90" role="document">
+    <div class="modal-content bg-light">
+      <div class="modal-close-label">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"> </div>
+    </div>
+  </div>
+</div>
 <script>
 
+  // Open Modal New Product
+  $('a.open-modal-product').on("click", function () {
+    var product_id = $(this).attr('data-product-id');
+    $('#ProductInfoModal').find('.modal-body').load("{{ url_for('stock_product', product_id=None) }}" + product_id);
+  })
 </script>
 {% endblock %}

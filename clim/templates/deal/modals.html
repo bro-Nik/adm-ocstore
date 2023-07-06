@@ -15,7 +15,7 @@
 
         <input type="radio" class="btn-check end-stage" id="stage_{{ stage.stage_id }}" {{ 'checked' if
           stage.stage_id==deal.stage_id }} value="{{ stage.stage_id }}">
-        <label class="btn {{ 'btn-success' if stage.type == 'end_good' else 'btn-danger' }} mb-2"
+        <label class="btn mb-2 text-white" style="{{ 'background: ' + stage.color + ';' if stage.color }}"
           for="stage_{{ stage.stage_id }}">
           {{ stage.name }}
         </label>
@@ -34,3 +34,15 @@
     $('#dealInfo').submit()
   })
 </script>
+
+<!-- Modal Booking -->
+<div class="modal fade" id="BookingModal" tabindex="-1" role="dialog" aria-labelledby="BookingModal" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen w-90" role="document">
+    <div class="modal-content bg-light">
+      <div class="modal-close-label">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"></div>
+    </div>
+  </div>
+</div>

@@ -1,3 +1,8 @@
+:root {
+  --font-size-little: 0.8rem;
+  --font-family-system: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';
+  --color-primary: #624BFF;
+}
 html, body {
     height: 100%;
 }
@@ -220,13 +225,13 @@ td.sticky-table {
     vertical-align: middle;
 }
 .stage {
-    position: relative;
-    z-index: 10;
     box-sizing: border-box;
-    padding: 0 1px 0 2px;
     height: 32px;
-    vertical-align: middle;
     flex: 1 1 100%;
+    overflow: hidden;
+    background-color: #fff;
+    border-radius: 5px;
+    position: relative;
 }
 .stage-item {
     position: relative;
@@ -234,8 +239,6 @@ td.sticky-table {
     padding: 0 10px;
     width: 100%;
     height: 32px;
-    border-width: 0 0 3px 0;
-    border-style: solid;
     vertical-align: middle;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -243,16 +246,13 @@ td.sticky-table {
     cursor: pointer;
     transition: all 250ms ease;
     background: #dfe3e8;
-    border-bottom-color: #765ed9;
-    border-radius: 5px;
     display: flex;
     align-items: center;
     color: #525c68;
 }
 .btn-check:checked+.stage-item {
-    background-color: #765ed9;
+    background-color: var(--deal-stage-color);
     color: rgb(255, 255, 255);
-    border: none;
 }
 .btn-check:checked+.stage-item.end-good {
     background-color: #56c31e;
@@ -298,4 +298,243 @@ input[type="number"]:focus {
 }
 .modal-close-label .btn-close {
     width: 100%;
+}
+.bootstrap-select.stage-filter {
+    border: 1px solid rgb(82 92 105 / 31%);
+    border-radius: 5px;
+}
+.deal-stage-line {
+    display: block;
+    height: 3px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--deal-stage-color);
+}
+.crm-kanban-deal-title {
+    color: #333;
+    font-size: 0.9rem;
+    margin: 0 0 4px 0;
+    font-weight: 500;
+}
+.crm-kanban-deal-price {
+    color: #333;
+    font-size: 0.9rem;
+}
+.crm-kanban-deal-connect {
+    position: absolute;
+    top: 5px;
+    right: 0;
+    opacity: 1;
+    -webkit-transition: .6s;
+    transition: .6s;
+    -webkit-transition-delay: 0;
+    transition-delay: 0;
+    z-index: 9;
+    text-align: center;
+    color: #4e3ccc;
+}
+.crm-kanban-deal-contact {
+    clear: both;
+    display: block;
+    cursor: pointer;
+    -webkit-transition: .1s;
+    -moz-transition: .1s;
+    transition: .1s;
+    margin: 5px;
+}
+.crm-kanban-deal-contact.disabled {
+    opacity: 15%;
+}
+.crm-kanban-deal-date-add {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    right: 7px;
+    bottom: 7px;
+    font: 500 var(--font-size-little) var(--font-family-system);
+    color: #959ca4;
+}
+.deal-info-contact {
+    font-size: var(--font-size-little);
+    display: flex;
+    margin: 4px 0 0;
+    color: #a8acb3;
+    white-space: nowrap;
+    font: 500 var(--font-size-little) var(--font-family-system);
+}
+.deal-info-block-title {
+    position: relative;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-pack: justify;
+    margin-bottom: 5px;
+    color: #a3a9b1;
+    font: var(--font-size-little) var(--font-family-system);
+    -webkit-box-pack: justify;
+    justify-content: space-between;
+}
+.deal-info-edit-link {
+    color: #212B36;
+    transition: 0.5s;
+    cursor: pointer;
+}
+.deal-info-edit-link:hover {
+    color: var(--color-primary);
+}
+.crm-editor-section {
+    background-color: #f9fafb;
+    box-shadow: 0 1px 1px 0 rgba(0,0,0,.04);
+    border-radius: 0.5rem;
+    padding: 0 1.25rem;
+}
+.crm-editor-section-header:first-child {
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+.crm-editor-section-header {
+    padding: 0.625rem 0;
+    margin-bottom: 0;
+}
+.crm-editor-section-header-text {
+    color: #525c69;
+    text-transform: uppercase;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+.crm-editor-section-header-text.accordion::after {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-left: auto;
+    content: "";
+    background-image: url(data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23637381'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e);
+    background-repeat: no-repeat;
+    background-size: 1.25rem;
+    transition: transform 0.2s ease-in-out;
+}
+.crm-editor-section-body {
+    flex: 1 1 auto;
+    padding: 1.25rem 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.125);
+}
+.deal-info-client {
+    padding: 1rem;
+    border: 1px solid #e9ecf1;
+    border-radius: 0.5rem;
+}
+.sticky-bottom {
+    position: fixed;
+    bottom: 0;
+    width: -webkit-fill-available;
+    transform: translateY(130%);
+    transition: all 300ms ease;
+    box-sizing: border-box;
+    box-shadow: 0 -2px 4px 0 rgba(0,0,0,.05);
+    text-align: center;
+    padding: 10px 0;
+  }
+.sticky-bottom.active {
+    transform: translateY(0);
+  }
+.sticky-bottom-box {
+  position: relative;
+}
+.btn-salato {
+    background: #bbed21;
+    border-color: #bbed21;
+    color: #535c69;
+}
+.btn-salato:hover {
+    background: #d2f95f;
+    border-color: #d2f95f;
+}
+.btn-salato:active {
+    background: #b2e232;
+    border-color: #b2e232;
+}
+.btn-salato:focus {
+    box-shadow: none;
+}
+.btn-transparent:hover {
+    color: #63738147;
+}
+.btn-transparent:active {
+    color: #3c3c3c;
+}
+.btn-transparent:focus {
+    box-shadow: none;
+}
+.pb-80 {
+    padding-bottom: 80px;
+}
+.select-new-container {
+    border-top: 1px solid #e6e8ea;
+    padding: 17px 22px;
+    transition: background .3s;
+    cursor: pointer;
+}
+.select-new-name {
+    margin-bottom: 0;
+    font-size: 15px;
+    color: #333;
+}
+.select-new-text {
+    color: #80868e;
+    margin-top: 15px;
+    position: relative;
+    padding: 0 0 0 31px;
+    font: 14px/24cm var(--ui-font-family-helvetica));
+}
+.select-new-text:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-image: url(data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%2212%22%20fill%3D%22%232FC6F6%22/%3E%3Cpath%20fill%3D%22%23FFF%22%20d%3D%22M13%2011h4v2h-4v4h-2v-4H7v-2h4V7h2v4z%22%20opacity%3D%22.9%22/%3E%3C/g%3E%3C/svg%3E);
+    background-repeat: no-repeat;
+}
+li.no-results:has(.select-new-container) {
+    overflow: hidden;
+    padding: 0;
+    background: rgba(47,198,246,.09);
+    margin: 0;
+}
+input.deal-info-title-input {
+    border: none;
+    background: none;
+}
+#workers {
+    display: flex;
+    flex-direction: column;
+}
+.worker {
+    min-height: 30px;
+    margin: 10px;
+    border: 1px solid #DFE3E8 !important;
+    border-radius: 5px;
+    padding: 15px;
+    display: flex;
+}
+.worker-days {
+    width: 100%;
+}
+.worker-day {
+    height: 40px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    margin: 0.25rem;
+    border: 1px solid #DFE3E8;
+    cursor: pointer;
+}
+.deal-info-edit-link-employments {
+    display: grid;
+    color: #212B36;
+    cursor: pointer;
 }

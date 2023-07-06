@@ -68,13 +68,13 @@
 
       <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
-          <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-grid gap-3">
+          <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-grid gap-3 mb-5">
             {% include 'stock/movement_details.html' %}
           </div>
         </div>
 
         <div class="tab-pane fade show active {{ 'visually-hidden' if not movement or not movement.posted }}" id="pills-product" role="tabpanel" aria-labelledby="pills-product-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">
+          <div class="col-12 d-grid gap-3 mb-5">
             {% include 'stock/movement_products.html' %}
           </div>
         </div>

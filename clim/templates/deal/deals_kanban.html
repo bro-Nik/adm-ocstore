@@ -1,0 +1,293 @@
+{% extends "deal/deals_base.html" %}
+{% block deals_content %}
+<!-- row  -->
+<div class="row">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <div class="board">
+
+      {% set var = namespace(column_count=0, item_count=0) %}
+      {% for stage in stages %}
+
+        {% set var.column_count = var.column_count + 1 %}
+        <div class="column" data-stage="{{ stage.stage_id }}" draggable>
+          <input type="hidden" class="stage-type" value="{{ stage.type }}">
+          <input type="hidden" class="stage-color" value="{{ stage.color if stage.color }}">
+
+          <div class="board-column-header check-all d-flex" style="{{ 'background: ' + stage.color + ';' if stage.color }}">
+            <div class="stage-name">{{ stage.name }}</div>
+            <div class="stage-deal-count ms-1">({{ stage.deals|length }})</div>
+            <div class="ms-auto header-action">
+              <i data-feather="edit" class="nav-icon icon-xs me-2 update-stage"></i>
+              <i data-feather="plus-circle" class="nav-icon icon-xs me-2 new-stage"></i>
+            </div>
+            <div class="ms-auto crm-kanban-item-checkbox visually-hidden">
+              <input class="form-check-input" type="checkbox">
+            </div>
+          </div>
+          <div class="board-column-content-wrapper">
+
+            {% for deal in stage.deals|sort(attribute='sort_order') %}
+              {% set var.item_count = var.item_count + 1 %}
+
+              <div class="board-item" draggable data-item="{{ deal.deal_id }}" data-item-sort="{{ deal.sort_order }}" style="{{ '--crm-kanban-item-color: ' + stage.color + ';' if stage.color }}">
+                <a class="crm-kanban-deal-title" href="{{ url_for('deal_info', deal_id=deal.deal_id) }}">
+                  {{ deal.name }}
+                </a>
+                <div class="crm-kanban-item-line"></div>
+                <div class="crm-kanban-deal-price">{{ deal.sum|money }} ₽</div>
+                <div class="crm-kanban-deal-date-add">
+                  <span class="">{{ deal.date_add|smart_date }}</span>
+                </div>
+                <div class="crm-kanban-item-checkbox visually-hidden">
+                  <input class="form-check-input to-check" type="checkbox" value="{{ deal.deal_id }}">
+                </div>
+                <div class="crm-kanban-deal-connect">
+		              <i data-feather="phone" width="20px" height="20px" stroke-width="1" class="crm-kanban-deal-contact {{ 'disabled' if not deal.contact.phone }}"></i>
+		              <span class="visually-hidden">{{ deal.contact.phone }}</span>
+		              <i data-feather="mail" width="20px" height="20px" stroke-width="1" class="crm-kanban-deal-contact disabled"></i>
+		              <i data-feather="message-square" width="20px" height="20px" stroke-width="1" class="crm-kanban-deal-contact disabled"></i>
+                </div>
+              </div>
+
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+
+
+    </div>
+  </div>
+</div>
+
+<!-- Actions buttons -->
+<div class="sticky-bottom actions visually-hidden">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <div class="bg-white h-100 d-flex gap-2 align-items-center">
+      <div class="m-1  ms-5">
+        <span class="">Отмеченно: </span>
+        <span class="checks-count"></span>
+        <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
+      </div>
+      <div class="vr my-3"></div>
+      <div class="my-1">
+        <button class="btn btn-sm rounded-3" type="button" data-action="delete">
+          <i data-feather="trash" class="nav-icon icon-xs"></i>
+          Удалить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Modal to delete deals -->
+<div class="modal fade" id="StageUpdate" tabindex="-1" role="dialog"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Новая стадия</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+        </button>
+      </div>
+      <div class="modal-body justify-content-center">
+        <form>
+          
+          <input type="hidden" name="stage_id" value="">
+
+          <label class="col-sm-3 col-form-label form-label">Название</label>
+          <input type="text" class="form-control mb-" name="name"
+            value="{{ product.description.name if product }}">
+
+          <label class="col-sm-3 col-form-label form-label">Тип</label>
+          <select class="form-control mb-1" name="type" required>
+            <option value="start">Начальная</option>
+            <option value="" selected>Промежуточная</option>
+            <option value="end_good">Удачная сделка</option>
+            <option value="end_bad">Неудачная сделка</option>
+          </select>
+
+          <label class="col-sm-3 col-form-label form-label">Код цвета</label>
+          <input type="text" class="form-control mb-3" name="color"
+            value="{{ product.description.name if product }}" required>
+
+          <div class="d-flex">
+            <button class="btn btn-primary rounded-3" type="submit">Сохранить</button>
+            <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">Отменить</button>
+            <button class="btn text-danger ms-auto delete" type="button" data-bs-toggle="modal" data-bs-target="#deleteModal">Удалить</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal to delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form>
+        <input type="hidden" name="what_delete" value="">
+        <input type="hidden" name="id_to_delete" value="">
+        <div class="modal-header">
+          <h5 class="modal-title"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+          </button>
+        </div>
+        <div class="modal-body d-flex gap-2 justify-content-center">
+          <button class="btn btn-danger rounded-3" type="submit">Удалить</button>
+          <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">Отменить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// New Stage
+$('body').on('click', 'svg.new-stage', function() {
+  var $column = $(this).closest('div.column');
+  var $new_column = $($column).clone();
+  $new_column.find('.stage-name').text('Новая стадия');
+  $new_column.find('.stage-deal-count').text('(0)');
+  $new_column.find('.board-column-content-wrapper').html('');
+  $column.after($new_column);
+
+  var url = "/crm/deals/new_stage"
+  url += '/' + $column.attr('data-stage')
+  $.ajax({
+    type: "GET",
+    url: url,
+    success: function (data) {
+      $new_column.attr('data-stage', data);
+    }
+  });
+});
+
+// Update Stage
+$('body').on('click', 'svg.update-stage', function() {
+  var $column = $(this).closest('div.column');
+  var $modal = $('#StageUpdate');
+  $modal.find('[name=stage_id]').val($($column).attr('data-stage'))
+  $modal.find('[name=name]').val($($column).find('.stage-name').text())
+  $modal.find('[name=type]').val($($column).find('.stage-type').val())
+  $modal.find('[name=color]').val($($column).find('.stage-color').val())
+
+  $modal.find('.delete').prop('disabled', $($column).find('.stage-deal-count').text() !== '(0)');
+
+  // to delete modal
+  var $delete_modal = $('#deleteModal');
+  $delete_modal.find('.modal-title').text('Удалить колонку "' + $($column).find('.stage-name').text() + '"?');
+  $delete_modal.find('[name=what_delete]').val('column');
+  $delete_modal.find('[name=id_to_delete]').val($($column).attr('data-stage'));
+
+  $modal.modal('toggle');
+});
+
+// Update Data To Server
+  $("#StageUpdate").find('form').submit(function (e) {
+    var url = '/crm/deals/stage_info/update';
+    var form_data = $(this).serialize();
+    $.ajax({
+      type: "POST",
+      url: url,
+      data: form_data,
+      success: function () {
+      }
+    });
+  }); 
+
+// Delete Data To Server
+  $("#deleteModal").find('form').submit(function (e) {
+    var form_data = $(this).serialize();
+    $.ajax({
+      type: "POST",
+      url: '{{ url_for('deals_data_delete') }}',
+      data: form_data,
+      success: function () {
+      }
+    });
+  }); 
+
+// Checks
+$('body').on('click', '.board-item', function(event) {
+  if (event.target.nodeName !== 'A') {
+    var status = $(this).find('.to-check').is(':checked')
+    var box = $(this).find('.crm-kanban-item-checkbox')
+    $(this).find('.to-check').prop('checked', !status);
+
+    ViewChecks();
+    CheckCount();
+  }
+});
+
+// View Checks
+function ViewChecks() {
+  var $checked_count = $('.to-check:checked').length;
+  if ($checked_count > 0) {
+    $('.crm-kanban-item-checkbox').removeClass('visually-hidden');
+    $('.actions').removeClass('visually-hidden');
+    $('.header-action').addClass('visually-hidden');
+    $('.crm-kanban-deal-connect').addClass('visually-hidden');
+    $('.board-column-header').addClass('check-all');
+  } else {
+    $('.crm-kanban-item-checkbox').addClass('visually-hidden');
+    $('.actions').addClass('visually-hidden');
+    $('.header-action').removeClass('visually-hidden');
+    $('.crm-kanban-deal-connect').removeClass('visually-hidden');
+    $('.board-column-header').removeClass('check-all');
+  }
+
+}
+
+// Check in stage
+$('body').on('click', '.board-column-header.check-all', function() {
+  var status = $(this).find(':checkbox').is(':checked')
+  var $column = $(this).closest('div.column');
+  $($column).find(':checkbox').prop('checked', !status);
+
+  ViewChecks();
+  CheckCount();
+});
+
+// Check Count
+function CheckCount() {
+  var $checked_count = $('.to-check:checked').length;
+  var $all_count = $('.to-check').length;
+  $('.checks-count').text($checked_count + ' / ' + $all_count);
+}
+
+// Decheck All
+$('body').on('click', '.decheck-all', function() {
+  $('.to-check').prop('checked', false);
+});
+
+
+// Checked Ids List
+$('body').find('.actions').on('click', '.btn', function() {
+  var action = $(this).attr('data-action')
+  if (action === 'delete') {
+    var checked = [];
+    $('.to-check:checked').each(function() {
+	    checked.push($(this).val());
+    });
+
+    // to delete modal
+    var $delete_modal = $('#deleteModal');
+    $delete_modal.find('.modal-title').text('Удалить выбранные сделки? (' + checked.length + ' шт)');
+    $delete_modal.find('[name=what_delete]').val('deals');
+    $delete_modal.find('[name=id_to_delete]').val(JSON.stringify(checked));
+
+    $delete_modal.modal('toggle');
+  }
+});
+
+</script>
+
+<script src="{{ url_for('static', filename='deal/js/dnd.js') }}"></script>
+<script src="{{ url_for('static', filename='deal/js/dnd-items.js') }}"></script>
+<script src="{{ url_for('static', filename='deal/js/dnd-columns.js') }}"></script>
+{% endblock %}

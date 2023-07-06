@@ -133,6 +133,10 @@ class ProductToCategory(db.Model):
                             db.ForeignKey('oc_category.category_id'),
                             primary_key=True)
     main_category = db.Column(db.Boolean)
+    # main_product = db.relationship('Product',
+    #                           backref=db.backref('main_category', lazy=True))
+    main_product = db.relationship('Product',
+                                  backref='main_category', uselist=False)
 
 # product_to_category = db.Table('oc_product_to_category',
 #     db.Column('product_id', db.Integer, db.ForeignKey('oc_product.product_id')),
@@ -498,9 +502,9 @@ class Deal(db.Model):
     __tablename__ = 'adm_deal'
     deal_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128))
-    contact_id = db.Column(db.Integer)
+    contact_id = db.Column(db.Integer, db.ForeignKey('adm_contact.contact_id'))
     stage_id = db.Column(db.Integer, db.ForeignKey('adm_deal_stage.stage_id'))
-    adress = db.Column(db.String(128))
+    details = db.Column(db.Text)
     products = db.Column(db.Text)
     consumables = db.Column(db.Text)
     expenses = db.Column(db.Text)
@@ -510,6 +514,7 @@ class Deal(db.Model):
     sum = db.Column(db.Float(15.4))
     analytics = db.Column(db.Text)
     profit = db.Column(db.Float(15.4))
+    sort_order = db.Column(db.Integer)
 
 
 class DealStage(db.Model):
@@ -517,8 +522,12 @@ class DealStage(db.Model):
     stage_id = db.Column(db.Integer, primary_key=True,)
     name = db.Column(db.String(128))
     type = db.Column(db.String(64))
+    sort_order = db.Column(db.Integer)
+    color = db.Column(db.String(45))
     deals = db.relationship('Deal',
-                            backref=db.backref('stage', lazy=True))
+                            backref=db.backref('stage', lazy=True),
+                            order_by='Deal.sort_order'
+                            )
 
 
 class Contact(db.Model):
@@ -527,6 +536,8 @@ class Contact(db.Model):
     name = db.Column(db.String(128))
     phone = db.Column(db.String(64))
     email = db.Column(db.String(64))
+    deals = db.relationship('Deal',
+                            backref=db.backref('contact', lazy=True))
 
 
 class StockMovement(db.Model):
@@ -544,3 +555,33 @@ class StockCategory(db.Model):
     __tablename__ = 'adm_stock_category'
     stock_category_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64))
+
+
+class Worker(db.Model):
+    __tablename__ = 'adm_worker'
+    worker_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(45))
+    start_day = db.Column(db.Time)
+    end_day = db.Column(db.Time)
+    employments = db.relationship('WorkerEmployment',
+                            backref=db.backref('worker', lazy=True))
+
+
+class WorkerEmployment(db.Model):
+    __tablename__ = 'adm_worker_employment'
+    employment_id = db.Column(db.Integer, primary_key=True)
+    worker_id = db.Column(db.Integer, db.ForeignKey('adm_worker.worker_id'))
+    title = db.Column(db.String(64))
+    date_start = db.Column(db.Date)
+    date_end = db.Column(db.Date)
+    time_start = db.Column(db.Time)
+    time_end = db.Column(db.Time)
+    event = db.Column(db.String(64))
+
+
+class DealService(db.Model):
+    __tablename__ = 'adm_deal_service'
+    service_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(45))
+    time = db.Column(db.Integer)
+

@@ -358,4 +358,172 @@
       .then(res => res.json())
       .then(data => window.consumables_in_option = data)
   }
+
+  // Stages
+  StegesColor();
+
+  function StegesColor() {
+    var after_checked = false;
+    $('#dealInfo').find('.stage').each(function () {
+      var color = $('#dealInfo').find('.stage').find(':checked').closest('div').css('--deal-stage-color')
+      //alert(color = $('#dealInfo').find('.stage').find(':checked').closest('div').find('label').text())
+      if (!after_checked) {
+        $(this).find('label').css('background', color)
+        $(this).find('label').css('color', '#fff')
+        $(this).find('.deal-stage-line').addClass('visually-hidden')
+      } else {
+        $(this).find('label').css('background', '#dfe3e8')
+        $(this).find('label').css('color', '#525c68')
+        $(this).find('.deal-stage-line').removeClass('visually-hidden')
+      }
+
+      if ($(this).find('input').is(':checked')) {
+        after_checked = true;
+      }
+    });
+  }
+
+  $('#dealInfo').on('change', '.stage input', function () {
+    var color = $('#dealInfo').find('.stage').find(':checked').closest('div').find('label').text();
+    StegesColor();
+  })
+
+  // Event Modified
+  $('#dealInfo').on('change', PageModified)
+
+  function PageModified() {
+    $('#dealInfo').find('.sticky-bottom').addClass('active')
+  }
+
+  // Cancel Modified
+  $('#dealInfo').on("click", '[type=reset]', function () {
+    location.reload();
+  });
+
+  // Show Services
+  $('body').on('change', 'select[name=what_need]', function () {
+    // var what_need = $(this).val();
+    // $(this).val().indexOf('установка') + 1
+    if ($(this).val().indexOf('установка') + 1) {
+      $('body').find('.services').removeClass('visually-hidden')
+    } else {
+      $('body').find('.services').addClass('visually-hidden')
+    }
+  })
+
+  // New Contact In Select
+  $('body').on('click', '.select-new-container', function () {
+    var $contact_box = $('#contact');
+    $contact_box.find('.to-hidden').addClass('visually-hidden');
+    $contact_box.find('.to-show').removeClass('visually-hidden');
+  });
+
+  // Show inputs
+  $('body').on('click', '.deal-info-edit-link', function () {
+    $(this).addClass('visually-hidden');
+
+    var $input = $(this).next()
+    $input.removeClass('visually-hidden');
+
+    if ($input.is('input')) {
+      data = $input.val();
+      $input.focus().val('').val(data);;
+    }
+  });
+
+  // Show Edit Deal Name
+  $('body').on('click', '.deal-info-title', function () {
+    $(this).addClass('visually-hidden');
+
+    var $input = $(this).next()
+    $input.removeClass('visually-hidden');
+    data = $input.val();
+    $input.focus().val('').val(data);;
+  });
+
+  // Show Contact Info
+  $('body').on('click', '.deal-info-contact', function () {
+    $(this).parent().addClass('visually-hidden');
+    $(this).parent().next().removeClass('visually-hidden');
+  });
+
+  $('body').find('input.datepicker').each(function () {
+    new AirDatepicker(this, {
+      position: 'right center',
+      timepicker: true,
+      minHours: 10,
+      maxHours: 12,
+      minHours: 14,
+      maxHours: 18,
+      minutesStep: 5
+    })
+  })
+
+  {% if deal %}
+
+  // Modal Booking
+  var start_date = '{{ start_date }}'
+  var need_load_deal_employments = true;
+  $('body').on('click', '#deal_employments', function () {
+
+    if (need_load_deal_employments) {
+      GetDataToBooking();
+    } else {
+      $('#BookingModal').modal('show');
+    }
+  });
+  function GetDataToBooking() {
+    var $modal = $('#BookingModal');
+    $modal.modal('hide');
+    var url = "{{ url_for('booking_day2',deal_id=deal.deal_id) }}";
+    url += '&start_date=' + start_date;
+    $modal.find('.modal-body').empty();
+    $modal.find('.modal-body').load(url, function () {
+      need_load_deal_employments = false;
+      BookingPageAirDatepicker();
+      $modal.modal('show');
+    });
+  }
+
+
+  // Update Deal Employments
+  UpdateDealEmployments();
+  function UpdateDealEmployments() {
+    $('body').find('#deal_employments').load("{{ url_for('deal_info_employments',deal_id=deal.deal_id) }}", function () {
+    });
+  };
+
+  // $('#event_save').on("click", function () {
+  $('#BookingModal').on("click", '#event_save', function () {
+    UpdateDealEmployments();
+  });
+
+  function BookingPageAirDatepicker() {
+    new AirDatepicker('#BookingPage input.datepicker',
+      {
+        // toggleSelected: true,
+        dateFormat(date) {
+          return date.toLocaleString('ru', {
+            year: 'numeric',
+            day: '2-digit',
+            month: 'long'
+          });
+        },
+        selectedDates: ['{{start_date}}'],
+        onSelect: function (date) {
+          //var start_date = date.date.toLocaleDateString('en-ca');
+          //var url = "{{ url_for('booking_day2') }}"
+          //url += '?start_date=' + ;
+          //if (deal_id) {
+          //url += '&deal_id=' + deal_id;
+          //}
+          //$(location).attr('href', url);
+          //start_date = date.date.toLocaleDateString('en-ca');
+          GetDataToBooking();
+          // var $modal = $('#BookingModal');
+          // $modal.find('.modal-body').html('');
+        },
+      })
+  }
+  {% endif %}
 </script>

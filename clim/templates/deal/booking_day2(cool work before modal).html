@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %} {% endblock %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='/time-picker/style.css') }}">
+{% endblock %}
+{% block content %}
+
+<!-- Container fluid -->
+<div class="container-fluid px-6 d-grid gap-3 mt-3">
+
+    <div class="row">
+        <div class="col-lg-12 col-md-12 col-12">
+            <!-- Page header -->
+            <div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="col-2 me-3 mb-lg-0">
+                        <h3 class="mb-0">Сделки</h3>
+                    </div>
+                    <div id="input_start_date" class="col-2">
+                        <input type="text" class="form-control border " value="{{ start_date }}">
+                    </div>
+                    <div class="ms-auto">
+                        <button id="event_save" class="btn btn-info">Отправить</button>
+                        <button id="event_resetNewData" class="btn btn-danger">Удалить новые</button>
+                        <button id="event_resetDataInDeal" class="btn btn-danger">Удалить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div style="padding: 0 0 40px;">
+    <div id="schedule"></div>
+    <div class="row">
+        <div class="col-md-8">
+            <h3>Log</h3>
+        </div>
+        <div class="col-md-4 text-right">
+            <a class="btn btn-default" style="margin-top: 16px;" id="clear-logs">clear</a>
+        </div>
+    </div>
+    <div style="padding: 12px 0 0; ">
+        <div id="logs" class="table-responsive"></div>
+    </div>
+</div>
+
+
+
+
+
+<script src="https://code.jquery.com/ui/1.10.4/jquery-ui.min.js" type="text/javascript" language="javascript"></script>
+<!-- Latest compiled and minified JavaScript -->
+<!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" -->
+<!--     integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" -->
+<!--     crossorigin="anonymous"></script> -->
+<script src="{{ url_for('static', filename='/time-picker/jq.schedule.js') }}"></script>
+<script type="text/javascript">
+    var deal_id = {{deal_id if deal_id else 0 }};
+    function addLog(type, message) {
+        var $log = $('<tr />');
+        $log.append($('<th />').text(type));
+        $log.append($('<td />').text(message ? JSON.stringify(message) : ''));
+        $("#logs table").prepend($log);
+    }
+    $(function () {
+        $("#logs").append('<table class="table">');
+        var isDraggable = true;
+        var isResizable = true;
+        var $sc = $("#schedule").timeSchedule({
+            startTime: "10:00:00", // schedule start time(HH:ii)
+            endTime: "18:00:00",   // schedule end time(HH:ii)
+            startDate: '{{ start_date }}',
+            widthTime: 60 * 15,  // cell timestamp example 10 minutes
+            timeLineY: 60,       // height(px)
+            verticalScrollbar: 20,   // scrollbar (px)
+            timeLineBorder: 1,   // border(top and bottom)
+            bundleMoveWidth: 6,  // width to move all schedules to the right of the clicked time line cell
+            timeLinePaddingTop: 5,
+            timeLinePaddingBottom: 5,
+            draggable: isDraggable,
+            resizable: isResizable,
+            resizableLeft: true,
+            rows:  {},
+            onChange: function (node, data) {
+                addLog('onChange', data);
+            },
+            onInitRow: function (node, data) {
+                addLog('onInitRow', data);
+            },
+            onClick: function (node, data) {
+                addLog('onClick', data);
+            },
+            onAppendRow: function (node, data) {
+                addLog('onAppendRow', data);
+            },
+            onAppendSchedule: function (node, data) {
+                addLog('onAppendSchedule', data);
+                if (data.data.class) {
+                    node.addClass(data.data.class);
+                }
+                if (data.data.image) {
+                    var $img = $('<div class="photo"><img></div>');
+                    $img.find('img').attr('src', data.data.image);
+                    node.prepend($img);
+                    node.addClass('sc_bar_photo');
+                }
+            },
+            onScheduleClick: function (node, time, timeline) {
+                var start = time;
+                var end = $(this).timeSchedule('formatTime', $(this).timeSchedule('calcStringTime', time) + 3600);
+                $(this).timeSchedule('addSchedule', timeline, {
+                    start: start,
+                    end: end,
+                    text: 'Новое дело',
+                    data: {
+                        class: 'sc_bar_insert'
+                    }
+                });
+                addLog('onScheduleClick', time + ' ' + timeline);
+            },
+        });
+        $('#event_timelineData').on('click', function () {
+            addLog('timelineData', $sc.timeSchedule('timelineData'));
+        });
+        $('#event_save').on("click", function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: '{{ url_for('booking_get_post', deal_id=deal_id) }}',
+                type: "POST",
+                data: JSON.stringify($sc.timeSchedule('timelineNewData')),
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+
+                // success: function () {
+                //     //UpdateProductsSelect();
+                // }
+            });
+            //$('#ProductInfoModal').modal('hide');
+        });
+        $('#event_scheduleData').on('click', function () {
+            addLog('scheduleData', $sc.timeSchedule('scheduleData'));
+        });
+        $('#event_resetNewData').on('click', function () {
+            $sc.timeSchedule('resetNewData');
+            addLog('resetData');
+        });
+        $('#event_resetDataInDeal').on('click', function () {
+            $sc.timeSchedule('resetDataInDeal');
+            addLog('resetData');
+        });
+        $('#event_resetRowData').on('click', function () {
+            $sc.timeSchedule('resetRowData');
+            addLog('resetRowData');
+        });
+        $('#event_setDraggable').on('click', function () {
+            isDraggable = !isDraggable;
+            $sc.timeSchedule('setDraggable', isDraggable);
+            addLog('setDraggable', isDraggable ? 'enable' : 'disable');
+        });
+        $('#event_setResizable').on('click', function () {
+            isResizable = !isResizable;
+            $sc.timeSchedule('setResizable', isResizable);
+            addLog('setResizable', isResizable ? 'enable' : 'disable');
+        });
+        $('.ajax-data').on('click', function () {
+            GetRows();
+        });
+
+        GetRows();
+        function GetRows() {
+            $.ajax({url: '{{ url_for('booking_data', date=start_date) }}'})
+                .done((data) => {
+                    addLog('Ajax GetData', data);
+                    $sc.timeSchedule('setRows', data);
+                });
+        }
+        $('#clear-logs').on('click', function () {
+            $('#logs .table').empty();
+        });
+
+    });
+
+    $('#input_start_date').find('input').each(function () {
+        new AirDatepicker(this,
+            {
+                // toggleSelected: true,
+                dateFormat(date) {
+                    return date.toLocaleString('ru', {
+                        year: 'numeric',
+                        day: '2-digit',
+                        month: 'long'
+                    });
+                },
+                selectedDates: ['{{start_date}}'],
+                onSelect: function (date) {
+                    var start_date = date.date.toLocaleDateString('en-ca')
+                    var url = "{{ url_for('booking_day2') }}"
+                    url += '?start_date=' + start_date;
+                    if (deal_id) {
+                        url += '&deal_id=' + deal_id;
+                    }
+                    $(location).attr('href', url);
+                },
+            })
+    })
+
+
+</script>
+{% endblock %}

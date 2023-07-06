@@ -11,6 +11,16 @@ from clim.routes import get_categories, get_consumables, get_module, get_product
 @app.route('/crm/stock/products', methods=['GET'])
 @login_required
 def stock_products():
+    # categories = tuple(Category.query
+    #                    .order_by(Category.sort_order)
+    #                    .join(Category.products)
+    #                    .where(Product.stocks).all())
+    #
+    # products = tuple(ProductToCategory.query
+    #                    .where(ProductToCategory.main_category == True)
+    #                    .join(ProductToCategory.main_product)
+    #                    .where(Product.stocks).all())
+
     products = tuple(db.session.execute(
         db.select(Product)
         .filter(Product.stocks != None)).scalars())
@@ -375,24 +385,6 @@ def json_consumables_in_option(option_value_id=None):
     return consumables
 
 
-@app.route('/crm/stock/product/new', methods=['GET'])
-@app.route('/crm/stock/product/<int:product_id>', methods=['GET'])
-@login_required
-def stock_product(product_id=None):
-    product = get_product(product_id)
-    categories_ids = []
-    if product:
-        for category in product.categories:
-            categories_ids.append(category.category_id)
-
-    categories = tuple(get_categories())
-    unit_classes = db.session.execute(db.select(WeightClass)).scalars()
-
-    return render_template('stock/product_info.html',
-                           product=product,
-                           categories_ids=categories_ids,
-                           categories=categories,
-                           unit_classes=unit_classes)
 
 
 @app.route('/json/consumables', methods=['GET'])
@@ -421,11 +413,34 @@ def json_all_products():
     return json.dumps(result)
 
 
+@app.route('/crm/stock/product/', methods=['GET'])
+@app.route('/crm/stock/product/<int:product_id>', methods=['GET'])
+@login_required
+def stock_product(product_id=None):
+    product = get_product(product_id)
+    categories_ids = []
+    if product:
+        for category in product.categories:
+            categories_ids.append(category.category_id)
+
+    categories = tuple(get_categories())
+    unit_classes = db.session.execute(db.select(WeightClass)).scalars()
+    main_category = db.session.execute(db.select(ProductToCategory).filter_by(product_id=product_id, main_category=True)).scalar()
+
+    return render_template('stock/product_info.html',
+                           product=product,
+                           categories_ids=categories_ids,
+                           categories=categories,
+                           main_category=main_category,
+                           unit_classes=unit_classes)
+
+
 @app.route('/crm/stock/product/add_new', methods=['POST'])
 @app.route('/crm/stock/product/<int:product_id>/update', methods=['POST'])
 @login_required
 def stock_product_update(product_id=None):
     product = get_product(product_id)
+    print('product', product.product_id)
     if not product:
         product = Product(
             model='',
@@ -486,18 +501,41 @@ def stock_product_update(product_id=None):
     product.description.name = request.form.get('short_name')
     product.description.meta_h1 = request.form.get('full_name')
 
-    categories_ids = request.form.getlist('categories_ids')
-    for category in product.categories:
-        if category.category_id not in categories_ids:
-            product.categories.remove(category)
-        else:
-            categories_ids.remove(category.category_id)
-    
-    for category_id in categories_ids:
-        category = db.session.execute(
-            db.select(Category).filter(Category.category_id == int(category_id))).scalar()
+    main_category_id = int(request.form.get('main_category_id'))
 
-        product.categories.append(category)
+    product_to_categories = db.session.execute(
+        db.select(ProductToCategory)
+        .filter_by(product_id=product.product_id)).scalars()
+
+    not_main_category = True
+    for product_to_category in product_to_categories:
+        if product_to_category.category_id == main_category_id:
+            product_to_category.main_category = True
+            not_main_category = False
+        else:
+            product_to_category.main_category = False
+
+    if not_main_category:
+        main_category = ProductToCategory(
+            product_id=product.product_id,
+            category_id=main_category_id,
+            main_category=True
+        )
+        db.session.add(main_category)
+
+    categories_ids = request.form.getlist('categories_ids')
+    if categories_ids:
+        for category in product.categories:
+            if category.category_id not in categories_ids and category.category_id != main_category_id:
+                product.categories.remove(category)
+            else:
+                categories_ids.remove(category.category_id)
+
+        for category_id in categories_ids:
+            category = db.session.execute(
+                db.select(Category).filter(Category.category_id == int(category_id))).scalar()
+
+            product.categories.append(category)
     
     db.session.commit()
 

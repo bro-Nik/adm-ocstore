@@ -1,124 +1,197 @@
-<div class="card h-100">
-  <div class="card">
-    <div class="card-body">
-      <div class="mb-3 row d-grid gap-2">
-        <div class="">
-          <label for="deal_name" class="fs-6">Название</label>
-          <input type="text" class="form-control" placeholder="" id="deal_name" name="deal_name"
-            value="{{ deal.name if deal }}">
-        </div>
+{% set details = deal.details|to_json if deal and deal.details else {} %}
+
+
+<div class="crm-editor-section">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">О сделке</span>
+  </div>
+
+  <div class="crm-editor-section-body">
+    <div class="d-grid gap-2">
+
+      {% if not deal %}
+      <div class="d-grid">
+        <label class="deal-info-block-title">Название</label>
+        <input type="text" class="form-control border" placeholder="Сделка #" name="deal_name"
+          value="{{ deal.name if deal }}">
       </div>
-    </div>
-  </div>
-</div>
+      {% endif %}
 
-<!-- contact  -->
-<div class="card h-100">
+      <div class="d-grid">
+        <label class="deal-info-block-title">Сумма</label>
+        {% if deal %}
+        <span class="deal-info-edit-link">{{ deal.sum|money }} ₽</span>
+        {% endif %}
+        <input type="number" step="any" class="form-control border {{ 'visually-hidden' if deal }} to-show"
+          name="deal_sum" value="{{ deal.sum }}">
+      </div>
 
-  <!-- card header  -->
-  <div class="card-header bg-white py-3">
-    <span class="fs-6 text-dark text-uppercase">Клиент</span>
-  </div>
+      <div id="contact">
+        <label class="deal-info-block-title">Клиент</label>
 
-  <!-- card -->
-  <div class="card">
+        <div class="to-hidden">
+          {% if deal.contact %}
+          <h5>{{ deal.contact.name}}</h5>
+          <span class="deal-info-contact">{{ deal.contact.phone|smart_phone }}</span>
+          <span class="deal-info-contact">{{ deal.contact.email}}</span>
+          {% endif %}
 
-    <!-- card body -->
-    <div class="card-body">
-
-      <!-- row -->
-      <div id="contact" class="mb-3 row d-grid gap-2">
-        <div id="contact_select">
-          <label for="name" class="fs-6">Контакт</label>
-
-          <select id="contact_select" class="selectpicker" data-width="100%" data-live-search="true"
-            data-none-selected-text="" data-none-results-text="<a onclick='ContactInfo({0})'>Создать новый контакт</a>"
+          <select class="selectpicker {{ 'visually-hidden' if deal and deal.contact }}" data-width="100%"
+            data-live-search="true" data-none-selected-text="" data-style="btn-white border"
+            data-none-results-text="<div class='select-new-container'><div class='select-new-name'>{0}</div><div class='select-new-text'>создать новый контакт</div></div>"
             name="contact_id">
-            <option></option>
+            <option value="">--Выбрать--</option>
             {% for contact in contacts %}
-            <option value="{{ contact.contact_id }}" data-phone="{{ contact.phone }}" data-email="{{ contact.email }}"
-              {{ 'selected' if deal and deal.contact_id==contact.contact_id }}>
+            <option value="{{ contact.contact_id }}" {{ 'selected' if deal and deal.contact_id==contact.contact_id }}
+              data-subtext="{{ contact.phone }}{{ ', ' if contact.phone and contact.email }} {{ contact.email }}">
               {{ contact.name }}
             </option>
             {% endfor %}
           </select>
-
         </div>
 
-        <div class="contact-info visually-hidden">
-          <label for="contact_name" class="fs-6">Контакт</label>
-          <input type="text" class="form-control" placeholder="" id="contact_name" name="contact_name">
-        </div>
+        <div class="to-show visually-hidden">
+          <div class="d-grid gap-2 deal-info-client">
 
-        <div class="contact-info visually-hidden">
-          <label for="contact_phone" class="fs-6">Телефон</label>
-          <input type="phone" class="form-control" placeholder="" id="contact_phone" name="contact_phone">
-        </div>
+            <div class="d-grid">
+              <label class="deal-info-block-title">Контакт</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i data-feather="user" height="20px" width="20px" color="#a3a9b1" stroke-width="1"></i>
+                </span>
+                <input type="text" class="form-control border" name="contact_name"
+                  value="{{ deal.contact.name if deal }}">
+              </div>
+            </div>
 
-        <div class="contact-info visually-hidden">
-          <label for="contact_email" class="fs-6">E-mail</label>
-          <input type="email" class="form-control" placeholder="" id="contact_email" name="contact_email">
+            <div class="d-grid">
+              <label class="deal-info-block-title">Телефон</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i data-feather="phone" height="20px" width="20px" color="#a3a9b1" stroke-width="1"></i>
+                </span>
+                <input type="phone" class="form-control border" name="contact_phone"
+                  value="{{ deal.contact.phone if deal }}">
+              </div>
+
+            </div>
+
+            <div class="d-grid">
+              <label class="deal-info-block-title">E-mail</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i data-feather="mail" height="20px" width="20px" color="#a3a9b1" stroke-width="1"></i>
+                </span>
+                <input type="email" class="form-control border" name="contact_email"
+                  value="{{ deal.contact.email if deal }}">
+              </div>
+            </div>
+
+          </div>
         </div>
 
       </div>
+
+
     </div>
   </div>
 </div>
 
-<!-- deal  -->
-<div class="card h-100">
+<!-- Details  -->
+<div class="crm-editor-section">
 
-  <!-- card header  -->
-  <div class="card-header bg-white py-3">
-    <span class="fs-6 text-dark text-uppercase">Услуги</span>
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">Детали</span>
   </div>
 
-  <!-- card -->
-  <div class="card">
+  <div class="crm-editor-section-body">
+    <div class="d-grid gap-2">
 
-    <!-- card body -->
-    <div class="card-body">
-
-      <!-- row -->
-      <div class="mb-3 row d-grid gap-2">
-
-        <div class="">
-          <label for="adress" class="fs-6">Адрес</label>
-          <input type="text" class="form-control" placeholder="" id="adress" name="adress"
-            value="{{ deal.adress if deal }}">
-        </div>
-
+      <div class="d-grid">
+        <label class="deal-info-block-title">Что интересует</label>
+        {% if details.get('what_need') %}
+        <span class="deal-info-edit-link">{{ details.get('what_need') }}</span>
+        {% endif %}
+        <select class="selectpicker {{ 'visually-hidden' if details.get('what_need') }} to-show" data-width="100%"
+          data-none-selected-text="" data-style="btn-white border" name="what_need">
+          <option value="">--Выберите пункт--</option>
+          <option {{ 'selected' if details.get('what_need')=='Кондицонер + установка' }}>Кондицонер + установка
+          </option>
+          <option {{ 'selected' if details.get('what_need')=='Только
+              кондиционер' }}>Только
+            кондиционер</option>
+          <option {{ 'selected' if details.get('what_need')=='Только установка' }}>Только установка
+          </option>
+          <option {{ 'selected' if details.get('what_need')=='Другое' }}>Другое</option>
+        </select>
       </div>
+
+      <div class="d-grid">
+        <label class="deal-info-block-title">Адрес</label>
+        {% if details.get('adress') %}
+        <span class="deal-info-edit-link">{{ details.get('adress') }}</span>
+        {% endif %}
+        <input type="text" class="form-control border {{ 'visually-hidden' if details.get('adress') }} to-show"
+          name="adress" value="{{ details.get('adress') if details.get('adress') }}">
+      </div>
+
+      <div class="d-grid">
+        <label class="deal-info-block-title">Комментарий</label>
+        {% if details.get('deal_comment') %}
+        <span class="deal-info-edit-link">{{ details.get('deal_comment') }}</span>
+        {% endif %}
+        <textarea class="form-control border {{ 'visually-hidden' if details.get('deal_comment') }} to-show"
+          name="deal_comment">{{ details.get('deal_comment') if details.get('deal_comment') }}</textarea>
+      </div>
+
     </div>
   </div>
 </div>
 
-<div class="card h-100">
-  <div class="card">
-    <div class="card-body">
-      <div class="mb-3 row d-grid gap-2">
-        <div class="">
-          <label class="fs-6">Дата завершения</label>
-          <input type="date" class="form-control" name="date_end" value="{{ deal.date_end if deal }}">
+<div id="accordionServices" class="accordion crm-editor-section">
+
+  <div class="crm-editor-section-header">
+    <span
+      class="crm-editor-section-header-text accordion-button {{ 'collapsed' if not details.get('what_need') or 'установка' not in details.get('what_need') }}"
+      data-bs-toggle="collapse" data-bs-target="#collapseServices" aria-expanded="true"
+      aria-controls="collapseServices">Услуги</span>
+  </div>
+
+  <div id="collapseServices"
+    class="crm-editor-section-body accordion-collapse collapse {{ 'show' if details.get('what_need') and 'установка' in details.get('what_need') }}"
+    data-bs-parent="">
+    <div class="d-grid gap-2">
+
+      <div class="d-grid">
+        <label class="deal-info-block-title">Дата и время выезда</label>
+        <div id="deal_employments" class="deal-info-edit-link-employments">
+          <span class="deal-info-edit-link-booking">Для выбора сохраните сделку</span>
         </div>
       </div>
+
     </div>
   </div>
 </div>
 
-<script>
-  // 
-  function ContactInfo(name) {
-    var contact_select = document.querySelector('#contact_select')
-    contact_select.classList.add('visually-hidden');
+<div class="accordion crm-editor-section" id="accordionOther">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text accordion-button collapsed" data-bs-toggle="collapse"
+      data-bs-target="#collapseOther" aria-expanded="true" aria-controls="collapseOther">Другое</span>
+  </div>
 
-    var contact_name = document.querySelector('#contact input[name="contact_name"]')
-    contact_name.value = name
+  <div id="collapseOther" class="crm-editor-section-body accordion-collapse collapse"
+    data-bs-parent="#accordionExample">
+    <div class="mb-3 row d-grid gap-2">
+      <div class="d-grid">
+        <label class="deal-info-block-title">Дата завершения</label>
+        {% if deal and deal.date_end %}
+        <span class="deal-info-edit-link">{{ deal.date_end|smart_date }}</span>
+        {% endif %}
+        <input type="datetime-local"
+          class="form-control border {{ 'visually-hidden' if deal and deal.date_end }} to-show datepicker"
+          name="date_end" value="{{ deal.date_end|string if deal and deal.date_end }}">
+      </div>
+    </div>
+  </div>
 
-    var ContactInfo = document.querySelectorAll('.contact-info')
-    ContactInfo.forEach(element => {
-      element.classList.remove("visually-hidden");
-    });
-  }
-
-</script>
+</div>
