@@ -427,6 +427,8 @@ def deal_info_employments(deal_id):
         time_start = employment.time_start
         time_end = employment.time_end
 
+        print(type(date_start))
+        print(type(date_end))
         if date_start == date_end:
             date = str(date_start.strftime('%d ')) + date_start.strftime('%B')
             year = date_start.year
@@ -438,12 +440,12 @@ def deal_info_employments(deal_id):
 
             return date + year + time
         else:
-            date_start = str(date_start.strftime('%d ')) + date_start.strftime('%B')
             year_start = date_start.year
+            date_start = str(date_start.strftime('%d ')) + date_start.strftime('%B')
             year_start = ' ' + str(year_start) if year_start != datetime.now().year else ''
 
-            date_end = str(date_end.strftime('%d ')) + date_end.strftime('%B')
             year_end = date_end.year
+            date_end = str(date_end.strftime('%d ')) + date_end.strftime('%B')
             year_end = ' ' + str(year_end) if year_end != datetime.now().year else ''
 
             time_start = str(time_start.strftime('%H:%M'))
