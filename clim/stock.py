@@ -440,7 +440,6 @@ def stock_product(product_id=None):
 @login_required
 def stock_product_update(product_id=None):
     product = get_product(product_id)
-    print('product', product.product_id)
     if not product:
         product = Product(
             model='',

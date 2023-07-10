@@ -1,5 +1,5 @@
 <!-- Libs JS -->
-<script src="{{ url_for('static', filename='js/bootstrap.bundle.js') }}"></script>
+<script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/jquery-3.6.4.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/jquery-slimscroll/jquery.slimscroll.min.js') }}"></script>
 <script type="text/javascript" src="https://unpkg.com/feather-icons@4.29.0/dist/feather.min.js"></script>
@@ -13,23 +13,18 @@
 
 
 <!-- Theme JS -->
-<!-- build:js @@webRoot/assets/js/theme.min.js -->
 <script src="{{ url_for('static', filename='assets/js/main.js') }}"></script>
 <script src="{{ url_for('static', filename='assets/js/feather.js') }}"></script>
 <script src="{{ url_for('static', filename='assets/js/sidebarMenu.js') }}"></script>
 
 
 <!-- Bootstrap select -->
-<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">-->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.css') }}">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
-
-<!-- endbuild -->
+<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-select/bootstrap-select.min.css') }}">
+<script src="{{ url_for('static', filename='bootstrap-select/bootstrap-select.min.js') }}"></script>
 
 <!-- Data Picker -->
 <link rel="stylesheet" href="{{ url_for('static', filename='air-datepicker/air-datepicker.css') }}">
 <script src="{{ url_for('static', filename='air-datepicker/air-datepicker.js') }}"></script>
-<!-- endbuild -->
 
 <script>
   feather.replace();
