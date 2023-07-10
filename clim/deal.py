@@ -379,44 +379,6 @@ def deal_info_update(deal_id=None):
     return redirect(url_for('deal_info', deal_id=deal.deal_id))
 
 
-@app.route('/crm/deals/booking', methods=['GET'])
-@app.route('/crm/deals/booking/<int:service_id>', methods=['GET'])
-@login_required
-def booking(service_id=None):
-    workers = db.session.execute(db.select(Worker)).scalars()
-    services = db.session.execute(db.select(DealService)).scalars()
-    end_day = datetime.today() + timedelta(days=15)
-    days = {}
-    day = datetime.today()
-    while day <= end_day:
-        days[day.day] = str(day.date())
-        day += timedelta(days=1)
-
-    return render_template('deal/booking.html',
-                           workers=tuple(workers),
-                           days=days,
-                           service_id=service_id,
-                           services=services)
-
-
-@app.route('/crm/deals/booking_day', methods=['GET'])
-@login_required
-def booking_day():
-    workers = db.session.execute(db.select(Worker)).scalars()
-    services = db.session.execute(db.select(DealService)).scalars()
-    end_day = datetime.today() + timedelta(days=15)
-    days = []
-    day = datetime.today()
-    while day <= end_day:
-        days.append(day.day)
-        day += timedelta(days=1)
-
-    return render_template('deal/booking_day.html',
-                           workers=tuple(workers),
-                           days=days,
-                           services=services)
-
-
 @app.route('/crm/deal/<int:deal_id>/employments', methods=['GET'])
 @login_required
 def deal_info_employments(deal_id):
@@ -427,8 +389,6 @@ def deal_info_employments(deal_id):
         time_start = employment.time_start
         time_end = employment.time_end
 
-        print(type(date_start))
-        print(type(date_end))
         if date_start == date_end:
             date = str(date_start.strftime('%d ')) + date_start.strftime('%B')
             year = date_start.year
@@ -481,7 +441,7 @@ def deal_info_employments(deal_id):
 
 @app.route('/crm/deals/booking_day2', methods=['GET'])
 @login_required
-def booking_day2():
+def deal_booking():
     services = db.session.execute(db.select(DealService)).scalars()
     deal_id = request.args.get('deal_id')
 
@@ -489,15 +449,15 @@ def booking_day2():
     if not start_date:
         start_date = datetime.now().date().strftime('%Y-%m-%d')
 
-    return render_template('deal/booking_day2.html',
+    return render_template('deal/deal_booking.html',
                            start_date=start_date,
                            services=services,
                            deal_id=deal_id)
 
 
-@app.route('/crm/deals/booking_get_post', methods=['POST'])
+@app.route('/crm/deals/deal_booking_post', methods=['POST'])
 @login_required
-def booking_get_post():
+def deal_booking_post():
     def str_date(str):
         return datetime.strptime(str, '%Y-%m-%d')
 
@@ -505,7 +465,6 @@ def booking_get_post():
     data = json.loads(request.data) if request.data else None
 
     for worker in data:
-        print(worker)
         if not worker.get('schedule'):
             continue
 
@@ -537,7 +496,7 @@ def booking_get_post():
 
 @app.route('/crm/deals/booking_data', methods=['GET'])
 @login_required
-def booking_data():
+def deal_booking_data():
     def str_date(str):
         return datetime.strptime(str, '%Y-%m-%d').date()
 

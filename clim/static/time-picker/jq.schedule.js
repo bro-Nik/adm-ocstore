@@ -103,6 +103,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       var d = $.extend({
         tableStartTime: 0,
         tableEndTime: 0,
+        tableStartDate: data.tableStartDate,
+        tableEndDate: data.tableEndDate,
         schedule: [],
         timeline: []
       }, data);
@@ -362,6 +364,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       });
     },
 
+     /**
+     * clear days
+     *
+     * @returns {methods}
+     */
+    resetDays: function resetDays() {
+      return this.each(function () {
+        var $this = $(this);
+        $this.find('.sc_header_scroll').empty();
+      });
+    },
+
    /**
      * clear row
      *
@@ -375,6 +389,74 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         for (var timeline in data) {
           methods.addRow.apply($this, [timeline, data[timeline]]);
+        }
+      });
+    },
+
+   /**
+     * create days
+     *
+     * 
+     * 
+     */
+    setDays: function setDays(start) {
+      return this.each(function () {
+        var $this = $(this);
+        methods.resetDays.apply($this);
+        var setting = methods._loadSettingData.apply($this);
+
+        var saveData = methods._loadData.apply($this);
+        var tableStartTime = saveData.tableStartTime
+        var tableEndTime = saveData.tableEndTime
+
+        var startDate = new Date(start);
+        var endDate = new Date(startDate);
+        var endDate = new Date(endDate.setDate(endDate.getDate() + 14));
+
+
+        for (var day = new Date(startDate); day < endDate; day = new Date(day.setDate(day.getDate() + 1))) {
+          var html_day = '';
+          html_day += '<div class="sc_day"></div>';
+          var $day = $(html_day);
+          if (day.getDay() < 1 || day.getDay() > 5) {
+            $day.addClass('weekend');
+          }
+
+          var html_date = '<div class="sc_date">' + day.toLocaleString('ru', { year: 'numeric', month: 'long', day: 'numeric'}) + '</div>';
+
+          var $date = $(html_date);
+
+          var html_time_in_day = '<div class="sc_time_in_day"></div>';
+          var $time_in_day = $(html_time_in_day);
+
+          var beforeTime = -1;
+
+          //alert(saveData.widthTime)
+          for (var t = tableStartTime; t < tableEndTime; t += setting.widthTime) {
+            if (beforeTime < 0 || Math.floor(beforeTime / 3600) !== Math.floor(t / 3600)) {
+              var html = '';
+              html += '<div class="sc_time">' + methods.formatTime(t) + '</div>';
+              var $time = $(html);
+              var cn = Number(Math.min(Math.ceil((t + setting.widthTime) / 3600) * 3600, tableEndTime) - t);
+              var cellNum = Math.floor(cn / setting.widthTime);
+              $time.width(cellNum * setting.widthTimeX);
+              $time_in_day.append($time);
+              beforeTime = t;
+            }
+          }
+          //$day.width(cellNum * config.widthTimeX);
+          $day.append($date);
+          $day.append($time_in_day);
+          $this.find('.sc_header_scroll').append($day);
+
+        // methods._saveData.apply($this, [{
+        //   tableStartTime: tableStartTime,
+        //   tableEndTime: tableEndTime,
+        //   tableStartDate: startDate,
+        //   tableEndDate: endDate
+        // }]);
+        saveData.tableStartDate = startDate;
+        saveData.tableEndDate = endDate;
         }
       });
     },
@@ -520,6 +602,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         var startDate = new Date(data.startDate);
         if (startDate < saveData.tableStartDate) {
           startDate = new Date(saveData.tableStartDate);
+          st = 0;
+          stext = methods.formatTime(saveData.tableStartTime);
         }
         var endDate = new Date(data.endDate);
         // if (endDate - saveData.tableEndDate >= 0) {
@@ -686,7 +770,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           resize: function resize(ev, ui) {
             // box-sizing: border-box; に対応
             ui.element.height(ui.size.height);
-            ui.element.width(ui.size.width);
+            if (ui.size.width < 30) {
+              ui.element.width(30);
+            } else {
+              ui.element.width(ui.size.width);
+            }
 
             var $resizeNode = $(this);
             var scKey = $resizeNode.data('sc_key');
@@ -812,6 +900,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           // var html_dayline = '<div class="dayline" data-date="' + day.toLocaleDateString('en-ca') + '"></div>';
           var html_dayline = '<div class="dayline"></div>';
           var $dayline = $(html_dayline);
+          if (day.getDay() < 1 || day.getDay() > 5) {
+            $dayline.addClass('weekend')
+          }
 
           for (var t = saveData.tableStartTime; t < saveData.tableEndTime; t += setting.widthTime) {
             var $tl = $('<div class="tl"></div>');
@@ -1056,13 +1147,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         var scWidth = $this.width();
         var scMainWidth = scWidth - setting.dataWidth - setting.verticalScrollbar;
-        //var cellNum = Math.floor((saveData.tableEndTime - saveData.tableStartTime) / setting.widthTime);
+        var cellNum = Math.floor((saveData.tableEndTime - saveData.tableStartTime) / setting.widthTime) * 14; // days
         $this.find('.sc_header_cell').width(setting.dataWidth);
         $this.find('.sc_data,.sc_data_scroll').width(setting.dataWidth);
         $this.find('.sc_header').width(scMainWidth);
         $this.find('.sc_main_box').width(scMainWidth);
-        // $this.find('.sc_header_scroll').width(setting.widthTimeX * cellNum);
-        // $this.find('.sc_main_scroll').width(setting.widthTimeX * cellNum);
+        $this.find('.sc_header_scroll').width(setting.widthTimeX * cellNum);
+        $this.find('.sc_main_scroll').width(setting.widthTimeX * cellNum);
       });
     },
 

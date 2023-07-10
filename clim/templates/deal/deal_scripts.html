@@ -75,10 +75,10 @@
   function UpdateAllSum(tab) {
     var all_sum = 0
     $(tab).find('.sum').each(function () {
-      all_sum += FromMoney(this.innerHTML)
+      all_sum += FromMoney($(this).html())
     });
     all_sum = ToMoney(all_sum);
-    $(tab).parent().find('.all-sum').text(all_sum + ' ₽')
+    $(tab).parent().find('.all-sum').text(all_sum)
   }
 
   function ToMoney(number) {
@@ -163,7 +163,7 @@
 
   // Data To Server
   $('#dealInfo').submit(function () {
-    var deal_sum = $('#pills-product').find('.all-sum').text()
+    var deal_sum = $('#pills-product').find('.all-sum').html()
     $('[name=deal_sum]').val(FromMoney(deal_sum))
 
     var products = '[';
@@ -450,19 +450,13 @@
   $('body').find('input.datepicker').each(function () {
     new AirDatepicker(this, {
       position: 'right center',
-      timepicker: true,
-      minHours: 10,
-      maxHours: 12,
-      minHours: 14,
-      maxHours: 18,
-      minutesStep: 5
     })
   })
 
   {% if deal %}
 
   // Modal Booking
-  var start_date = '{{ start_date }}'
+  //var start_date = '{{ start_date }}'
   var need_load_deal_employments = true;
   $('body').on('click', '#deal_employments', function () {
 
@@ -472,15 +466,14 @@
       $('#BookingModal').modal('show');
     }
   });
+
   function GetDataToBooking() {
     var $modal = $('#BookingModal');
     $modal.modal('hide');
-    var url = "{{ url_for('booking_day2',deal_id=deal.deal_id) }}";
-    url += '&start_date=' + start_date;
+    var url = "{{ url_for('deal_booking',deal_id=deal.deal_id) }}";
     $modal.find('.modal-body').empty();
     $modal.find('.modal-body').load(url, function () {
       need_load_deal_employments = false;
-      BookingPageAirDatepicker();
       $modal.modal('show');
     });
   }
@@ -498,32 +491,6 @@
     UpdateDealEmployments();
   });
 
-  function BookingPageAirDatepicker() {
-    new AirDatepicker('#BookingPage input.datepicker',
-      {
-        // toggleSelected: true,
-        dateFormat(date) {
-          return date.toLocaleString('ru', {
-            year: 'numeric',
-            day: '2-digit',
-            month: 'long'
-          });
-        },
-        selectedDates: ['{{start_date}}'],
-        onSelect: function (date) {
-          //var start_date = date.date.toLocaleDateString('en-ca');
-          //var url = "{{ url_for('booking_day2') }}"
-          //url += '?start_date=' + ;
-          //if (deal_id) {
-          //url += '&deal_id=' + deal_id;
-          //}
-          //$(location).attr('href', url);
-          //start_date = date.date.toLocaleDateString('en-ca');
-          GetDataToBooking();
-          // var $modal = $('#BookingModal');
-          // $modal.find('.modal-body').html('');
-        },
-      })
-  }
   {% endif %}
+
 </script>

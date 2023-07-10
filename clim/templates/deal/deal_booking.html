@@ -1,0 +1,218 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='time-picker/style.css') }}">
+
+<!-- Container fluid -->
+<div id="BookingPage" class="container-fluid px-6 d-grid gap-3 mt-3">
+
+    <div class="row">
+        <div class="col-lg-12 col-md-12 col-12">
+            <!-- Page header -->
+            <div>
+                <div class="d-flex align-items-center mb-2 gap-3">
+                    <div class="col-2 me-3 mb-lg-0">
+                        <h3 class="mb-0">Бронирование времени</h3>
+                    </div>
+
+                    <div id="StartDate" class="col-2">
+                        <input type="text" class="form-control border">
+                    </div>
+
+                    <div id="service_select">
+                        <select class="selectpicker border" data-none-selected-text="Выберите услугу" width="auto"
+                            data-style="btn-white" data-none-results-text="" name="">
+                            <option value=""></option>
+                            {% for service in services %}
+                            <option value="{{ service.time }}" data-subtext="{{ (service.time/60)|smart_int }} ч">
+                                {{ service.name}}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="ms-auto">
+                        <button id="event_save" class="btn btn-primary">Сохранить</button>
+                        <button id="event_resetNewData" class="btn btn-transparent">Удалить новые</button>
+                        <button id="event_resetDataInDeal" class="btn btn-transparent">Удалить относящиеся к
+                            сделке</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div id="schedule"></div>
+        <div class="row">
+            <div class="col-md-8">
+                <h3>Log</h3>
+            </div>
+            <div class="col-md-4 text-right">
+                <a class="btn btn-default" style="margin-top: 16px;" id="clear-logs">clear</a>
+            </div>
+        </div>
+        <div style="padding: 12px 0 0; ">
+            <div id="logs" class="table-responsive"></div>
+        </div>
+
+    </div>
+</div>
+
+
+
+
+<script src="https://code.jquery.com/ui/1.10.4/jquery-ui.min.js" type="text/javascript" language="javascript"></script>
+<script src="{{ url_for('static', filename='time-picker/jq.schedule.js') }}"></script>
+<script type="text/javascript">
+    var event = 'deal_{{ deal_id }}';
+    var start_date = '{{ start_date }}'
+
+    function addLog(type, message) {
+        var $log = $('<tr />');
+        $log.append($('<th />').text(type));
+        $log.append($('<td />').text(message ? JSON.stringify(message) : ''));
+        $("#logs table").prepend($log);
+    }
+
+    var $options = {
+        startTime: "10:00:00", // schedule start time(HH:ii)
+        endTime: "18:00:00",   // schedule end time(HH:ii)
+        startDate: start_date,
+        widthTime: 60 * 15,  // cell timestamp example 10 minutes
+        timeLineY: 60,       // height(px)
+        verticalScrollbar: 20,   // scrollbar (px)
+        timeLineBorder: 1,   // border(top and bottom)
+        bundleMoveWidth: 6,  // width to move all schedules to the right of the clicked time line cell
+        timeLinePaddingTop: 5,
+        timeLinePaddingBottom: 5,
+        draggable: true,
+        resizable: true,
+        resizableLeft: true,
+        rows: {},
+        onChange: function (node, data) {
+            addLog('onChange', data);
+        },
+        onInitRow: function (node, data) {
+            addLog('onInitRow', data);
+        },
+        onClick: function (node, data) {
+            addLog('onClick', data);
+        },
+        onAppendRow: function (node, data) {
+            addLog('onAppendRow', data);
+        },
+        onAppendSchedule: function (node, data) {
+            addLog('onAppendSchedule', data);
+            if (data.data.class) {
+                node.addClass(data.data.class);
+            }
+            if (data.data.image) {
+                var $img = $('<div class="photo"><img></div>');
+                $img.find('img').attr('src', data.data.image);
+                node.prepend($img);
+                node.addClass('sc_bar_photo');
+            }
+        },
+        onScheduleClick: function (node, time, day, timeline) {
+            console.log(day)
+            var start = time;
+            var end = $(this).timeSchedule('formatTime', $(this).timeSchedule('calcStringTime', time) + service_time);
+            $(this).timeSchedule('addSchedule', timeline, {
+                start: start,
+                end: end,
+                day: day,
+                text: service_name,
+                event: event,
+                data: {
+                    class: 'sc_bar_insert'
+                }
+            });
+            addLog('onScheduleClick', time + ' ' + day + ' ' + timeline);
+        },
+    }
+
+
+    $(function () {
+        $("#logs").append('<table class="table">');
+        //var isDraggable = true;
+        //var isResizable = true;
+        var $sc = jQuery("#schedule").timeSchedule($options);
+        $('#event_save').on("click", function (e) {
+            e.preventDefault();
+            $.ajax({
+                url: '{{ url_for('deal_booking_post', deal_id=deal_id) }}',
+                type: "POST",
+                data: JSON.stringify($sc.timeSchedule('timelineNewData')),
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+            });
+            $('#BookingModal').modal('hide');
+        });
+        $('#event_resetNewData').on('click', function () {
+            $sc.timeSchedule('resetNewData');
+            addLog('resetData');
+        });
+        $('#event_resetDataInDeal').on('click', function () {
+            $sc.timeSchedule('resetDataInDeal');
+            addLog('resetData');
+        });
+
+        setTimeout(function () {
+            $sc.timeSchedule('_resizeRow')
+            $sc.timeSchedule('_resizeWindow')
+        }, 500);
+
+        $('#StartDate input').on("change", function () {
+            var start_date = $('#StartDate input').attr('data-start-date')
+            $sc.timeSchedule('setDays', start_date);
+            GetRows(start_date);
+        });
+        GetRows(start_date);
+        function GetRows(start_date) {
+            var url = "{{ url_for('deal_booking_data') }}"
+            url += '?date=' + start_date;
+            $.ajax({url: url})
+                .done((data) => {
+                    addLog('Ajax GetData', data);
+                    $sc.timeSchedule('setRows', data);
+                });
+        };
+
+        $('#clear-logs').on('click', function () {
+            $('#logs .table').empty();
+        });
+    });
+
+
+
+    // Selectpicker
+    $('#service_select').find('select').selectpicker();
+
+    var service_time = 3600;
+    var service_name = 'Новое дело';
+    $('#service_select').on('change', 'select', function () {
+        service_time = 60 * $(this).val();
+        service_name = $(this).find(':selected').text();
+    })
+
+    //function BookingPageAirDatepicker() {
+
+    var startDateInput = new AirDatepicker('#StartDate input',
+        {
+            // toggleSelected: true,
+            dateFormat(date) {
+                return date.toLocaleString('ru', {
+                    year: 'numeric',
+                    day: '2-digit',
+                    month: 'long'
+                });
+            },
+            selectedDates: ['{{start_date}}'],
+            onSelect: function (date) {
+                var $date_input = $('#StartDate input');
+                $date_input.attr('data-start-date', date.date.toLocaleDateString('en-ca'));
+                $date_input.trigger("change");
+                startDateInput.hide();
+            },
+        })
+  //}
+</script>

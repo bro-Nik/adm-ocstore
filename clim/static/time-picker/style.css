@@ -24,7 +24,8 @@
   text-align: center;
   /* border-left: solid 1px #fff; */
   color: #555;
-  border-right: solid 1px #ccc;
+  /* border-right: solid 1px #ccc; */
+  Box-shadow: 0px 0px 0px #9d97977a, 0px 0px 0px #9d97977a, 0px 0px 0px #9d97977a, -1px 0px 0px #9d97977a;
 }
 .jq-schedule .sc_data {
   float: left;
@@ -198,13 +199,15 @@
     display: flex;
 }
 .sc_date {
-    border-right: solid 2px #ccc;
+    /* border-right: solid 2px #ccc; */
     display: flex;
     justify-content: center;
+    Box-shadow: 0px 0px 0px #9d9797, 0px 0px 0px #9d9797, 1px 0px 0px #9d9797, -1px 0px 0px #9d9797;
 }
 .sc_time_in_day {
     display: flex;
-    border-right: solid 1px #ccc;
+    /* border-right: solid 1px #ccc; */
+    Box-shadow: 0px 0px 0px #9d9797, 0px 0px 0px #9d9797, 1px 0px 0px #9d9797, -1px 0px 0px #9d9797;
 }
 .timeline {
     display: flex;
@@ -217,8 +220,12 @@
     flex-wrap: nowrap;
     flex-direction: row;
     position: relative;
-    border-right: solid 1px #ccc;
+    /* border-right: solid 1px #ccc; */
+    Box-shadow: 0px 1px 0px #9d9797, 0px -1px 0px #9d9797, 1px 0px 0px #9d9797, -1px 0px 0px #9d9797;
 }
 .sc_bar_insert {
   background: #63d16d !important;
+}
+#schedule .weekend {
+    background: #cccccc7d;
 }
