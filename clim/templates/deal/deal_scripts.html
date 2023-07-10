@@ -93,6 +93,10 @@
     return parseFloat(string)
   }
 
+  function floatOrZero(number) {
+    return parseFloat(number) ? number : 0
+  }
+
   // Change Trigers
   $('body').on('change', 'select.product-select', function () {
     var tr = $(this).closest('tr')
@@ -173,8 +177,8 @@
         type = $option.attr('data-product-type')
         var item = '{"product_id": ' + $(this).find('select.product-select').val() +
           ', "type": "' + type +
-          '", "price": ' + parseFloat($(this).find('.price').val()) +
-          ', "quantity": ' + parseFloat($(this).find('.quantity').val()) +
+          '", "price": ' + floatOrZero($(this).find('.price').val()) +
+          ', "quantity": ' + floatOrZero($(this).find('.quantity').val()) +
           ', "stock_id": ' + $(this).find('select.stock-select').val() + '},'
 
         products += item;
@@ -189,8 +193,8 @@
     $('#tabConsumables').find('tr.product').each(function () {
       if ($(this).find('select.product-select').val()) {
         var item = '{"product_id": ' + $(this).find('select.product-select').val() +
-          ', "price": ' + parseFloat($(this).find('.price').val()) +
-          ', "quantity": ' + parseFloat($(this).find('.quantity').val()) +
+          ', "price": ' + floatOrZero($(this).find('.price').val()) +
+          ', "quantity": ' + floatOrZero($(this).find('.quantity').val()) +
           ', "stock_id": ' + $(this).find('select.stock-select').val() + '},'
 
         consumables += item;
