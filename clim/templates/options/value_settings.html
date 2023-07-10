@@ -226,7 +226,7 @@
                         </select>
                       </td>
                       <td class="col-2">
-                        <input type="text" class="form-control quantity" value="{{ consumable.quantity|smart_int }}">
+                        <input type="text" class="form-control quantity" value="{{ consumable.quantity|smart_int if consumable.quantity }}" placeholder="0">
                       </td>
                       <td></td>
                     </tr>
@@ -326,8 +326,11 @@
     var consumables = '[';
     $('#tabConsumables').find('tr.product').each(function () {
       if ($(this).find('select.product-select').val()) {
-        var item = '{"product_id": ' + $(this).find('select.product-select').val() +
-          ', "quantity": ' + parseFloat($(this).find('.quantity').val()) + '},'
+        var product_id = $(this).find('select.product-select').val();
+        var quantity = $(this).find('.quantity').val();
+        quantity = parseFloat(quantity) ? quantity : 0;
+        var item = '{"product_id": ' + product_id +
+          ', "quantity": ' + quantity + '},'
 
         consumables += item;
       }
@@ -336,7 +339,6 @@
     if (consumables !== '[]') {
       $('[name=consumables_data]').val(JSON.stringify(consumables));
     }
-    alert(consumables)
   })
 
   // Checks
