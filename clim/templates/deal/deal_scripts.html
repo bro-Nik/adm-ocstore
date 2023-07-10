@@ -30,22 +30,25 @@
   }
 
   function updateStocks(tr) {
-    $select = $(tr).find('select.stock-select')
-    stock_id = $select.val()
+    var $select = $(tr).find('select.stock-select')
+    var stock_id = $select.val()
     $select.empty();
     $select.selectpicker('destroy');
-    product_id = $(tr).find('select.product-select').find(':selected').val();
+
+    var $product_selected = $(tr).find('select.product-select').find(':selected');
+    var product_id = $product_selected.val();
+    var unit = $product_selected.attr('data-unit');
 
     if (stocks[product_id]) {
 
       for (let i = 0; i < (stocks[product_id]).length; i++) {
         var newOption = new Option(`${stocks[product_id][i].stock_name}`, `${stocks[product_id][i].stock_id}`);
-        newOption.setAttribute('data-subtext', `${stocks[product_id][i].quantity}` + ` ${stocks[product_id][i].unit}`);
+        newOption.setAttribute('data-subtext', `${stocks[product_id][i].quantity}` + ` ${unit}`);
         if (+stocks[product_id][i].stock_id === +stock_id) {
           $(newOption).prop('selected', true);
         }
         $select.append(newOption);
-        ($(tr).find('.input-group-text.quantity')).text(stocks[product_id][i].unit)
+        ($(tr).find('.input-group-text.quantity')).text(unit)
       }
       $select.prop('disabled', false);
     }

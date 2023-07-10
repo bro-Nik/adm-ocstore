@@ -52,7 +52,8 @@
             data-none-results-text="Не найдено {0}">
             <option value="">-- Выберите расходный материал --</option>
             {% for product in consumables %}
-            <option value="{{ product.product_id }}" data-price="{{ product.cost }}" {{ 'selected' if
+            <option value="{{ product.product_id }}" data-price="{{ product.cost }}"
+              data-unit="{{ product.unit_class.description.unit }}" {{ 'selected' if
               product.product_id==deal_consumable.product_id }}>{{
               product.description.name }}</option>
             {% endfor %}
