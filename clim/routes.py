@@ -107,11 +107,16 @@ def get_other_product(product_id: int):
 
 def get_consumables():
     """ Получить с расходные материалы """
+    settings_in_base = get_module('crm_stock')
+    settings = {}
+    if settings_in_base.value:
+        settings = json.loads(settings_in_base.value)
+    ids = settings.get('consumables_categories_ids')
 
     request_base = Product.query
 
     request_base = (request_base.join(Product.categories)
-               .filter(Category.category_id == 11900348))
+                   .where(Category.category_id.in_(ids)))
 
     request_base = request_base.order_by(Product.mpn)
 

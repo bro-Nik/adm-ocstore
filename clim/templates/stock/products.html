@@ -54,17 +54,15 @@
                 </tr>
               </thead>
               <tbody>
-                {% set var = namespace(sum=0, quantity=0, unit='', count=0) %}
+                {% set var = namespace(sum=0, quantity=0, unit='') %}
 
                 {% for product in products %}
                   {% set var.quantity = 0 %}
                   {% set var.unit = product.unit_class.description.unit %}
-                  {% set var.count = var.count + 1 %}
 
                     <tr>
                       <td class="">
-                        <span class="product_count">{{ var.count }}.</span>
-                        <a href="" class="open-modal-product" data-product-id="{{ product.product_id }}" data-bs-toggle="modal" data-bs-target="#ProductInfoModal">
+                        <a href="" class="text-inherit open-modal-product" data-product-id="{{ product.product_id }}" data-bs-toggle="modal" data-bs-target="#ProductInfoModal">
                           {{ product.description.name }}
                         </a>
                       </td>
