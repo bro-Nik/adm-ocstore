@@ -201,7 +201,7 @@
 
                     {% set var = namespace(count=0) %}
 
-                    {% set option_value_consumables = value.settings.consumables|to_json %}
+                    {% set option_value_consumables = value.settings.consumables|to_json if value.settings %}
 
                     {% if not option_value_consumables %}
                     {% set option_value_consumables = [{}] %}
