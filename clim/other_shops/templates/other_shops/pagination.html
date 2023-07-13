@@ -1,0 +1,47 @@
+{% if products.pages > 1 %}
+
+<div class="row align-items-center justify-content-center mt-3 mb-6">
+  <div class="col-auto">
+    <nav aria-label="">
+      <ul class="pagination">
+        {% set var = namespace(url=request.path+'?') %}
+
+        {% for param in request.args if param != 'page' %}
+        {% set var.url = var.url + '&' + param + '=' + request.args.get(param) %}
+        {% endfor %}
+
+        {% if products.has_prev %}
+        <li class="page-item">
+          <a class="page-link" href="{{ var.url }}&page={{ products.prev_num }}" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+        {% endif %}
+
+        {% for number in products.iter_pages() %}
+        {% if not number %}
+        <li class="page-item" aria-current="page">
+          <span class="page-link">...</span>
+        </li>
+        {% elif products.page != number %}
+        <li class="page-item">
+          <a class="page-link" href="{{ var.url }}&page={{number}}">{{ number }}</a>
+        </li>
+        {% else %}
+        <li class="page-item active" aria-current="page">
+          <span class="page-link">{{ number }}</span>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% if products.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="{{ var.url }}&page={{ products.next_num }}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+</div>
+{% endif %}

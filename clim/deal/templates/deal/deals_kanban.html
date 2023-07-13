@@ -1,0 +1,114 @@
+{% extends "deal/deals.html" %}
+{% block deals_content %}
+<!-- row  -->
+<div class="row">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <div id="Deals" class="board">
+
+      {% set var = namespace(column_count=0, item_count=0) %}
+      {% for stage in stages %}
+
+        {% set var.column_count = var.column_count + 1 %}
+        <div class="column stage-column" data-stage="{{ stage.stage_id }}" draggable>
+          <input type="hidden" class="stage-type" value="{{ stage.type }}">
+          <input type="hidden" class="stage-color" value="{{ stage.color if stage.color }}">
+
+          <div class="board-column-header check-all d-flex stage-header" style="{{ 'background: ' + stage.color + ';' if stage.color }}">
+            <div class="stage-name">{{ stage.name }}</div>
+            <div class="stage-deal-count ms-1">({{ stage.deals|length }})</div>
+            <div class="ms-auto stage-action">
+              <i data-feather="edit" class="nav-icon icon-xs me-2 update-stage"></i>
+              <i data-feather="plus-circle" class="nav-icon icon-xs me-2 new-stage"></i>
+            </div>
+            <div class="ms-auto crm-kanban-item-checkbox visually-hidden">
+              <input class="form-check-input" type="checkbox">
+            </div>
+          </div>
+          <div class="board-column-content-wrapper">
+
+            {% for deal in stage.deals|sort(attribute='sort_order') %}
+              {% set var.item_count = var.item_count + 1 %}
+
+              <div class="board-item" draggable data-item="{{ deal.deal_id }}" data-item-sort="{{ deal.sort_order }}" style="{{ '--crm-kanban-item-color: ' + stage.color + ';' if stage.color }}">
+                <a class="crm-kanban-deal-title" href="{{ url_for('.deal_info', deal_id=deal.deal_id) }}">
+                  {{ deal.name }}
+                </a>
+                <div class="crm-kanban-item-line"></div>
+                <div class="crm-kanban-deal-price">{{ deal.sum|money }} ₽</div>
+                <div class="crm-kanban-deal-date-add">
+                  <span class="">{{ deal.date_add|smart_date }}</span>
+                </div>
+                <div class="crm-kanban-item-checkbox visually-hidden">
+                  <input class="form-check-input to-check" type="checkbox" value="{{ deal.deal_id }}">
+                </div>
+                <div class="crm-kanban-deal-connect">
+		              <i data-feather="phone" width="20px" height="20px" stroke-width="1" class="crm-kanban-deal-contact {{ 'disabled' if not deal.contact.phone }}"></i>
+		              <span class="visually-hidden">{{ deal.contact.phone }}</span>
+		              <i data-feather="mail" width="20px" height="20px" stroke-width="1" class="crm-kanban-deal-contact disabled"></i>
+		              <i data-feather="message-square" width="20px" height="20px" stroke-width="1" class="crm-kanban-deal-contact disabled"></i>
+                </div>
+              </div>
+
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+
+
+    </div>
+  </div>
+</div>
+
+<script>
+
+// Checks
+$('body').on('click', '.board-item', function(event) {
+  if (event.target.nodeName !== 'A') {
+    var status = $(this).find('.to-check').is(':checked')
+    var box = $(this).find('.crm-kanban-item-checkbox')
+    $(this).find('.to-check').prop('checked', !status);
+
+    ViewChecks();
+    CheckCount();
+    //$('#Deals :checkbox').trigger('change');
+  }
+});
+
+// View Checks
+function ViewChecks() {
+  var checked_count = $('.to-check:checked').length;
+  if (checked_count > 0) {
+    $('.crm-kanban-item-checkbox').removeClass('visually-hidden');
+    $('.stage-action').addClass('visually-hidden');
+    $('.crm-kanban-deal-connect').addClass('visually-hidden');
+    $('.board-column-header').addClass('check-all');
+    $('.sticky-bottom.actions').addClass('active');
+  } else {
+    $('.crm-kanban-item-checkbox').addClass('visually-hidden');
+    $('.stage-action').removeClass('visually-hidden');
+    $('.crm-kanban-deal-connect').removeClass('visually-hidden');
+    $('.board-column-header').removeClass('check-all');
+    $('.sticky-bottom.actions').removeClass('active');
+  }
+}
+
+// Check in stage
+$('body').on('click', '.board-column-header.check-all', function() {
+  var status = $(this).find(':checkbox').is(':checked')
+  var $column = $(this).closest('div.column');
+  $($column).find(':checkbox').prop('checked', !status);
+
+  ViewChecks();
+  CheckCount();
+});
+
+// Decheck All
+$('body').on('click', '.decheck-all', function() {
+  $('.to-check').prop('checked', false);
+});
+</script>
+
+<script src="{{ url_for('.static', filename='js/dnd.js') }}"></script>
+<script src="{{ url_for('.static', filename='js/dnd-items.js') }}"></script>
+<script src="{{ url_for('.static', filename='js/dnd-columns.js') }}"></script>
+{% endblock %}

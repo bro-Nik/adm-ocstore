@@ -74,6 +74,22 @@ def smart_date(date_time):
 app.add_template_filter(smart_date)
 
 
+def how_long_ago(event_date):
+    ''' Возвращает сколько прошло от входящей даты '''
+    if type(event_date) == str:
+        event_date = datetime.strptime(event_date, '%Y-%m-%d')
+
+    today = datetime.now().date()
+    if today == datetime.date(event_date):
+        result = 'сегодня'
+    else:
+        result = str((today - datetime.date(event_date)).days) + ' д. назад'
+
+    return result
+
+app.add_template_filter(how_long_ago)
+
+
 def smart_phone(phone_number: str) -> str:
     if not phone_number:
         return ''

@@ -1,0 +1,130 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --item-width: 288px;
+  --item-height: 120px;
+  --column-width: 300px;
+}
+
+body {
+/*  padding: 30px; */
+  color: #333;
+}
+
+.board {
+  display: flex;
+}
+
+.column {
+  /*background-color: white;*/
+  width: var(--column-width);
+  border-left: 1px dashed #ccc;
+  border-radius: 5px;
+}
+.column:last-child {
+  border-right: 1px dashed #ccc;
+}
+
+.board-column-header {
+  left: -1px;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  margin-bottom: 0.5em;
+  font-weight: bold;
+  /*cursor: move;*/
+  vertical-align: middle;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--ui-font-weight-semi-bold,600);
+  /* cursor: pointer; */
+  transition: all 250ms ease;
+  background: #765ed9;
+  border-bottom-color: #765ed9;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  color: #fff;
+  padding-left: 10px;
+  position: relative;
+  overflow: hidden;
+  height: 32px;
+}
+.stage-action {
+  opacity: 0;
+}
+.column:hover .stage-action,
+.table .stage-action {
+  opacity: 30%;
+}
+.stage-header:hover .stage-action {
+  opacity: 100%;
+}
+.board-column-content-wrapper {
+  padding: 5px;
+}
+.board-item {
+  background-color: #fff;
+  border-radius: 5px;
+  padding: 10px 30px 10px 15px;
+  /*cursor: move;*/
+  margin-bottom: 0.5em;
+  width: var(--item-width);
+  height: var(--item-height);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.board-item-content {
+  pointer-events: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.placeholder {
+  background-color: #3e3e3e36;
+  margin-bottom: 0.5em;
+  width: var(--item-width);
+  height: var(--item-height);
+  border: 1px dashed #4e4e4e;
+  border-radius: 5px;
+}
+
+.emptySectionHiddenLesson {
+  background: none;
+  border: none;
+  width: var(--item-width);
+  height: var(--item-height);
+}
+
+.placeholder-column {
+  background-color: white;
+  width: var(--column-width);
+  border: none;
+  margin-right: 20px;
+  padding: 5px;
+}
+.crm-kanban-item-checkbox {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    pointer-events: none;
+    transition: .15s;
+    /* z-index: 99; */
+}
+.crm-kanban-item-line {
+    display: block;
+    width: 3px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: var(--crm-kanban-item-color);
+}

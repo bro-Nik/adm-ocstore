@@ -4,15 +4,17 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 import redis
 from celery import Celery
+from clim.models import db
 
 
-db = SQLAlchemy()
+# db = SQLAlchemy()
 migrate = Migrate()
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_pyfile('settings.py')
+
 
     db.init_app(app)
 
@@ -27,6 +29,7 @@ def create_app():
 
 
 app = create_app()
+
 
 
 def make_celery(app):
@@ -46,6 +49,8 @@ redis = redis.StrictRedis('127.0.0.1', 6379)
 login_manager = LoginManager(app)
 
 
+from clim.blueprints import make_blueprints
+make_blueprints(app)
 
 if __name__ == '__main__':
     db.create_all()

@@ -1,1 +1,1 @@
-from clim import app, models, routes, other_shops, options, users, reports, stock, deal, jinja_filters
+from clim import app, models, routes, options, users, reports, jinja_filters, blueprints

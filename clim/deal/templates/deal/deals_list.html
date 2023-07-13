@@ -1,0 +1,107 @@
+{% extends "deal/deals.html" %}
+{% block deals_content %}
+<!-- row  -->
+<div class="row">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+
+    <div class="card h-100">
+
+      <!-- table  -->
+      <div class="table-responsive">
+        <form class="" id="Deals" method="post" action="{{ url_for('.deals_action') }}">
+          <table class="table text-nowrap">
+            <thead class="">
+              <tr>
+                <th class="main-tab-checkbox">
+                  <input class="form-check-input check-all" type="checkbox">
+                </th>
+                <th scope="col">Название</th>
+                <th scope="col">Дата создания</th>
+                <th scope="col">Сумма</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {% set var = namespace(deal_count=0) %}
+
+              {% for stage in stages %}
+
+                <tr style="{{ 'background: ' + stage.color + ';' if stage.color }}"
+                  class="stage-column" data-stage="{{ stage.stage_id }}">
+
+                  <input type="hidden" class="stage-type" value="{{ stage.type }}">
+                  <input type="hidden" class="stage-color" value="{{ stage.color if stage.color }}">
+
+                  <td class="main-tab-checkbox py-1">
+                    <input id="stage_id_{{ stage.stage_id }}" class="form-check-input check-stage" type="checkbox">
+                  </td>
+                  <td class="py-1 text-white" colspan=4>
+                    <div class="d-flex stage-header">
+                      <div class="stage-name">{{ stage.name }}</div>
+                      <div class="stage-deal-count ms-1">({{ stage.deals|length }})</div>
+                      <div class="ms-5 stage-action">
+                        <i data-feather="edit" class="nav-icon icon-xs me-2 update-stage"></i>
+                        <i data-feather="plus-circle" class="nav-icon icon-xs me-2 new-stage"></i>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+
+                {% for deal in stage.deals %}
+                  {% set var.deal_count = var.deal_count + 1 %}
+                  <tr>
+                    <td class="main-tab-checkbox">
+                      <input class="form-check-input to-check stage_id_{{ stage.stage_id }}" type="checkbox"
+                                                               name="deal_id_{{ var.deal_count }}" value="{{ deal.deal_id }}">
+                    </td>
+                    <td class="">
+                      <a href="{{ url_for('.deal_info', deal_id=deal.deal_id) }}" class="text-inherit">
+                        {{ deal.name }}
+                      </a>
+                      <br>
+                      <span class="fs-6"></span>
+                    </td>
+                    <td class="">
+                      <span class="fs-6">{{ deal.date_add.strftime('%d.%m.%Y') }}</span>
+                    </td>
+                    <td class="">
+                      <span class="fs-6">{{ deal.sum|money }} ₽</span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% endfor %}
+            </tbody>
+          </table>
+          <input type="hidden" class="deals-ids" name="deals-ids">
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  
+  // Check All
+  $('#Deals').on("change", '.check-all', function () {
+    $('.to-check').prop('checked', $(this).is(':checked'));
+  })
+
+  // Check Stage
+  $('#Deals').on("change", '.check-stage', function () {
+    $('.' + this.id).prop('checked', $(this).is(':checked'));
+  })
+
+  // Show buttons
+  $('#Deals').on("change", ':checkbox', function () {
+    var checked_count = $('.to-check:checked').length;
+    if (checked_count > 0) {
+      $('.sticky-bottom.actions').addClass('active');
+    } else {
+      $('.sticky-bottom.actions').removeClass('active');
+    }
+    CheckCount();
+  })
+</script>
+{% endblock %}

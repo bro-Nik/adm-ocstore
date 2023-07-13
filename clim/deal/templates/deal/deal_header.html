@@ -1,0 +1,92 @@
+<div class="row">
+  <div class="col-lg-12 col-md-12 col-12">
+    <!-- Page header -->
+    <div>
+      <div class="d-flex align-items-center">
+        <div class="mb-2 mb-lg-0">
+          <h3 class="mb-0">
+            <a href="{{ url_for('.deals', view=session.get('crm_view')) }}" class="">Сделки</a>
+            {% if deal %}
+            <span class="deal-info-title">| {{ deal.name }}</span>
+            <input type="text" class="deal-info-title-input visually-hidden to-show" name="deal_name"
+              value="{{ deal.name }}">
+            {% else %}
+            | Добавление сделки
+            {% endif %}
+
+          </h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="col-12 d-flex gap-2">
+  {% set active_stage = False %}
+  {% for stage in stages if not 'end_' in stage.type %}
+  <div class="stage" style="{{ '--deal-stage-color: ' + stage.color + ';' if stage.color }}">
+    <input type="radio" class="btn-check" name="stages" id="stage_{{ stage.stage_id }}" {{ 'checked' if
+      stage.stage_id==deal.stage_id }} {{ 'checked' if not deal and stage.type=='start' }} value="{{ stage.stage_id }}">
+    <label class="stage-item fs-6" for="stage_{{ stage.stage_id }}">
+      {{ stage.name }}
+    </label>
+    <div class="deal-stage-line"></div>
+  </div>
+  {% endfor %}
+
+  {% if not deal or not 'end_' in deal.stage.type %}
+  <div class="stage" style="--deal-stage-color: #56c31e;">
+    <label class="stage-item fs-6" data-bs-toggle="modal" data-bs-target="#closeDeal">
+      Завершить сделку
+    </label>
+    <div class="deal-stage-line"></div>
+  </div>
+  {% else %}
+
+  <div class="stage" style="{{ '--deal-stage-color: ' + deal.stage.color + ';' if deal.stage.color }}">
+    <input type="radio" class="btn-check" name="stages" id="stage_{{ deal.stage_id }}" checked
+      value="{{ deal.stage_id }}" data-bs-toggle="modal" data-bs-target="#closeDeal">
+    <label class="stage-item fs-6 {{ 'end-good' if deal.stage.type == 'end_good' else 'end-bad' }}"
+      for="stage_{{ deal.stage_id }}">
+      {{ deal.stage.name }}
+    </label>
+    <div class="deal-stage-line"></div>
+  </div>
+
+  {% endif %}
+
+
+</div>
+
+<div class="row align-items-center">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <!-- nav -->
+    <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail" role="tab"
+          aria-controls="pills-detail" aria-selected="true">Общие</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="pills-product-tab" data-bs-toggle="pill" data-bs-target="#pills-product" role="tab"
+          aria-controls="pills-product" aria-selected="false">Товары</a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" id="pills-consumables-tab" data-bs-toggle="pill" data-bs-target="#pills-consumables"
+          role="tab" aria-controls="pills-consumables" aria-selected="false">Расходные
+          материалы</a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" id="pills-expenses-tab" data-bs-toggle="pill" data-bs-target="#pills-expenses" role="tab"
+          aria-controls="pills-expenses" aria-selected="false">Расходы</a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" id="pills-analytics-tab" data-bs-toggle="pill" data-bs-target="#pills-analytics" role="tab"
+          aria-controls="pills-analytics" aria-selected="false">Аналитика</a>
+      </li>
+
+    </ul>
+  </div>
+</div>

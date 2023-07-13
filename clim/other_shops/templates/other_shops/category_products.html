@@ -1,0 +1,132 @@
+<!-- Container fluid -->
+<div id="ShopProducts" class="container-fluid px-6">
+  <!-- row filter  -->
+  <div class="row">
+    <div class="col-lg-12 col-md-12 col-12">
+      <!-- Page header -->
+      <div>
+        <div class="d-flex align-items-center">
+          <div class="mb-2 mb-lg-0">
+            <h3 class="mb-0">
+              <span class="text-primary">{{ categories[0].shop.name }}</span> |
+              Товары
+            </h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- card discount products -->
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12 mt-6">
+      <div class="card h-100">
+
+        <div class="card-body">
+          <div class="row g-2">
+
+            <div class="col-md-2">
+              <div class="mb-1">
+                <label class="form-label h7">Категория</label>
+                <select class="form-select form-select-sm" data-name="category_id">
+                  <option {{ 'selected' if not category_id }} value="">Все</option>
+
+                  {% for category in categories %}
+                  {% set id = category.other_category_id %}
+                  {% if not category.parent_id %}
+                  <option {{ 'selected' if id==category_id|int }} value="{{ id }}">
+                    {{ category.name }}
+                  </option>
+
+                  {% for subcategory in categories %}
+                  {% set id = subcategory.other_category_id %}
+                  {% if subcategory.parent_id == category.other_category_id %}
+                  <option {{ 'selected' if id==category_id|int }} value="{{ id }}">
+                    - {{ subcategory.name }}
+                  </option>
+
+                  {% endif %}
+                  {% endfor %}
+
+                  {% endif %}
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="col-md-2">
+              <div class="mb-1">
+                <label class="form-label h7">Изменения</label>
+                <select class="form-select form-select-sm" data-name="changes">
+                  <option value="">Все</option>
+
+                  {% if new_product_ids %}
+                  <option value="new_product" {{ 'selected' if changes=='new_product' }}>Новые товары</option>
+                  {% endif %}
+
+                  {% if new_price_ids %}
+                  <option value="new_price" {{ 'selected' if changes=='new_price' }}>Цена обновилась</option>
+                  {% endif %}
+
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- row  -->
+  <div class="row mt-6 mb-6">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="card h-100">
+
+        <!-- table  -->
+        <div class="table-responsive">
+          <form class="" id="options-form" method="post" action="{{ url_for('confirm_product_to_product') }}">
+            <table class="table text-nowrap">
+              <thead class="">
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Название</th>
+                  <th scope="col"></th>
+                  <th scope="col">Цена</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for product in products|sort(attribute='name') %}
+                <tr>
+                  <td class="text-average">{{ product.other_product_id }}</td>
+                  <td class="">{{ product.name }}</td>
+                  <td class=""><a href="{{ product.link }}">link</a></td>
+                  <td class="">{{ product.price }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {% include 'other_shops/pagination.html' %}
+
+  </div>
+  <script>
+    $('#ShopProducts').find('.pagination a').on("click", function () {
+      var $modal = $('#FullScreenModal');
+      var url = $(this).attr('href');
+      $modal.find('.modal-body').load(url);
+      return false;
+    })
+
+    $('#ShopProducts').find('select').on("change", function () {
+      var $modal = $('#FullScreenModal');
+      var url = "{{ url_for('.category_products', shop_id=categories[0].shop_id) }}?";
+
+      $('#ShopProducts').find('select').each(function () {
+        url += '&' + $(this).attr('data-name') + '=' + $(this).val();
+      });
+      $modal.find('.modal-body').load(url);
+    })
+
+  </script>

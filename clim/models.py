@@ -1,6 +1,10 @@
+from flask_sqlalchemy import SQLAlchemy
 from itertools import product
-from clim.app import db
+# from clim.app import db
 from flask_login import UserMixin
+
+
+db = SQLAlchemy()
 
 
 class Product(db.Model):

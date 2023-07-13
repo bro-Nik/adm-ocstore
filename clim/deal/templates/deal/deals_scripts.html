@@ -1,0 +1,132 @@
+<script>
+  // Live Search
+  $(document).ready(function () {
+    $("#filter").keyup(function () {
+
+      // Retrieve the input field text and reset the count to zero
+      var filter = $(this).val(), count = 0;
+
+      // Loop through the comment list
+      $(".board-item").each(function () {
+
+        // If the list item does not contain the text phrase fade it out
+        if ($(this).text().search(new RegExp(filter, "i")) < 0) {
+          $(this).fadeOut();
+
+          // Show the list item if the phrase matches and increase the count by 1
+        } else {
+          $(this).show();
+          count++;
+        }
+      });
+
+      // Update the count
+      var numberItems = count;
+      $("#filter-count").text("Number of Filter = " + count);
+    });
+  });
+
+  // New Stage
+  $('body').on('click', 'svg.new-stage', function () {
+    var $column = $(this).closest('.stage-column');
+    var $new_column = $($column).clone();
+    $new_column.find('.stage-name').text('Новая стадия');
+    $new_column.find('.stage-deal-count').text('(0)');
+    $new_column.find('.board-column-content-wrapper').html('');
+    $column.after($new_column);
+
+    var url = "{{ url_for('.new_stage') }}"
+    url += '/' + $column.attr('data-stage')
+    $.ajax({
+      type: "GET",
+      url: url,
+      success: function (data) {
+        $new_column.attr('data-stage', data);
+      }
+    });
+  });
+
+
+  // Check Count
+  function CheckCount() {
+    var checked_count = $('.to-check:checked').length;
+    var all_count = $('.to-check').length;
+    $('.checks-count').text(checked_count + ' / ' + all_count);
+  }
+
+  // Checked Ids List
+  $('#Deals').submit(function () {
+    var checked = [];
+    $('.to-check:checked').each(function () {
+      checked.push($(this).val());
+    });
+    $('.deals-ids').val(JSON.stringify(checked));
+
+  })
+
+  // Delete Data To Server
+  $("#deleteModal").find('form').submit(function (e) {
+    var url = "{{ url_for('.deals_action') }}"
+    var form_data = $(this).serialize();
+    var action = $(this).find('[name=what_delete]').val()
+    $.ajax({
+      type: "POST",
+      url: url + '/' + action,
+      data: form_data,
+      success: function () {
+      }
+    });
+  });
+
+  // Update Stage Info
+  $('body').on('click', 'svg.update-stage', function () {
+    var $column = $(this).closest('.stage-column');
+    var $modal = $('#StageUpdate');
+    $modal.find('[name=stage_id]').val($($column).attr('data-stage'))
+    $modal.find('[name=name]').val($($column).find('.stage-name').text())
+    $modal.find('[name=type]').val($($column).find('.stage-type').val())
+    $modal.find('[name=color]').val($($column).find('.stage-color').val())
+
+    $modal.find('.delete').prop('disabled', $($column).find('.stage-deal-count').text() !== '(0)');
+
+    // to delete modal
+    var $delete_modal = $('#deleteModal');
+    $delete_modal.find('.modal-title').text('Удалить колонку "' + $($column).find('.stage-name').text() + '"?');
+    $delete_modal.find('[name=what_delete]').val('delete_column');
+    $delete_modal.find('[name=ids]').val($($column).attr('data-stage'));
+
+    $modal.modal('toggle');
+  });
+
+  // Checked Ids List
+  $('body').find('.actions').on('click', '.btn', function () {
+    var action = $(this).attr('data-action')
+    if (action === 'delete_deals') {
+      var checked = [];
+      $('.to-check:checked').each(function () {
+        checked.push($(this).val());
+      });
+
+      // to delete modal
+      var $delete_modal = $('#deleteModal');
+      $delete_modal.find('.modal-title').text('Удалить выбранные сделки? (' + checked.length + ' шт)');
+      $delete_modal.find('[name=what_delete]').val('delete_deals');
+      $delete_modal.find('[name=ids]').val(JSON.stringify(checked));
+
+      $delete_modal.modal('toggle');
+    }
+  });
+
+  // Update Data To Server
+  $("#StageUpdate").find('form').submit(function (e) {
+    var url = '/crm/deals/stage_info/update';
+    var form_data = $(this).serialize();
+    $.ajax({
+      type: "POST",
+      url: url,
+      data: form_data,
+      success: function () {
+      }
+    });
+  }); 
+</script>
