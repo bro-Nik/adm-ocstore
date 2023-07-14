@@ -19,8 +19,8 @@
         <div id="navPages" class="collapse {{ 'show' if '/site/' in request.path }}" data-bs-parent="#sideNavbar">
           <ul class="nav flex-column">
             <li class="nav-item">
-              <a class="nav-link has-arrow {{ 'active' if url_for('options') in request.path }}"
-                href="{{ url_for('options') }}">
+              <a class="nav-link has-arrow {{ 'active' if request.blueprint == 'option' }}"
+                href="{{ url_for('option.options') }}">
                 Опции
               </a>
             </li>
@@ -40,15 +40,9 @@
 
 
             <li class="nav-item">
-              <a class="nav-link {{ 'active' if request.path == url_for('other_shops.shops') }}"
+              <a class="nav-link {{ 'active' if request.blueprint == 'other_shops' }}"
                 href="{{ url_for('other_shops.shops') }}">
                 Другие магазины
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a class="nav-link" href="">
-                Склад
               </a>
             </li>
 
@@ -106,14 +100,14 @@
         <div id="navCrm" class="collapse {{ 'show' if '/crm/' in request.path }}" data-bs-parent="#sideNavbar">
           <ul class="nav flex-column">
             <li class="nav-item">
-              <a class="nav-link {{ 'active' if 'deals' in request.path }}"
+              <a class="nav-link {{ 'active' if request.blueprint == 'deal' }}"
                 href="{{ url_for('deal.deals', view=session.get('crm_view')) }}">
                 Сделки
               </a>
             </li>
 
             <li class="nav-item">
-              <a class="nav-link {{ 'active' if 'stock' in request.path }}" href="{{ url_for('stock.products') }}">
+              <a class="nav-link {{ 'active' if request.blueprint == 'stock' }}" href="{{ url_for('stock.products') }}">
                 Склад
               </a>
             </li>

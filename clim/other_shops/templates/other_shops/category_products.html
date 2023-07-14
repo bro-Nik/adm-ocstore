@@ -1,6 +1,5 @@
 <!-- Container fluid -->
-<div id="ShopProducts" class="container-fluid px-6">
-  <!-- row filter  -->
+<div id="ShopProducts" class="container-fluid px-6 d-grid gap-3 mt-3">
   <div class="row">
     <div class="col-lg-12 col-md-12 col-12">
       <!-- Page header -->
@@ -15,66 +14,68 @@
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- card discount products -->
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12 mt-6">
-      <div class="card h-100">
+  <!-- card discount products -->
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <div class="card h-100">
 
-        <div class="card-body">
-          <div class="row g-2">
+      <div class="card-body">
+        <div class="row g-2">
 
-            <div class="col-md-2">
-              <div class="mb-1">
-                <label class="form-label h7">Категория</label>
-                <select class="form-select form-select-sm" data-name="category_id">
-                  <option {{ 'selected' if not category_id }} value="">Все</option>
+          <div class="col-md-2">
+            <div class="mb-1">
+              <label class="form-label h7">Категория</label>
+              <select class="selectpicker" data-width="100%" data-live-search="true" data-none-selected-text="Все"
+                data-none-results-text="Не найдено {0}" data-name="category_id">
+                <option {{ 'selected' if not category_id }} value="">Все</option>
 
-                  {% for category in categories %}
-                  {% set id = category.other_category_id %}
-                  {% if not category.parent_id %}
-                  <option {{ 'selected' if id==category_id|int }} value="{{ id }}">
-                    {{ category.name }}
-                  </option>
+                {% for category in categories %}
+                {% set id = category.other_category_id %}
+                {% if not category.parent_id %}
+                <option {{ 'selected' if id==category_id|int }} value="{{ id }}">
+                  {{ category.name }}
+                </option>
 
-                  {% for subcategory in categories %}
-                  {% set id = subcategory.other_category_id %}
-                  {% if subcategory.parent_id == category.other_category_id %}
-                  <option {{ 'selected' if id==category_id|int }} value="{{ id }}">
-                    - {{ subcategory.name }}
-                  </option>
+                {% for subcategory in categories %}
+                {% set id = subcategory.other_category_id %}
+                {% if subcategory.parent_id == category.other_category_id %}
+                <option {{ 'selected' if id==category_id|int }} value="{{ id }}">
+                  - {{ subcategory.name }}
+                </option>
 
-                  {% endif %}
-                  {% endfor %}
+                {% endif %}
+                {% endfor %}
 
-                  {% endif %}
-                  {% endfor %}
-                </select>
-              </div>
+                {% endif %}
+                {% endfor %}
+              </select>
             </div>
-
-            <div class="col-md-2">
-              <div class="mb-1">
-                <label class="form-label h7">Изменения</label>
-                <select class="form-select form-select-sm" data-name="changes">
-                  <option value="">Все</option>
-
-                  {% if new_product_ids %}
-                  <option value="new_product" {{ 'selected' if changes=='new_product' }}>Новые товары</option>
-                  {% endif %}
-
-                  {% if new_price_ids %}
-                  <option value="new_price" {{ 'selected' if changes=='new_price' }}>Цена обновилась</option>
-                  {% endif %}
-
-                </select>
-              </div>
-            </div>
-
           </div>
+
+          <div class="col-md-2">
+            <div class="mb-1">
+              <label class="form-label h7">Изменения</label>
+              <select class="selectpicker" data-width="100%" data-none-selected-text="Все" data-name="changes">
+                <option value="">Все</option>
+
+                {% if new_product_ids %}
+                <option value="new_product" {{ 'selected' if changes=='new_product' }}>Новые товары</option>
+                {% endif %}
+
+                {% if new_price_ids %}
+                <option value="new_price" {{ 'selected' if changes=='new_price' }}>Цена обновилась</option>
+                {% endif %}
+
+              </select>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
   </div>
+
   <!-- row  -->
   <div class="row mt-6 mb-6">
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
@@ -108,10 +109,14 @@
       </div>
     </div>
 
-    {% include 'other_shops/pagination.html' %}
+    {% include 'partials/pagination.html' %}
 
   </div>
   <script>
+    $('#ShopProducts').find('.selectpicker').each(function () {
+      $(this).selectpicker();
+    });
+
     $('#ShopProducts').find('.pagination a').on("click", function () {
       var $modal = $('#FullScreenModal');
       var url = $(this).attr('href');

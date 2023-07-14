@@ -1,15 +1,30 @@
 import json
 import re
-from flask import render_template, redirect, url_for, request
+from flask import render_template, redirect, url_for, request, Blueprint, session
 from flask_login import login_required
 
-from clim.app import app, db
-from clim.models import Attribute, AttributeDescription, Manufacturer, Option,\
+# from clim.app import app, db
+from clim.models import db, Attribute, AttributeDescription, Manufacturer, Option,\
     OptionDescription, OptionSetting, OptionValueSetting, OptionValue, \
     OptionValueDescription, ProductAttribute, ProductOption,\
-    ProductOptionValue, Product, CategoryDescription
-from clim.routes import get_consumables, get_discount_products, get_products, get_categories,\
-    get_product
+    ProductOptionValue, Product, CategoryDescription, Category
+from clim.routes import get_consumables, get_categories, get_product
+
+
+option = Blueprint('option', __name__, template_folder='templates', static_folder='static')
+
+def session_get(param):
+    prefix = option.name + '_'
+    return session.get(prefix + param)
+
+
+def session_post(param, value):
+    prefix = option.name + '_'
+    session[prefix + param] = value
+
+
+def int_or_other(number, default):
+    return int(number) if number else default
 
 
 def get_option(option_id):
@@ -17,44 +32,120 @@ def get_option(option_id):
         db.select(Option).filter_by(option_id=option_id)).scalar()
 
 
-def get_option_value(value_id):
+def get_values():
+    return db.session.execute(
+        db.select(OptionValueDescription)
+        .order_by(OptionValueDescription.option_value_id)).scalars()
+
+
+def get_value(value_id):
     return db.session.execute(
         db.select(OptionValue).filter_by(option_value_id=value_id)).scalar()
 
 
-@app.route('/options', methods=['GET'])
+def get_products(pagination=True, filter={}):
+
+    request_base = Product.query
+
+    if filter.get('stock'):
+        stock = filter.get('stock')
+        if stock == 'not not in stock':
+            request_base = request_base.filter(Product.quantity > 0)
+        elif stock == 'in stock':
+            request_base = request_base.filter((Product.quantity == 10)
+                                               & (Product.price != 100001))
+        elif stock == 'on order':
+            request_base = request_base.filter(Product.quantity == 1)
+        elif stock == 'not in stock':
+            request_base = request_base.filter(Product.quantity == 0)
+        elif stock == 'price request':
+            request_base = request_base.filter(Product.price == 100001)
+
+    if filter.get('manufacturers_ids'):
+        manufacturers_ids = filter.get('manufacturers_ids')
+        request_base = request_base.where(Product.manufacturer_id.in_(manufacturers_ids))
+
+    if filter.get('categories_ids'):
+        categories_ids = filter.get('categories_ids')
+        request_base = (request_base.join(Product.categories)
+                   .filter(Category.category_id.in_(categories_ids)))
+
+    if filter.get('attribute_id'):
+        attribute_id = filter.get('attribute_id')
+        attribute_values = filter.get('attribute_values')
+        request_base = (request_base.join(Product.attributes)
+                    .where((ProductAttribute.attribute_id == attribute_id)
+                           & (ProductAttribute.text.in_(attribute_values)))
+                    .order_by(ProductAttribute.text))
+
+    if filter.get('options') == 'whith options':
+        request_base = (request_base.filter(Product.options != None))
+    elif filter.get('options') == 'whithout options':
+        request_base = (request_base.filter(Product.options == None))
+
+    #request_base = request_base.order_by(Product.mpn)
+
+    if not pagination:
+        return request_base.all()
+
+    return request_base.paginate(page=int_or_other(request.args.get('page'), 1),
+                                 per_page=int_or_other(filter.get('per_page'), 20),
+                                 error_out=False)
+
+
+
+@option.route('/options', methods=['GET'])
 @login_required
 def options():
     """ Страница опций """
     options = db.session.execute(db.select(Option)).scalars()
-    return render_template('options/options.html', options=options)
+    return render_template('option/options.html', options=options)
 
 
-@app.route('/options/add', methods=['GET'])
-@app.route('/options/<int:option_id>/settings', methods=['GET'])
+@option.route('/delete', methods=['POST'])
 @login_required
-def option_settings(option_id=None):
+def options_action():
+    """ Действия над опциями """
+    data = json.loads(request.data) if request.data else {}
+
+    action = data.get('action')
+    ids = data.get('ids')
+
+    for id in ids:
+        option = get_option(id)
+        if option.description:
+            db.session.delete(option.description)
+        db.session.delete(option)
+    db.session.commit()
+
+    return ''
+
+
+@option.route('/settings', methods=['GET'])
+@login_required
+def option_settings():
     """ Добавить или изменить опцию """
-    option = settings = None
-    if option_id:
-        option = get_option(option_id)
-        if option.settings:
-            settings = json.loads(option.settings.text)
+    option_id = request.args.get('option_id')
 
-    return render_template('options/settings.html',
-                           option=option,
-                           option_id=option_id,
-                           settings=settings)
+    return render_template('option/option_settings.html',
+                           option=get_option(option_id),
+                           )
 
 
-@app.route('/options/add_option', methods=['POST'])
-@app.route('/options/<int:option_id>/update', methods=['POST'])
+@option.route('/settings_update', methods=['POST'])
 @login_required
-def option_add(option_id=None):
-    """ Отправка данных на добавление или изменение опции """
-    name = request.form.get('name')
-    sort = request.form.get('sort')
-    type = request.form.get('type')
+def option_update():
+    """ Отправка настроек опции """
+    option_id = request.args.get('option_id')
+    option = get_option(option_id)
+    if not option:
+        option = Option(opt_image=0)
+        option.description = OptionDescription(language_id=1)
+        db.session.add(option)
+
+    option.description.name = request.form.get('name')
+    option.sort_order = request.form.get('sort')
+    option.type = request.form.get('type')
 
     settings_dict = {
         'quantity': request.form.get('quantity'),
@@ -68,55 +159,18 @@ def option_add(option_id=None):
             settings = json.dumps(settings_dict)
             break
 
-    if option_id:
-        option = get_option(option_id)
+        if not option.settings:
+            option.settings = OptionSetting()
+        option.settings.text = settings
 
-        option.description.name = name
-        option.sort_order = sort
-        option.type = type
-        if option.settings:
-            option.settings.text = settings
-        else:
-            option.settings = OptionSetting(text=settings)
-
-    else:
-        option = Option(sort_order=sort, type=type, opt_image=0)
-        option.description = OptionDescription(name=name, language_id=1)
-        db.session.add(option)
     db.session.commit()
-    return redirect(url_for('options'))
+    return redirect(url_for('.options'))
 
 
-@app.route('/options/delete', methods=['POST'])
-@login_required
-def options_delete():
-    """ Удаление опций """
-    options_count = request.form.get('options-count')
-    if not options_count:
-        return redirect(url_for('options'))
-
-    counter = 1
-    while counter <= int(options_count):
-        option_id = request.form.get('option-' + str(counter))
-        if not option_id:
-            counter += 1
-            continue
-        option = get_option(option_id)
-
-        if option.description:
-            db.session.delete(option.description)
-        db.session.delete(option)
-        counter += 1
-    db.session.commit()
-    return redirect(url_for('options'))
-
-
-@app.route('/options/<int:option_id>/values', methods=['GET'])
+@option.route('/<int:option_id>/values', methods=['GET'])
 @login_required
 def option_values(option_id):
     """ Варианты опции """
-    option = get_option(option_id)
-
     products_and_options = tuple(db.session.execute(
         db.select(ProductOption).filter_by(option_id=option_id)).scalars())
 
@@ -141,24 +195,24 @@ def option_values(option_id):
         other_prices[item.product.mpn] = {'name': item.product_option_value.product_option.description.name,
                                           'price': item.product_option_value.price}
 
-    return render_template('options/values.html',
-                           option=option,
-                           option_id=option_id,
+    return render_template('option/option_values.html',
+                           option=get_option(option_id),
                            count_list=count_list,
                            other_prices=other_prices)
 
 
-@app.route('/site/options/<int:option_id>/new_value', methods=['GET'])
-@app.route('/site/options/<int:option_id>/value_<int:value_id>/settings', methods=['GET'])
+@option.route('/<int:option_id>/option_value_settings', methods=['GET'])
 @login_required
-def option_value_settings(option_id, value_id=None):
+def value_settings(option_id):
     """ Добавить или изменить вариант опции """
     option = get_option(option_id)
-    option_value = settings = None
+
+    value_id = request.args.get('value_id')
+    value = settings = None
     if value_id:
-        option_value = get_option_value(value_id)
-        if option_value.settings and option_value.settings.settings:
-            settings = json.loads(option_value.settings.settings)
+        value = get_value(value_id)
+        if value.settings and value.settings.settings:
+            settings = json.loads(value.settings.settings)
 
     attributes = db.session.execute(db.select(Attribute)).scalars()
     categories = get_categories()
@@ -185,10 +239,9 @@ def option_value_settings(option_id, value_id=None):
     
     products = tuple(get_consumables())
 
-    return render_template('options/value_settings.html',
-                           option_id=option_id,
+    return render_template('option/value_settings.html',
                            option=option,
-                           value=option_value,
+                           value=value,
                            value_id=value_id,
                            settings=settings,
                            categories=tuple(categories),
@@ -197,15 +250,12 @@ def option_value_settings(option_id, value_id=None):
                            products=products)
 
 
-@app.route('/options/<int:option_id>/add_value', methods=['POST'])
-@app.route('/options/<int:option_id>/value_<int:value_id>/update', methods=['POST'])
+@option.route('/<int:option_id>/option_value_update', methods=['POST'])
 @login_required
-def option_value_add(option_id, value_id=None):
-    """ Отправка данных на добавление или изменение значения опции """
-    name = request.form.get('name')
-    price = request.form.get('price')
-    price = price if price else 0
-    sort = request.form.get('sort')
+def value_settings_update(option_id):
+    """ Отправка настроек значения опции """
+    value_id = request.args.get('value_id')
+
     settings_dict = {
         'categories_ids': request.form.getlist('categories_ids'),
         'attribute_id': request.form.get('attribute_id'),
@@ -219,28 +269,21 @@ def option_value_add(option_id, value_id=None):
             settings = json.dumps(settings_dict)
             break
 
-    if value_id:
-        option_value = get_option_value(value_id)
-        option_value.sort_order = sort
-        option_value.description.name = name
-        if option_value.settings:
-            option_value.settings.price = price
-            option_value.settings.settings = settings
-        else:
-            option_value.settings = OptionValueSetting(price=price,
-                                                       settings=settings)
+    value = get_value(value_id)
+    if not value:
+        value = OptionValue(image=0,
+                            option_id=option_id)
+        db.session.add(value)
+    if not value.description:
+        value.description = OptionValueDescription(language_id=1,
+                                                   option_id=option_id)
+    if not value.settings:
+        value.settings = OptionValueSetting()
 
-    else:
-        option_value = OptionValue(sort_order=sort, image=0,
-                                   option_id=option_id)
-        option_value.description = OptionValueDescription(name=name,
-                                                          language_id=1,
-                                                          option_id=option_id)
-
-        option_value.settings = OptionValueSetting(price=price,
-                                                   settings=settings)
-
-        db.session.add(option_value)
+    value.sort_order = request.form.get('sort')
+    value.description.name = request.form.get('name')
+    value.settings.price = int_or_other(request.form.get('price'), 0)
+    value.settings.settings = settings
 
     db.session.commit()
 
@@ -248,9 +291,9 @@ def option_value_add(option_id, value_id=None):
     consumables = request.form.get('consumables_data')
     if consumables:
         consumables = json.loads(consumables.replace(',]', ']'))
-        option_value.settings.consumables = consumables
+        value.settings.consumables = consumables
     else:
-        option_value.settings.consumables = None
+        value.settings.consumables = None
 
     db.session.commit()
 
@@ -259,55 +302,44 @@ def option_value_add(option_id, value_id=None):
                                 option_id=option_id,
                                 value_id=value_id))
 
-    return redirect(url_for('option_value_products',
-                            option_id=option_id,
-                            value_id=value_id))
+    return ''
 
 
-@app.route('/options/<int:option_id>', methods=['POST'])
-@app.route('/options/<int:option_id>/<string:action>', methods=['POST'])
+@option.route('/<int:option_id>', methods=['POST'])
 @login_required
-def options_action(option_id, action=None):
+def values_action(option_id):
     """ Действия над значениями опции """
-    values_count = request.form.get('values-count')
-    if not values_count:
-        return redirect(url_for('option_values', option_id=option_id))
+    data = json.loads(request.data) if request.data else {}
+    action = data.get('action')
+    ids = data.get('ids')
 
-    counter = 1
-    while counter <= int(values_count):
-        next_chacked = request.form.get('value-' + str(counter))
-        if not next_chacked:
-            counter += 1
-            continue
-
-        value_id = request.form.get('value-id-' + str(counter))
-        option_value = get_option_value(value_id)
+    for value_id in ids:
+        value = get_value(value_id)
 
         # Удалить
         if action == 'delete':
 
-            if option_value.settings:
-                db.session.delete(option_value.settings)
-            if option_value.products_options:
-                for product in option_value.products_options:
+            if value.settings:
+                db.session.delete(value.settings)
+            if value.products_options:
+                for product in value.products_options:
                     db.session.delete(product)
-            if option_value.description:
-                db.session.delete(option_value.description)
+            if value.description:
+                db.session.delete(value.description)
             db.session.commit()
-            db.session.delete(option_value)
+            db.session.delete(value)
 
         # Авто привязка
         elif action == 'auto_compare':
-            auto_option_to_products(option_value)
+            auto_option_to_products(value)
 
         # Отвязка
         elif action == 'clean_options':
-            for product_option in option_value.products_options:
+            for product_option in value.products_options:
                 product_clean_options(product_option.product_id)
 
-        counter += 1
     db.session.commit()
-    return redirect(url_for('option_values', option_id=option_id))
+    return redirect(url_for('.option_values', option_id=option_id))
 
 
 def other_products_in_option_value(option_value):
@@ -427,7 +459,7 @@ def product_clean_options(product_id):
     db.session.commit()
 
 
-@app.route('/options/<int:option_id>/change', methods=['POST'])
+@option.route('/<int:option_id>/change', methods=['POST'])
 @login_required
 def change_options_value(option_id):
     values_count = request.form.get('values-count')
@@ -480,39 +512,39 @@ def change_options_value(option_id):
     return redirect(url_for('option_values', option_id=option_id))
 
 
-def get_option_values():
-    all_options = db.session.execute(
-        db.select(OptionValueDescription)
-        .order_by(OptionValueDescription.option_value_id)).scalars()
-    return all_options
-
-
-def get_filter_options(option_value):
+def get_filter_options(value, request):
     filter = {}
-    if option_value.settings and option_value.settings.settings:
-        settings = json.loads(option_value.settings.settings)
+    if value.settings and value.settings.settings:
+        settings = json.loads(value.settings.settings)
         filter['categories_ids'] = settings.get('categories_ids')
         filter['attribute_id'] = settings.get('attribute_id')
         filter['attribute_values'] = settings.get('attribute_values')
         filter['stock'] = settings.get('stock')
-        filter['manufacturers_ids'] = request.form.getlist('manufacturers_ids')
-        filter['options'] = request.form.get('options')
+
+    if request.method == 'POST':
+        session_post('manufacturers_ids', request.form.getlist('manufacturers_ids')) 
+        session_post('options', request.form.get('options')) 
+        session_post('per_page', request.form.get('per_page')) 
+
+    filter['manufacturers_ids'] = session_get('manufacturers_ids')
+    filter['options'] = session_get('options')
+    filter['per_page'] = session_get('per_page')
     return filter
 
 
-@app.route('/options/option_<int:option_id>/value_<string:value_id>', methods=['GET', 'POST'])
+@option.route('/<int:option_id>/value_products', methods=['GET', 'POST'])
 @login_required
-def option_value_products(option_id, value_id):
+def value_products(option_id):
+    value_id = request.args.get('value_id')
 
-    option_value = get_option_value(value_id)
+    value = get_value(value_id)
+    filter = get_filter_options(value, request)
+    products = get_products(filter=filter)
 
     attributes = (Attribute.query
         .join(Attribute.description)
         .where(AttributeDescription.name != None)
         .order_by(Attribute.sort_order)).all()
-
-    filter = get_filter_options(option_value)
-    products = get_products(filter=filter)
 
     request_base = Manufacturer.query
 
@@ -523,40 +555,30 @@ def option_value_products(option_id, value_id):
                    .filter(CategoryDescription.category_id.in_(categories_ids)))
     manufacturers = request_base.order_by(Manufacturer.name).all()
 
-    other_products = other_products_in_option_value(option_value)
+    other_products = other_products_in_option_value(value)
 
-    return render_template('options/products.html',
+    return render_template('option/value_products.html',
                            products=products,
                            option_id=option_id,
-                           value=option_value,
-                           value_id=value_id,
+                           value=value,
                            manufacturers=manufacturers,
                            filter=filter,
                            attributes=attributes,
                            other_products=other_products)
 
 
-@app.route('/options/option_<int:option_id>/value_<string:value_id>/action/<string:action>', methods=['GET', 'POST'])
-@app.route('/options/option_<int:option_id>/value_<string:value_id>/action', methods=['GET', 'POST'])
+@option.route('/<int:option_id>/value_<string:value_id>/products_action', methods=['POST'])
 @login_required
-def option_value_products_action(option_id, value_id, action=None):
+def products_action(option_id, value_id):
     """ Действия над товараим в опции """
-    products_count = request.form.get('products-count')
-    if not products_count:
-        return redirect(url_for('option_value_products',
-                                option_id=option_id,
-                                value_id=value_id))
+    value = get_value(value_id)
+    settings = json.loads(value.option.settings.text)
 
-    option_value = get_option_value(value_id)
+    data = json.loads(request.data) if request.data else {}
+    action = data.get('action')
+    ids = data.get('ids')
 
-    settings = json.loads(option_value.option.settings.text)
-
-    counter = 1
-    while counter <= int(products_count):
-        product_id = request.form.get('product-id-' + str(counter))
-        if not product_id:
-            counter += 1
-            continue
+    for product_id in ids:
 
         # Удаление
         if (action == 'delete'):
@@ -564,17 +586,16 @@ def option_value_products_action(option_id, value_id, action=None):
 
         # Принять изменения
         elif action == 'option_to_products':
-            manual_option_to_products(product_id, option_value, settings)
+            manual_option_to_products(product_id, value, settings)
 
-        counter += 1
     db.session.commit()
 
-    return redirect(url_for('option_value_products',
+    return redirect(url_for('.value_products',
                             option_id=option_id,
                             value_id=value_id))
 
 
-@app.route('/options/delete_', methods=['GET'])
+@option.route('/options/delete_', methods=['GET'])
 @login_required
 def option_del():
     options = ProductOption.query.filter(ProductOption.product_option_value == None)

@@ -1,14 +1,6 @@
-{% extends "base.html" %}
-{% block title %}  {% endblock %}
-{% block head %}
-    {{ super() }}
-{% endblock %}
-{% block link %}
-{% endblock %}
-{% block content %}
-
 <!-- Container fluid -->
-<form id="OptionValueSettings" method="post" action="{{ url_for('option_value_add', option_id=option_id, value_id=value_id) }}">
+<form id="OptionValueSettings"
+  action="{{ url_for('.value_settings_update', option_id=option.option_id, value_id=value_id) }}">
   <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
     <div class="row">
@@ -18,15 +10,11 @@
           <div class="d-flex align-items-center">
             <div class="mb-2 mb-lg-0">
               <h3 class="mb-0">
-                <a href="" class="">Варианты опции</a>
-                | {{ 'Настройки' if value_id else 'Новое значение опции' }}
+                {{ value.description.name if value else 'Новое значение опции' }}
               </h3>
             </div>
             <div class="ms-auto d-flex gap-2">
-              <button id="submit" type="submit" class="btn btn-primary">Сохранить</button>
-              <button id="submit" type="submit" class="btn btn-primary"
-                formaction="{{ url_for('option_value_add', option_id=option_id, value_id=value_id, action='apply') }}">Применить</button>
-              <a class="btn btn-primary" href="">Товары</a>
+              <button type="button" class="btn btn-primary submit">Сохранить</button>
             </div>
           </div>
         </div>
@@ -38,8 +26,8 @@
         <!-- nav -->
         <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
           <li class="nav-item" role="presentation">
-            <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail" role="tab"
-              aria-controls="pills-detail" aria-selected="true">Общие</a>
+            <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail"
+              role="tab" aria-controls="pills-detail" aria-selected="true">Общие</a>
           </li>
 
           <li class="nav-item">
@@ -57,7 +45,8 @@
       <div class="col-xl-12 col-lg-12 col-md-12 col-12">
 
         <div class="tab-content" id="pills-tabContent">
-          <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
+          <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab"
+            tabindex="0">
             <div class="col-12 d-grid gap-3">
 
               <div class="card h-100">
@@ -67,25 +56,25 @@
 
                   <!-- card body -->
                   <div class="card-body">
-                    
+
                     <!-- row -->
                     <div class="mb-3 row">
                       <div class="col-sm-4 mb-3 mb-lg-0">
                         <label for="name" class="form-label">Название</label>
-                        <input type="text" class="form-control"
-                            id="name" name="name" value="{{ value.description.name if value }}" required>
+                        <input type="text" class="form-control" id="name" name="name"
+                          value="{{ value.description.name if value }}" required>
                       </div>
-                      
+
                       <div class="col-sm-4">
                         <label for="sort" class="form-label">Порядок сортировки</label>
-                        <input type="number" class="form-control" placeholder=""
-                            id="sort" name="sort" value="{{ value.sort_order if value }}">
+                        <input type="number" class="form-control" placeholder="" id="sort" name="sort"
+                          value="{{ value.sort_order if value }}">
                       </div>
-                      
+
                       <div class="col-sm-4">
                         <label for="price" class="form-label">Цена</label>
-                        <input type="number" class="form-control" placeholder=""
-                            id="price" name="price" value="{{ value.settings.price if value }}">
+                        <input type="number" class="form-control" placeholder="" id="price" name="price"
+                          value="{{ value.settings.price if value }}">
                       </div>
                     </div>
 
@@ -95,36 +84,38 @@
                         <div class="mb-1">
                           <label for="categories_ids" class="form-label">Категория</label>
                           <select class="selectpicker" data-width="100%" data-live-search="true"
-                            data-none-selected-text = "Все" data-none-results-text="Не найдено {0}" 
-                            id="categories_ids" name="categories_ids">
+                            data-none-selected-text="Все" data-none-results-text="Не найдено {0}" id="categories_ids"
+                            name="categories_ids">
                             <option></option>
 
                             {% for category in categories %}
-                              {% set id = category.category_id %}
-                              {% if not category.parent_id %} 
-                                <optgroup label="{{ category.description.name }}">
+                            {% set id = category.category_id %}
+                            {% if not category.parent_id %}
+                            <optgroup label="{{ category.description.name }}">
 
-                                {% for subcategory in categories %}
-                                  {% set id = subcategory.category_id %}
-                                  {% if subcategory.parent_id == category.category_id %}
-                                    <option {{ 'selected' if settings and id|string in settings.get('categories_ids') }} value="{{ id }}">
-                                      {{ subcategory.description.name }}
-                                    </option>
+                              {% for subcategory in categories %}
+                              {% set id = subcategory.category_id %}
+                              {% if subcategory.parent_id == category.category_id %}
+                              <option {{ 'selected' if settings and id|string in settings.get('categories_ids') }}
+                                value="{{ id }}">
+                                {{ subcategory.description.name }}
+                              </option>
 
-                                    {% for subsubcategory in categories %}
-                                      {% set id = subsubcategory.category_id %}
-                                      {% if subsubcategory.parent_id == subcategory.category_id %}
-                                        <option {{ 'selected' if settings and id|string in settings.get('categories_ids') }} value="{{ id }}">
-                                          - {{ subsubcategory.description.name }}
-                                        </option>
-                                      {% endif %}
-                                    {% endfor %}
-
-                                  {% endif %}
-                                {% endfor %}
-                                  
+                              {% for subsubcategory in categories %}
+                              {% set id = subsubcategory.category_id %}
+                              {% if subsubcategory.parent_id == subcategory.category_id %}
+                              <option {{ 'selected' if settings and id|string in settings.get('categories_ids') }}
+                                value="{{ id }}">
+                                - {{ subsubcategory.description.name }}
+                              </option>
                               {% endif %}
-                            {% endfor %}
+                              {% endfor %}
+
+                              {% endif %}
+                              {% endfor %}
+
+                              {% endif %}
+                              {% endfor %}
                           </select>
                         </div>
                       </div>
@@ -132,12 +123,12 @@
                       <div class="col-sm-4">
                         <label for="attribute_id" class="form-label">Атрибут сопоставления</label>
                         <select class="selectpicker" data-width="100%" data-live-search="true"
-                          data-none-selected-text = "Нет" data-none-results-text="Не найдено {0}"
-                          id="attribute_id" name="attribute_id">
-                            <option></option>
+                          data-none-selected-text="Нет" data-none-results-text="Не найдено {0}" id="attribute_id"
+                          name="attribute_id">
+                          <option></option>
                           {% for attribute in attributes if attribute.description.name %}
-                            <option {{ 'selected' if settings and attribute.attribute_id == settings.get('attribute_id')|int }}
-                              value="{{ attribute.attribute_id }}">{{ attribute.description.name }}</option>
+                          <option {{ 'selected' if settings and attribute.attribute_id==settings.get('attribute_id')|int
+                            }} value="{{ attribute.attribute_id }}">{{ attribute.description.name }}</option>
                           {% endfor %}
                         </select>
                       </div>
@@ -145,16 +136,16 @@
                       <div class="col-sm-4">
                         <label for="attribute_values" class="form-label">Значения атрибута</label>
                         <select class="selectpicker" data-width="100%" data-live-search="true"
-                          data-none-selected-text = "Нет" data-none-results-text="Не найдено {0}" multiple
+                          data-none-selected-text="Нет" data-none-results-text="Не найдено {0}" multiple
                           id="attribute_values" name="attribute_values">
                           {% for attribute_value in attribute_values|sort if attribute_values %}
-                            <option 
-                              value="{{ attribute_value }}" {{ 'selected' if settings and attribute_value|string in settings.get('attribute_values') }}>
-                              {{ attribute_value }}</option>
+                          <option value="{{ attribute_value }}" {{ 'selected' if settings and attribute_value|string in
+                            settings.get('attribute_values') }}>
+                            {{ attribute_value }}</option>
                           {% endfor %}
                         </select>
                       </div>
-                      
+
                     </div>
 
                     <!-- row -->
@@ -164,10 +155,10 @@
                         <label for="stock" class="form-label">Наличие товара</label>
                         <select class="selectpicker" data-width="100%" id="stock" name="stock">
                           <option value="">Все</option>
-                          <option {{ 'selected' if settings and settings.get('stock') == 'in stock on order' }}
+                          <option {{ 'selected' if settings and settings.get('stock')=='in stock on order' }}
                             value="in stock on order">В наличии и под заказ</option>
-                          <option {{ 'selected' if settings and settings.get('stock') == 'in stock' }}
-                            value="in stock">Только в наличии</option>
+                          <option {{ 'selected' if settings and settings.get('stock')=='in stock' }} value="in stock">
+                            Только в наличии</option>
                         </select>
                       </div>
 
@@ -179,9 +170,10 @@
             </div>
           </div>
 
-          <div class="tab-pane fade" id="pills-consumables" role="tabpanel" aria-labelledby="pills-consumables-tab" tabindex="0">
+          <div class="tab-pane fade" id="pills-consumables" role="tabpanel" aria-labelledby="pills-consumables-tab"
+            tabindex="0">
             <div class="col-12 d-grid gap-3">
-                    
+
               <!-- row -->
               <div id="tabConsumables" class="card h-100">
 
@@ -216,17 +208,19 @@
                       </td>
                       <td class="col-4">
                         <span class="line-count">{{ var.count }}.</span>
-                        <select class="product-select selectpicker" data-width="100%" data-live-search="true" data-none-selected-text=""
-                          data-none-results-text="Не найдено {0}">
+                        <select class="product-select selectpicker" data-width="100%" data-live-search="true"
+                          data-none-selected-text="" data-none-results-text="Не найдено {0}">
                           <option value="">-- Выберите товар --</option>
                           {% for product in products %}
-                          <option value="{{ product.product_id }}" {{ 'selected' if product.product_id == consumable.product_id }}>{{
+                          <option value="{{ product.product_id }}" {{ 'selected' if
+                            product.product_id==consumable.product_id }}>{{
                             product.description.name }}</option>
                           {% endfor %}
                         </select>
                       </td>
                       <td class="col-2">
-                        <input type="text" class="form-control quantity" value="{{ consumable.quantity|smart_int if consumable.quantity }}" placeholder="0">
+                        <input type="text" class="form-control quantity"
+                          value="{{ consumable.quantity|smart_int if consumable.quantity }}" placeholder="0">
                       </td>
                       <td></td>
                     </tr>
@@ -234,7 +228,7 @@
 
                   </tbody>
                 </table>
-                
+
                 <div class="d-flex">
                   <div>
                     <div class="m-3 gap-2 justify-content-start actions">
@@ -246,18 +240,19 @@
                     </div>
                   </div>
                   <div class="m-3 ms-auto gap-2">
-                      <select class="selectpicker product-select consumables-ids" data-width="" data-live-search="true" data-none-selected-text=""
-                        data-none-results-text="Не найдено {0}" multiple>
-                        <option></option>
-                        {% for product in products %}
-                          <option value="{{ product.product_id }}">{{
-                            product.description.name }}</option>
-                        {% endfor %}
-                      </select>
+                    <select class="selectpicker product-select consumables-ids" data-width="" data-live-search="true"
+                      data-none-selected-text="" data-none-results-text="Не найдено {0}" multiple>
+                      <option></option>
+                      {% for product in products %}
+                      <option value="{{ product.product_id }}">{{
+                        product.description.name }}</option>
+                      {% endfor %}
+                    </select>
 
                     <button class="btn rounded-3 btn-light" type="button" onclick="FillProducts()">Сформировать</button>
                     <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
-                    <button class="btn rounded-3 btn-outline-secondary open-modal-product" type="button" data-bs-toggle="modal" data-bs-target="#ProductInfoModal">Создать товар</button>
+                    <button class="btn rounded-3 btn-outline-secondary open-modal-product" type="button"
+                      data-bs-toggle="modal" data-bs-target="#ProductInfoModal">Создать товар</button>
                     <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
                   </div>
                 </div>
@@ -273,7 +268,8 @@
 </form>
 
 <!-- Modal -->
-<div class="modal fade" id="ProductInfoModal" tabindex="-1" role="dialog" aria-labelledby="ProductInfoLabel" aria-hidden="true">
+<div class="modal fade" id="ProductInfoModal" tabindex="-1" role="dialog" aria-labelledby="ProductInfoLabel"
+  aria-hidden="true">
   <div class="modal-dialog modal-fullscreen w-90" role="document">
     <div class="modal-content bg-light">
       <div class="modal-close-label">
@@ -285,6 +281,9 @@
 </div>
 
 <script>
+  $('#OptionValueSettings').find('.selectpicker').each(function () {
+    $(this).selectpicker();
+  });
 
   // Fields
   function newLine($new_line = '', product_id = '') {
@@ -315,9 +314,9 @@
   // Fill products
   function FillProducts() {
     var ids = $('select.consumables-ids').val()
-      for (let i = 0; i < ids.length; i++) {
-      newLine('', product_id=ids[i])
-      }
+    for (let i = 0; i < ids.length; i++) {
+      newLine('', product_id = ids[i])
+    }
   }
 
   // Data To Server
@@ -396,7 +395,7 @@
 
   // Open Modal
   $('.open-modal-product').on("click", function () {
-    $('#ProductInfoModal').find('.modal-body').load("{{ url_for('stock_product', product_id=None) }}");
+    //$('#ProductInfoModal').find('.modal-body').load("");
   })
 
   // Placeholder
@@ -448,8 +447,9 @@
     Placeholder('end')
   }
 
+  //url_for('json_consumables')
   function getProducts() {
-    return fetch('{{ url_for('json_consumables') }}', {
+    return fetch('', {
       method: 'GET',
       headers: {
         "Content-type": "application/json; charset=UTF-8"
@@ -459,4 +459,3 @@
       .then(data => window.products = data)
   }
 </script>
-{% endblock %}
