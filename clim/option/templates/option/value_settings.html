@@ -1,6 +1,6 @@
 <!-- Container fluid -->
 <form id="OptionValueSettings"
-  action="{{ url_for('.value_settings_update', option_id=option.option_id, value_id=value_id) }}">
+  action="{{ url_for('.value_settings_update', option_id=option.option_id, value_id=value.option_value_id) }}">
   <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
     <div class="row">
@@ -14,7 +14,7 @@
               </h3>
             </div>
             <div class="ms-auto d-flex gap-2">
-              <button type="button" class="btn btn-primary submit">Сохранить</button>
+              <button type="button" class="btn btn-primary submit-local">Сохранить</button>
             </div>
           </div>
         </div>
@@ -251,8 +251,9 @@
 
                     <button class="btn rounded-3 btn-light" type="button" onclick="FillProducts()">Сформировать</button>
                     <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
-                    <button class="btn rounded-3 btn-outline-secondary open-modal-product" type="button"
-                      data-bs-toggle="modal" data-bs-target="#ProductInfoModal">Создать товар</button>
+                    <button class="btn rounded-3 btn-outline-secondary open-modal-product" type="button">
+                      Создать товар
+                    </button>
                     <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
                   </div>
                 </div>
@@ -267,20 +268,9 @@
   <input type="hidden" name="consumables_data">
 </form>
 
-<!-- Modal -->
-<div class="modal fade" id="ProductInfoModal" tabindex="-1" role="dialog" aria-labelledby="ProductInfoLabel"
-  aria-hidden="true">
-  <div class="modal-dialog modal-fullscreen w-90" role="document">
-    <div class="modal-content bg-light">
-      <div class="modal-close-label">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body"> </div>
-    </div>
-  </div>
-</div>
 
 <script>
+
   $('#OptionValueSettings').find('.selectpicker').each(function () {
     $(this).selectpicker();
   });
@@ -320,7 +310,8 @@
   }
 
   // Data To Server
-  $('#OptionValueSettings').submit(function () {
+  $('#OptionValueSettings').submit(function (e) {
+    e.preventDefault();
 
     var consumables = '[';
     $('#tabConsumables').find('tr.product').each(function () {
@@ -338,6 +329,7 @@
     if (consumables !== '[]') {
       $('[name=consumables_data]').val(JSON.stringify(consumables));
     }
+
   })
 
   // Checks
@@ -395,7 +387,9 @@
 
   // Open Modal
   $('.open-modal-product').on("click", function () {
-    //$('#ProductInfoModal').find('.modal-body').load("");
+    var $modal = $('#ProductInfoModal');
+    NewModal($modal);
+    $modal.find('.modal-body').load("{{ url_for('stock.product_info') }}");
   })
 
   // Placeholder

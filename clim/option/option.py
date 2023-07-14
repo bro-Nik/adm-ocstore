@@ -3,15 +3,15 @@ import re
 from flask import render_template, redirect, url_for, request, Blueprint, session
 from flask_login import login_required
 
-# from clim.app import app, db
 from clim.models import db, Attribute, AttributeDescription, Manufacturer, Option,\
     OptionDescription, OptionSetting, OptionValueSetting, OptionValue, \
     OptionValueDescription, ProductAttribute, ProductOption,\
-    ProductOptionValue, Product, CategoryDescription, Category
+    ProductOptionValue, Product, CategoryDescription, Category, WeightClass, ProductToCategory
 from clim.routes import get_consumables, get_categories, get_product
 
 
 option = Blueprint('option', __name__, template_folder='templates', static_folder='static')
+
 
 def session_get(param):
     prefix = option.name + '_'
@@ -23,8 +23,11 @@ def session_post(param, value):
     session[prefix + param] = value
 
 
-def int_or_other(number, default):
+def int_or_other(number, default=0):
     return int(number) if number else default
+
+def float_or_other(number, default=0):
+    return float(number) if number else default
 
 
 def get_option(option_id):
@@ -128,8 +131,7 @@ def option_settings():
     option_id = request.args.get('option_id')
 
     return render_template('option/option_settings.html',
-                           option=get_option(option_id),
-                           )
+                           option=get_option(option_id))
 
 
 @option.route('/settings_update', methods=['POST'])
@@ -242,7 +244,6 @@ def value_settings(option_id):
     return render_template('option/value_settings.html',
                            option=option,
                            value=value,
-                           value_id=value_id,
                            settings=settings,
                            categories=tuple(categories),
                            attributes=attributes,
@@ -250,7 +251,7 @@ def value_settings(option_id):
                            products=products)
 
 
-@option.route('/<int:option_id>/option_value_update', methods=['POST'])
+@option.route('/<int:option_id>/value_settings_update', methods=['POST'])
 @login_required
 def value_settings_update(option_id):
     """ Отправка настроек значения опции """
@@ -280,9 +281,9 @@ def value_settings_update(option_id):
     if not value.settings:
         value.settings = OptionValueSetting()
 
-    value.sort_order = request.form.get('sort')
+    value.sort_order = int_or_other(request.form.get('sort'))
     value.description.name = request.form.get('name')
-    value.settings.price = int_or_other(request.form.get('price'), 0)
+    value.settings.price = float_or_other(request.form.get('price'))
     value.settings.settings = settings
 
     db.session.commit()
@@ -296,11 +297,6 @@ def value_settings_update(option_id):
         value.settings.consumables = None
 
     db.session.commit()
-
-    if request.args.get('action') == 'apply':
-        return redirect(url_for('option_value_settings',
-                                option_id=option_id,
-                                value_id=value_id))
 
     return ''
 
@@ -606,4 +602,3 @@ def option_del():
         db.session.delete(product_option_value)
 
     return 'ok'
-

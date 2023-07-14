@@ -19,7 +19,7 @@
     {% include 'partials/navbar-vertical.html' %}
     <!-- Page content -->
     <div id="page-content">
-      {#{% include 'partials/header.html' %}#}
+      {% include 'partials/header.html' %}
 
       {% with messages = get_flashed_messages() %}
         {% if messages %}

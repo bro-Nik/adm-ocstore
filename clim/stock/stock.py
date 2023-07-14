@@ -561,8 +561,9 @@ def product_info_update(product_id=None):
     
     db.session.commit()
 
-    return redirect(url_for('product_info',
-                            product_id=product.product_id))
+    # return redirect(url_for('.product_info',
+    #                         product_id=product.product_id))
+    return ''
 
 
 @stock.route('/rename_products', methods=['GET'])

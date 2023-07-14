@@ -407,7 +407,7 @@
   }
 
   function getProducts() {
-    return fetch('{{ url_for('.json_all_products') }}', {
+    return fetch('{{ url_for('stock.json_all_products') }}', {
       method: 'GET',
       headers: {
         "Content-type": "application/json; charset=UTF-8"

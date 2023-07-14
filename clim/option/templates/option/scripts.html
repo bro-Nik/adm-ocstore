@@ -52,18 +52,21 @@
       data: JSON.stringify(data),
       contentType: 'application/json; charset=utf-8',
       //dataType: 'json',
-      success: function (data) {
-        if (typeof current_url === 'undefined') {
-          location.reload();
-        } else {
-          $(btn).closest('.modal-body').load(current_url);
-        }
-      }
+      success: PageUpdate(btn)
     });
   };
+  function PageUpdate(btn) {
+    var apply = $(btn).hasClass('apply');
+    if (apply) {
+      $(btn).closest('.modal-body').load(current_url);
+    } else {
+      location.reload();
+    }
+  }
 
   $("#FullScreenModal").on("click", "form .submit", function () {
     //e.preventDefault();
+    var apply = $(this).hasClass('.apply');
     var $form = $(this).closest("form");
     var form_data = $form.serialize();
     $.ajax({
@@ -75,5 +78,53 @@
       }
     });
     $('#FullScreenModal').modal('hide');
-  }); 
+  });
+
+  // Modals
+
+  function NewModal($modal) {
+    var count = $('.modal.show').length
+    if (count !== 0) {
+      var z_index = 0;
+
+      $('body').find('.modal.show').each(function () {
+        var this_z_index = parseInt($(this).css('z-index'));
+        if (this_z_index > z_index) {
+          z_index = this_z_index;
+        }
+        var $close_btn = $(this).find('.modal-close-label')
+        $close_btn.css('top', '+=60')
+        $close_btn.css('opacity', '50%')
+
+      });
+      $modal.css('z-index', z_index + 1)
+      $modal.modal('toggle')
+    }
+  }
+
+  function CloseModal($modal) {
+    var count = $('.modal.show').length
+    if (count > 1) {
+      var z_index = parseInt($modal.css('z-index'));
+      var max_z_index = 0;
+
+      $('body').find('.modal.show').each(function () {
+        var this_z_index = parseInt($(this).css('z-index'));
+        if (this_z_index !== z_index && this_z_index > max_z_index) {
+          max_z_index = this_z_index;
+        }
+      });
+
+      $('body').find('.modal.show').each(function () {
+        var $close_btn = $(this).find('.modal-close-label')
+        $close_btn.css('top', '-=60')
+
+        var this_z_index = parseInt($(this).css('z-index'));
+        if (this_z_index == max_z_index) {
+          $close_btn.css('opacity', '1')
+        }
+      });
+    }
+    $modal.modal('toggle');
+  }
 </script>

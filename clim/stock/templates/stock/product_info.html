@@ -1,6 +1,6 @@
 <!-- Container fluid -->
 <form id="ProductInfo" method="post"
-  action="{{ url_for('.product_info_update', product_id=product.product_id if product else None) }}">
+  action="{{ url_for('stock.product_info_update', product_id=product.product_id if product else None) }}">
   <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
     <div class="row">
@@ -222,6 +222,7 @@
 
   $("#ProductInfo").submit(function (e) {
     e.preventDefault();
+    CloseModal($(this).closest('.modal'));
     var form_data = $(this).serialize();
     $.ajax({
       type: "POST",

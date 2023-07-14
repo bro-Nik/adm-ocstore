@@ -8,7 +8,8 @@
           <div class="mb-2 mb-lg-0">
             <h3 class="mb-0">
               <span class="text-primary">{{ value.description.name }}</span>
-              | Товары</h3>
+              | Товары
+            </h3>
           </div>
         </div>
       </div>
@@ -20,20 +21,22 @@
     <div class="card h-100">
 
       <div class="card-body">
-        <form id="ValueProductsFilter" action="{{ url_for('.value_products', option_id=option_id, value_id=value.option_value_id) }}">
-            
+        <form id="ValueProductsFilter"
+          action="{{ url_for('.value_products', option_id=option_id, value_id=value.option_value_id) }}">
+
           <div class="row g-2">
 
             <div class="col-md-2">
               <div class="mb-1">
                 <label class="form-label h7">Производитель</label>
-                <select class="selectpicker" data-width="100%" data-live-search="true" data-none-selected-text = "Все"
-                 data-none-results-text="Не найдено {0}" multiple name="manufacturers_ids">
+                <select class="selectpicker" data-width="100%" data-live-search="true" data-none-selected-text="Все"
+                  data-none-results-text="Не найдено {0}" multiple name="manufacturers_ids">
 
                   {% for manufacturer in manufacturers %}
-                    {% set id = manufacturer.manufacturer_id %}
-                    <option {{ 'selected' if filter.get('manufacturers_ids') and id|string in filter.get('manufacturers_ids') }} value="{{ id }}">{{ manufacturer.name }}
-                    </option>
+                  {% set id = manufacturer.manufacturer_id %}
+                  <option {{ 'selected' if filter.get('manufacturers_ids') and id|string in
+                    filter.get('manufacturers_ids') }} value="{{ id }}">{{ manufacturer.name }}
+                  </option>
                   {% endfor %}
                 </select>
               </div>
@@ -44,8 +47,10 @@
                 <label class="form-label h7">Опции</label>
                 <select class="selectpicker" data-width="100%" name="options">
                   <option value="">Все</option>
-                  <option {{ 'selected' if filter.get('options') == 'whith options' }} value="whith options">Товары с опциями</option>
-                  <option {{ 'selected' if filter.get('options') == 'whithout options' }} value="whithout options">Товары без опций</option>
+                  <option {{ 'selected' if filter.get('options')=='whith options' }} value="whith options">Товары с
+                    опциями</option>
+                  <option {{ 'selected' if filter.get('options')=='whithout options' }} value="whithout options">Товары
+                    без опций</option>
                 </select>
               </div>
             </div>
@@ -56,7 +61,7 @@
                 <label class="form-label h7">Результатов</label>
                 <select class="selectpicker" data-width="100%" name="per_page">
                   {% for i in [20, 40, 60, 80, 100] %}
-                  <option {{ 'selected' if filter.get('per_page')|int == i }} value="{{ i }}">{{ i }}</option>
+                  <option {{ 'selected' if filter.get('per_page')|int==i }} value="{{ i }}">{{ i }}</option>
                   {% endfor %}
                 </select>
               </div>
@@ -75,28 +80,28 @@
         <!-- table  -->
         <div class="table-responsive">
           <form class="" id="optionProducts" method='post' action="">
-          <table class="table text-nowrap">
-            <thead class="">
-              <tr>
-                <th class="main-tab-checkbox">
-                  <input class="form-check-input check-all" type="checkbox">
-                </th>
-                <th scope="col">Название</th>
-                <th scope="col">Опции</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% set group_attribute = namespace(name='') %}
+            <table class="table text-nowrap">
+              <thead class="">
+                <tr>
+                  <th class="main-tab-checkbox">
+                    <input class="form-check-input check-all" type="checkbox">
+                  </th>
+                  <th scope="col">Название</th>
+                  <th scope="col">Опции</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% set group_attribute = namespace(name='') %}
 
-              {% for product in products %}
+                {% for product in products %}
 
                 {% for attribute in product.attributes if attribute.attribute_id == filter.get('attribute_id')|int %}
-                  {% if attribute.text != group_attribute.name %}
-                    {% set group_attribute.name = attribute.text %}
-                    <tr>
-                      <td colspan=3><b>{{ attribute.text }}</b></td>
-                    </tr>
-                  {% endif %}
+                {% if attribute.text != group_attribute.name %}
+                {% set group_attribute.name = attribute.text %}
+                <tr>
+                  <td colspan=3><b>{{ attribute.text }}</b></td>
+                </tr>
+                {% endif %}
                 {% endfor %}
 
                 <tr>
@@ -108,16 +113,16 @@
                   </td>
                   <td>
                     {% for option in product.options %}
-                      {{ option.product_option_value.product_option.description.name }}
+                    {{ option.product_option_value.product_option.description.name }}
                     {% endfor %}
                   </td>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+                {% endfor %}
+              </tbody>
+            </table>
 
-        </form>
-        
+          </form>
+
         </div>
 
       </div>
@@ -127,43 +132,43 @@
   {% include 'partials/pagination.html' %}
 
   {% if other_products %}
-    <div class="row mt-6 mb-6">
-      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-        <div class="card h-100">
+  <div class="row mt-6 mb-6">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="card h-100">
 
-          <!-- card header  -->
-          <div class="card-header bg-white py-4">
-            <h4 class="mb-0">Товары не подходящие по фильтру</h4>
-          </div>
+        <!-- card header  -->
+        <div class="card-header bg-white py-4">
+          <h4 class="mb-0">Товары не подходящие по фильтру</h4>
+        </div>
 
-          <!-- table other -->
-          <div class="table-responsive">
-            <table class="table text-nowrap">
-              <thead class="table-light">
-                <tr>
-                  <th scope="col" class="sticky-table"> Название </th>
-                  <th scope="col"></th>
-                </tr>
-              </thead>
-              <tbody>
+        <!-- table other -->
+        <div class="table-responsive">
+          <table class="table text-nowrap">
+            <thead class="table-light">
+              <tr>
+                <th scope="col" class="sticky-table"> Название </th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
 
-                {% for product in other_products %}
+              {% for product in other_products %}
 
-                  <tr>
-                    <td class="sticky-table"> {{ product.mpn }} </td>
-                    <td>
-                      {% for option in product.options %}
-                        {{ option.product_option_value.product_option.description.name }}
-                      {% endfor %}
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
+              <tr>
+                <td class="sticky-table"> {{ product.mpn }} </td>
+                <td>
+                  {% for option in product.options %}
+                  {{ option.product_option_value.product_option.description.name }}
+                  {% endfor %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
+  </div>
   {% endif %}
 </div>
 
@@ -178,12 +183,12 @@
       </div>
       <div class="vr my-3"></div>
       <div class="my-1">
-        <button class="btn btn-sm rounded-3 action" type="button" data-action="option_to_products">
+        <button class="btn btn-sm rounded-3 action apply" type="button" data-action="option_to_products">
           <i data-feather="check-square" class="icon-xs"></i>
           Привязать
         </button>
 
-        <button class="btn btn-sm rounded-3 action" type="button" data-action="delete">
+        <button class="btn btn-sm rounded-3 action apply" type="button" data-action="delete">
           <i data-feather="minus-square" class="icon-xs"></i>
           Отвязать
         </button>
@@ -197,49 +202,39 @@
   var action_url = "{{ url_for('.products_action', option_id=option_id, value_id=value.option_value_id) }}"
   var current_url = "{{ request.full_path }}".replaceAll("&amp;", "&")
 
-// Selectpicker
-$('#ValueProducts').find('.selectpicker').each(function () {
-  $(this).selectpicker();
-});
-
-// Icons
-feather.replace();
-
-// Filter
-$('#ValueProducts').find('select').on("change", function () {
-  var $modal = $('#FullScreenModal');
-
-  var $form = $('#ValueProductsFilter'),
-      form_data = $form.serialize();
-      url = $form.attr('action');
-  /* отправляем данные методом POST */
-  var posting = $.post(url, form_data);
-  /* результат помещаем в div */
-    ;
-  posting.done(function(data) {
-    var content = $(data);
-    $modal.find('.modal-body').empty().append( content );
+  // Selectpicker
+  $('#ValueProducts').find('.selectpicker').each(function () {
+    $(this).selectpicker();
   });
 
+  // Icons
+  feather.replace();
 
-})
+  // Filter
+  $('#ValueProducts').find('select').on("change", function () {
+    var $modal = $('#FullScreenModal');
 
-// Pagination
+    var $form = $('#ValueProductsFilter'),
+      form_data = $form.serialize();
+    url = $form.attr('action');
+    /* отправляем данные методом POST */
+    var posting = $.post(url, form_data);
+    /* результат помещаем в div */
+    ;
+    posting.done(function (data) {
+      var content = $(data);
+      $modal.find('.modal-body').empty().append(content);
+    });
 
-$('#ValueProducts').find('.pagination a').on("click", function () {
-  var $modal = $('#FullScreenModal');
-  var url = $(this).attr('href');
-  $modal.find('.modal-body').load(url);
-  return false;
-})
 
+  })
 
-// Замена formaction
-var url = "{{ url_for('.products_action', option_id=option_id, value_id=value_id) }}"
-function fAction(action, title="None") {
-var x = document.getElementById("optionProducts").action;
-  x = `${url + "/" + action}`
-  document.getElementById("optionProducts").action = x
-  document.getElementById("titleModal").textContent = `${title}`
-}
+  // Pagination
+  $('#ValueProducts').find('.pagination a').on("click", function () {
+    var $modal = $('#FullScreenModal');
+    var url = $(this).attr('href');
+    $modal.find('.modal-body').load(url);
+    return false;
+  })
+
 </script>
