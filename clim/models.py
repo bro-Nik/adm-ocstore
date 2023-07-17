@@ -139,8 +139,8 @@ class ProductToCategory(db.Model):
     main_category = db.Column(db.Boolean)
     # main_product = db.relationship('Product',
     #                           backref=db.backref('main_category', lazy=True))
-    main_product = db.relationship('Product',
-                                  backref='main_category', uselist=False)
+    # main_product = db.relationship('Product',
+    #                               backref='main_category', uselist=False)
 
 # product_to_category = db.Table('oc_product_to_category',
 #     db.Column('product_id', db.Integer, db.ForeignKey('oc_product.product_id')),
@@ -553,6 +553,7 @@ class StockMovement(db.Model):
     products = db.Column(db.Text)
     movement_type = db.Column(db.String(32))
     details = db.Column(db.Text)
+    stocks = db.Column(db.Text)
 
 
 class StockCategory(db.Model):

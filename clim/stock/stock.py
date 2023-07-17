@@ -73,15 +73,16 @@ def movements(movement_type):
 @stock.route('/movements/<string:movement_type>/action', methods=['POST'])
 @login_required
 def movements_action(movement_type):
-    ids_list = request.form.get('movements-ids')
-    ids_list = json.loads(ids_list) if ids_list else []
+    data = json.loads(request.data) if request.data else {}
 
-    for id in ids_list:
+    action = data.get('action')
+    ids = data.get('ids')
+
+    for id in ids:
         db.session.delete(get_movement(id))
     db.session.commit()
 
-    return redirect(url_for('.movements',
-                            movement_type=movement_type))
+    return ''
 
 
 def get_movement(movement_id):
@@ -89,10 +90,20 @@ def get_movement(movement_id):
         db.select(StockMovement).filter_by(movement_id=movement_id)).scalar()
 
 
-@stock.route('/movements/<string:movement_type>/new', methods=['GET'])
-@stock.route('/movements/<string:movement_type>/<int:movement_id>', methods=['GET'])
+@stock.route('/movements/<string:movement_type>/movement_info', methods=['GET'])
 @login_required
-def movement_info(movement_type, movement_id=None):
+def movement_info(movement_type):
+    movement_id = request.args.get('movement_id')
+
+    return render_template('stock/movement_fast.html',
+                           movement_type=movement_type,
+                           movement_id=movement_id)
+
+
+@stock.route('/movements/<string:movement_type>/movement_lazy', methods=['GET'])
+@login_required
+def movement_info_lazy(movement_type):
+    movement_id = request.args.get('movement_id')
 
     return render_template('stock/movement.html',
                            movement=get_movement(movement_id),
@@ -105,19 +116,25 @@ def movement_info(movement_type, movement_id=None):
 @stock.route('/movement_update/<string:movement_type>_<int:movement_id>', methods=['POST'])
 @login_required
 def movement_update(movement_type, movement_id=None):
-    products = request.form.get('products_data')
-    if products:
-        products = json.loads(products.replace(',]', ']'))
-
-    action = request.form.get('action')
-    name = request.form.get('name')
-
     movement = get_movement(movement_id)
 
+    data = json.loads(request.data) if request.data else {}
+
+    def dumps_or_other(data, default=None):
+        return json.dumps(data) if data else default
+
+    action = data.get('action')
+    name = data.get('name')
+
+
     if 'save' in action:
-        if movement:
-            movement.products = products
-        else:
+        if not movement:
+            movement = StockMovement(
+                movement_type=movement_type,
+                date=datetime.now().date()
+            )
+            db.session.add(movement)
+
             if not name:
                 movement_count = (StockMovement.query
                     .filter(StockMovement.movement_type == movement_type)
@@ -126,19 +143,13 @@ def movement_update(movement_type, movement_id=None):
                     name = 'Приход #'
                 elif movement_type == 'moving':
                     name = 'Перемещение #'
-                else:
-                    pass
                 name += str(movement_count + 1)
 
-            movement = StockMovement(
-                name=name,
-                movement_type=movement_type,
-                date=datetime.now().date(),
-                products=products
-            )
-            db.session.add(movement)
+        movement.name = name
+        movement.products = dumps_or_other(data.get('products'))
+        movement.stocks = dumps_or_other(data.get('stocks'))
 
-    db.session.commit()
+        db.session.commit()
 
     if 'posting' in action:
         error = ''
@@ -168,9 +179,7 @@ def movement_update(movement_type, movement_id=None):
         else:
             flash(error)
 
-    return redirect(url_for('.movement_info',
-                            movement_type=movement_type,
-                            movement_id=movement.movement_id))
+    return 'this is response'
 
 
 def stock_coming_posting(movement):
@@ -314,19 +323,36 @@ def stocks():
                            stocks=tuple(get_stocks()))
 
 
-@stock.route('/stocks/new_stock', methods=['GET'])
-@stock.route('/stocks/<int:stock_id>/settings', methods=['GET'])
+@stock.route('/stocks_action', methods=['POST'])
 @login_required
-def stock_settings(stock_id=None):
+def stocks_action():
+    data = json.loads(request.data) if request.data else {}
+
+    action = data.get('action')
+    ids = data.get('ids')
+
+    for id in ids:
+        stock = get_stock(id)
+        if stock.products:
+            flash('У склада "' + stock.name + '" есть товары, он не удален')
+        else:
+            db.session.delete(get_stock(id))
+    db.session.commit()
+
+    return ''
+
+
+@stock.route('/stocks/stock_settings', methods=['GET'])
+@login_required
+def stock_settings():
     return render_template('stock/stock_settings.html',
-                           stock=get_stock(stock_id))
+                           stock=get_stock(request.args.get('stock_id')))
 
 
-@stock.route('/stocks/add_stock', methods=['POST'])
-@stock.route('/stocks/<int:stock_id>/update', methods=['POST'])
+@stock.route('/stocks/stock_settings_update', methods=['POST'])
 @login_required
-def stock_settings_update(stock_id=None):
-    stock = get_stock(stock_id)
+def stock_settings_update():
+    stock = get_stock(request.args.get('stock_id'))
     if not stock:
         stock = Stock()
         db.session.add(stock)

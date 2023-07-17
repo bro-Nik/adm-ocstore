@@ -222,7 +222,6 @@
 
   $("#ProductInfo").submit(function (e) {
     e.preventDefault();
-    CloseModal($(this).closest('.modal'));
     var form_data = $(this).serialize();
     $.ajax({
       type: "POST",

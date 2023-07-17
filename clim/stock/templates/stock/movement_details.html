@@ -96,19 +96,3 @@
     </div>
   </div>
 </div>
-<script>
-  // 
-  function ContactInfo(name) {
-    var contact_select = document.querySelector('#contact_select')
-    contact_select.classList.add('visually-hidden');
-
-    var contact_name = document.querySelector('#contact input[name="contact_name"]')
-    contact_name.value = name
-
-    var ContactInfo = document.querySelectorAll('.contact-info')
-    ContactInfo.forEach(element => {
-      element.classList.remove("visually-hidden");
-    });
-  }
-
-</script>

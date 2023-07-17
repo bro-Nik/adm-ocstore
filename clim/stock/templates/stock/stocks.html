@@ -3,36 +3,35 @@
 {% block head %}
     {{ super() }}
 {% endblock %}
-{% block link %}
-{% endblock %}
+
 {% block content %}
 
-<div class="container-fluid px-6 d-grid gap-3 mt-3">
+<form id="Stocks" action="{{ url_for('.stocks_action') }}">
+  <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
-  {% include 'stock/header.html' %}
-  <div class="row">
-    <div class="col-lg-12 col-md-12 col-12">
-      <!-- Page header -->
-      <div>
-        <div class="d-flex align-items-center">
-          <div class="mb-2 mb-lg-0">
-            <h3 class="mb-0">Склады</h3>
-          </div>
-          <div class="ms-auto d-flex gap-2">
-            <a class="btn btn-primary" href="{{ url_for('.stock_settings') }}">Добавить</a>
+    {% include 'stock/header.html' %}
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-12">
+        <!-- Page header -->
+        <div>
+          <div class="d-flex align-items-center">
+            <div class="mb-2 mb-lg-0">
+              <h3 class="mb-0">Склады</h3>
+            </div>
+            <div class="ms-auto d-flex gap-2">
+              <a class="btn btn-primary show-stock-settings" href="#">Добавить</a>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- row  -->
-  <div class="row">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <div class="card h-100">
+    <!-- row  -->
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+        <div class="card h-100">
 
-        <!-- table  -->
-        <form class="" id="shops"  method="post" action="">
+          <!-- table  -->
           <div class="table-responsive">
             <table class="table text-nowrap">
               <thead class="">
@@ -50,12 +49,11 @@
 
                 {% for stock in stocks %}
                   {% set var.sum = 0 %}
-                    <tr>
+                  <tr data-stock-id="{{ stock.stock_id }}">
                       <td class="text-average main-tab-checkbox">
-                        {% set var.count = var.count + 1 %}
-                        <input class="form-check-input to-check" type="checkbox" name="{{ 'stock-' + var.count|string }}" value="{{ stock.stock_id }}">
+                        <input class="form-check-input to-check" type="checkbox" value="{{ stock.stock_id }}">
                       </td>
-                      <td class=""><a href="{{ url_for('.stock_settings', stock_id=stock.stock_id) }}" class="text-inherit">{{ stock.name }}</a></td>
+                      <td class=""><a href="#" class="text-inherit show-stock-settings">{{ stock.name }}</a></td>
                       <td class="">
                         {% for product in stock.products %}
                           {% set var.sum = var.sum + product.quantity * product.main_product.cost %}
@@ -68,33 +66,121 @@
 
               </tbody>
             </table>
-          <input type="hidden" name="shops-count" value="{{ var.count }}">
-          <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns visually-hidden">
-            <button class="btn rounded-3 btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#deleteModal">Удалить</button>
-            <button class="btn rounded-3 btn-secondary" type="button" onclick="showButtons(false)">Отмена</button>
           </div>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Modal Delete -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-3">Вы уверенны?</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <button type="submit" form="shops" class="w-100 mb-2 btn rounded-3 btn-danger"><strong>Да</strong></button>
+  <!-- Actions buttons -->
+  <div class="sticky-bottom actions">
+    <div class="col-12">
+      <div class="bg-white h-100 d-flex gap-2 align-items-center">
+        <div class="m-1  ms-5">
+          <span class="">Отмеченно: </span>
+          <span class="checks-count"></span>
+          <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
+        </div>
+        <div class="vr my-3"></div>
+        <div class="my-1">
+          <button class="btn btn-sm rounded-3 action-confirmation" type="button" data-action="delete" data-title="Удалить склады?">
+            <i data-feather="trash" class="icon-xs"></i>
+            Удалить
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
+</form>
+
+{% include 'stock/modals.html' %}
 
 <script>
+  // Check All
+  $('body').on("change", '.check-all', function () {
+    var $table = $(this).closest('table');
+    $table.find('.to-check').prop('checked', $(this).is(':checked'));
+    $table.find('.to-check:checkbox').trigger('change');
+  })
+
+  // Check Count
+  $('body').on("change", '.to-check:checkbox', function () {
+    var $table = $(this).closest('table'),
+      checked_count = $table.find('.to-check:checked').length,
+      all_count = $table.find('.to-check').length;
+
+    var $box_actions = $('.sticky-bottom.actions');
+    if (checked_count > 0) {
+      $box_actions.addClass('active');
+    } else {
+      $box_actions.removeClass('active');
+    }
+
+    $box_actions.find('.checks-count').text(checked_count + ' / ' + all_count);
+    $table.find('.check-all').prop('checked', checked_count > 0);
+  })
+
+  // Open Modal Stock Settings
+  $('.show-stock-settings').on("click", function () {
+    var $modal = $('#FullScreenModal');
+
+    var url = "{{ url_for('.stock_settings') }}";
+    var stock_id = $(this).closest("tr").attr('data-stock-id');
+    if (stock_id) {
+      url += '?stock_id=' + stock_id;
+    }
+    $modal.find('.modal-body').load(url);
+    $modal.modal('toggle')
+  })
+
+  // Actions
+  $('body').on("click", '.action-confirmation', function () {
+    var $modal = $('#ModalConfirmation');
+    var $btn = $modal.find('.action');
+    $modal.find('.modal-title').text($(this).attr('data-title'));
+    $btn.attr('data-action', $(this).attr('data-action'));
+
+    var $form = $(this).closest('form');
+    $btn.attr('data-form', '#' + $form.attr('id'));
+
+    $modal.modal('show');
+  })
+
+  $('body').on("click", '.action', function () {
+    var $btn = $(this),
+      checked = [];
+    if ($btn.attr('data-form')) {
+      var $form = $($btn.attr('data-form'));
+    } else {
+      var $form = $btn.closest('form');
+    }
+
+    $form.find('.to-check:checked').each(function () {
+      checked.push($(this).val());
+    });
+    var data = {
+      action: $btn.attr('data-action'),
+      ids: checked
+    }
+    SendingData(data, $btn, $form)
+  })
+
+  function SendingData(data, $btn, $form) {
+    $.ajax({
+      type: "POST",
+      url: $form.attr('action'),
+      data: JSON.stringify(data),
+      contentType: 'application/json; charset=utf-8',
+      //dataType: 'json',
+      success: PageUpdate($btn)
+    })//.done(PageUpdate($btn));
+  };
+
+  function PageUpdate($btn) {
+    $('.modal.show').each(function () {
+      $(this).modal('hide');
+    })
+    setTimeout("location.reload()", 1000);
+  }
 </script>
 {% endblock %}
