@@ -102,7 +102,10 @@
   // Open Modal Movement
   $('.show-movement').on("click", function () {
     var $modal = $('#FullScreenModal');
+    // preloader
+    $modal.find('.modal-body').load("{{ url_for('.movement_info_placeholder') }}");
 
+    // page
     var url = "{{ url_for('.movement_info', movement_type=movement_type) }}";
     var movement_id = $(this).closest("tr").attr('data-movement-id');
     if (movement_id) {

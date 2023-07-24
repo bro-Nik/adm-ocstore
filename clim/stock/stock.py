@@ -90,19 +90,15 @@ def get_movement(movement_id):
         db.select(StockMovement).filter_by(movement_id=movement_id)).scalar()
 
 
+@stock.route('/movements/movement_info_placeholder', methods=['GET'])
+@login_required
+def movement_info_placeholder():
+    return render_template('stock/movement_placeholder.html')
+
+
 @stock.route('/movements/<string:movement_type>/movement_info', methods=['GET'])
 @login_required
 def movement_info(movement_type):
-    movement_id = request.args.get('movement_id')
-
-    return render_template('stock/movement_fast.html',
-                           movement_type=movement_type,
-                           movement_id=movement_id)
-
-
-@stock.route('/movements/<string:movement_type>/movement_lazy', methods=['GET'])
-@login_required
-def movement_info_lazy(movement_type):
     movement_id = request.args.get('movement_id')
 
     return render_template('stock/movement.html',
@@ -124,8 +120,12 @@ def movement_update(movement_type, movement_id=None):
         return json.dumps(data) if data else default
 
     action = data.get('action')
-    name = data.get('name')
-
+    info = data.get('info') if data.get('info') else {}
+    if info:
+        info = dict((a.strip(), (b.strip()))
+                    for a, b in (element.split('=')
+                                 for element in info.split('&')))
+    name = info.get('name')
 
     if 'save' in action:
         if not movement:

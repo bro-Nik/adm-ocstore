@@ -1,191 +1,71 @@
 <script>
-  $('.end-of-deal').on("click", function () {
-    $('#closeDeal').modal('show')
-  })
 
   var current_url = "{{ url_for('.deal_info',deal_id=deal.deal_id) }}"
+  var stocks = {}
 
-  $('#DealInfo').find('tr.product').each(function () {
-    UpdateProductSelect($(this));
-  });
-
-  function UpdateProductSelect($tr) {
-    var productSelect = $tr.find('select.product-select');
-
-    productSelect.select2({
-      theme: "bootstrap-5",
-      width: '300px',
-      dropdownParent: $tr.closest('div[id]'),
-      dropdownAutoWidth: true,
-      selectionCssClass: productSelect.data('class'),
-      ajax: {
-        delay: 250,
-        url: productSelect.data('url'),
-        dataType: 'json',
-        data: function (params) {
-          var query = {
-            search: params.term,
-            page: params.page || 1
-          }
-          return query;
-        }
-      }
-    }).on('select change', function (evt, config) {
-      var data = $(this).select2('data')[0],
-        productSelected = $(this).find(':selected'),
-        $tr = $(this).closest('tr');
-      if (data != undefined) {
-        // console.log(data); // выведет в консоль дополнительные данные
-        $tr.find('.price').val(data.price);
-        $tr.find('.input-group-text.quantity').text(data.unit);
-        productSelected.attr('data-type', data.type);
-      }
-      $tr.find('select.stock-select').empty();
-      UpdateStockSelect($tr);
-
-    });
-    UpdateStockSelect($tr);
-  }
-
-  function UpdateStockSelect($tr) {
-    var $stockSelect = $tr.find('select.stock-select'),
-      $productSelected = $tr.find('select.product-select :selected'),
-      product_id = $productSelected.val();
-
-
-    if ($productSelected.attr('data-type') === 'service') {
-      if ($stockSelect.hasClass('select2-hidden-accessible')) {
-        $stockSelect.select2('destroy');
-      }
-      $stockSelect.addClass('visually-hidden');
-      return false;
-    } else {
-      $stockSelect.removeClass('visually-hidden');
-    }
-
-    $stockSelect.prop("disabled", !product_id);
-    // if (!product_id) {
-    //   return false;
-    // }
-
-    $stockSelect.select2({
-      theme: "bootstrap-5",
-      width: '200px',
-      dropdownParent: $tr.closest('div[id]'),
-      templateResult: formatStockOption,
-      dropdownAutoWidth: true,
-      selectionCssClass: $stockSelect.data('class'),
-      ajax: {
-        delay: 250,
-        url: "{{ url_for('.ajax_stocks') }}",
-        dataType: 'json',
-        data: function (params) {
-          var query = {
-            search: params.term,
-            page: params.page || 1,
-            product_id: +product_id
-          }
-          return query;
-        },
-      }
-    }).on('select change', function (evt, config) {
-      var data = $(this).select2('data')[0],
-        $tr = $(this).closest('tr');
-
-      var quantity = data.quantity || $stockSelect.find(':selected').attr('data-quantity');
-      $tr.find('.available').text(quantity);
-
-    });
-
-
-    var url = "{{ url_for('.ajax_stocks_first') }}" + '?product_id=' + product_id;
-    if ($stockSelect.val()) {
-      url += '&stock_id=' + $stockSelect.val();
-    }
-    $.ajax({
-      type: 'GET',
-      url: url,
-      dataType: 'json'
-    }).then(function (data) {
-      var option = new Option(data.text, data.id, true, true);
-      $(option).attr('data-quantity', data.quantity);
-      $stockSelect.append(option).trigger('change');
-
-      $tr.find('.available').text(data.quantity);
-
-      $stockSelect.trigger({
-        type: 'select2:select',
-        params: {
-          data: data
-        }
-      });
+  // Start
+  async function DealStart() {
+    await getProductsInStocks();
+    $('#DealInfo').find('tr.product').each(function () {
+      var $this = $(this);
+      updateStocks($this);
+      ProductAvailable($this);
+      $this.find('select').selectpicker()
     });
   }
+  {% if not deal or not deal.posted %}
+  DealStart();
+  {% endif %}
 
-
-  function formatStockOption(stock) {
-    var $stock = $(
-      '<span class="text">' + stock.text + '<small class="text-muted">' + stock.quantity + '</small></span>'
-    );
-    return $stock;
-  };
-
-  $('#DealInfo .select-other').each(function () {
-    $(this).select2({
-      theme: "bootstrap-5",
-      width: '300px',
-      minimumResultsForSearch: Infinity,
-      selectionCssClass: $(this).data('class')
-      // dropdownParent: $(this).closest('div[id]')
+  // Products in stocks
+  function getProductsInStocks() {
+    return fetch("{{url_for('stock.json_products_in_stocks') }}", {
+      method: 'GET',
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
     })
-  })
+      .then(res => res.json())
+      .then(data => window.stocks = data)
+  }
 
-  // Select2 Contacts
-  $('#contactSelect').select2({
-    theme: "bootstrap-5",
-    width: '100%',
-    dropdownParent: '#pills-detail',
-    templateResult: formatContactOption,
-    dropdownAutoWidth: true,
-    selectionCssClass: 'border',
-    "language": {
-      "noResults": function () {
-        return "Ничего не найдено";
-      }
-    },
-    escapeMarkup: function (markup) {
-      return markup;
-    },
-    ajax: {
-      delay: 250,
-      url: "{{ url_for('.ajax_contacts') }}",
-      dataType: 'json',
-      data: function (params) {
-        var query = {
-          search: params.term,
-          page: params.page || 1
+  function updateStocks($tr) {
+    var $select = $tr.find('select.stock-select'),
+      stock_id = $select.val();
+    $select.empty();
+    $select.selectpicker('destroy');
+
+    var $product_selected = $tr.find('select.product-select').find(':selected'),
+      product_id = $product_selected.val(),
+      unit = $product_selected.attr('data-product-unit');
+
+    if (stocks[product_id]) {
+
+      for (let i = 0; i < (stocks[product_id]).length; i++) {
+        var newOption = new Option(`${stocks[product_id][i].stock_name}`, `${stocks[product_id][i].stock_id}`);
+        newOption.setAttribute('data-subtext', `${stocks[product_id][i].quantity}` + ` ${unit}`);
+        if (+stocks[product_id][i].stock_id === +stock_id) {
+          $(newOption).prop('selected', true);
         }
-        return query;
+        $select.append(newOption);
+        $tr.find('.input-group-text.quantity').text(unit);
       }
+      $select.prop('disabled', false);
     }
-  }).on('select2:open', () => {
-    $(".select2-results:not(:has(button))").append("<div class='select-new-container'><div class='select-new-name'></div><div class='select-new-text'>создать новый контакт</div></div>")
-  });
-
-  function formatContactOption(contact) {
-    var $contact = '<span class="text">' + contact.text;
-    if (contact.phone || contact.email) {
-      $contact += '<br><small class="text-muted">' + contact.phone + ((contact.phone && contact.email) ? ', ' : '') + contact.email + '</small>';
+    else {
+      $select.prop('disabled', true);
     }
-    $contact += '</span>';
-
-    return $($contact);
+    $select.selectpicker();
   };
 
-  // Focus Select2 Search
-  $(document).on('select2:open', () => {
-    document.querySelector('.select2-search__field').focus();
-  });
+  function ProductAvailable($tr) {
+    $tr.find('.available').text('');
+    $product_select = $tr.find('select.product-select').find(':selected');
+    if ($product_select.val()) {
+      available = $tr.find('select.stock-select option:selected').attr('data-subtext');
+      $tr.find('.available').text(available);
+    }
+  }
 
   function UpdateSum($tr) {
     var quantity = $tr.find('.quantity').val(),
@@ -216,8 +96,36 @@
     return parseFloat(string)
   }
 
+  function floatOrZero(number) {
+    return parseFloat(number) ? number : 0
+  }
 
   // Change Trigers
+  $('body').on('change', 'select.product-select', function () {
+    var $tr = $(this).closest('tr');
+    updateStocks($tr);
+    ProductAvailable($tr);
+
+    var $option = $(this).find(':selected'),
+      price = $option.attr('data-price'),
+      type = $option.attr('data-product-type'),
+      quantity = $tr.find('.quantity').val();
+
+    $tr.find('.price').val(price);
+    $tr.find('.sum').text(price * quantity);
+    $tr.find('.product-type').val(type);
+
+    if (type === 'service') {
+      $tr.find('.stock-select').addClass('visually-hidden');
+    } else {
+      $tr.find('.stock-select').removeClass('visually-hidden');
+    }
+  })
+
+  $('body').on('change', 'select.stock-select', function () {
+    ProductAvailable($(this).closest('tr'))
+  })
+
   $('body').on('change', 'input.quantity', function () {
     UpdateSum($(this).closest('tr'))
   })
@@ -228,35 +136,101 @@
 
 
   // Fields
-  function newLine(tab, $new_line = '') {
-    var $tab = $(tab);
+  function newLine($tab, $new_line = '') {
     if ($new_line === '') {
       var $line = $tab.find('tr.product').eq(-1);
-
-      $line.find('select').each(function () {
-        if ($(this).hasClass('select2-hidden-accessible')) {
-          $(this).select2('destroy');
-        }
-      });
-
-      var $new_line = $line.clone();
+      $line.find('select').selectpicker('destroy')
+      var $new_line = $($line).clone();
       $new_line.appendTo($tab.find('tbody'));
-
-      UpdateProductSelect($line);
+      $line.find('select').selectpicker();
+    } else {
+      $new_line.find('select').selectpicker('destroy');
     }
 
     var count = $tab.find('tr.product').length;
     $new_line.find('input').val('');
-    $new_line.find('.to-check').prop('checked', false).trigger('change');
+    $new_line.find('.to-check').prop('checked', false);
+    $new_line.find('.to-check').trigger('change');
     $new_line.find('.line-count').text(count + '.');
     $new_line.find('.input-group-text.quantity').text(' шт');
     $new_line.find('.available').text('');
     $new_line.find('.sum').text('0');
-    $new_line.find('select').empty();
+    $new_line.find('select.product-select').val('')
+    $new_line.find('select.stock-select').empty();
+    $new_line.find('select.stock-select').prop('disabled', true)
 
-    UpdateProductSelect($new_line)
-    $new_line.find('select.product-select').select2('open');
+    $new_line.find('select').selectpicker()
+    $new_line.find('select.product-select').selectpicker('toggle');
+    $tab.find('.to-check:checkbox').trigger('change');
   }
+
+  // Data To Server
+  $('#DealInfo').on("click", '.btn-to-submit', function () {
+    var deal_sum = $('#pills-product').find('.all-sum').html();
+    $('[name=deal_sum]').val(FromMoney(deal_sum));
+
+    var $btn = $(this),
+      $form = $btn.closest('form'),
+      products = [],
+      expenses = [],
+      consumables = [];
+
+    // products
+    $form.find('#tabProducts').find('tr.product').each(function () {
+      var $this = $(this),
+        product_id = +$this.find('select.product-select').val();
+      if (product_id) {
+        var item = {
+          product_id: product_id,
+          type: $this.find(':selected').attr('data-product-type'),
+          price: floatOrZero($this.find('.price').val()),
+          quantity: floatOrZero($this.find('.quantity').val()),
+          stock_id: +$this.find('select.stock-select').val()
+        }
+        products.push(item);
+      }
+    })
+
+    // consumables
+    $form.find('#tabConsumables').find('tr.product').each(function () {
+      var $this = $(this),
+        product_id = +$this.find('select.product-select').val();
+      if (product_id) {
+        var item = {
+          product_id: product_id,
+          price: floatOrZero($this.find('.price').val()),
+          quantity: floatOrZero($this.find('.quantity').val()),
+          stock_id: +$this.find('select.stock-select').val()
+        }
+        products.push(item);
+      }
+    })
+
+    // expenses
+    $form.find('#tabExpenses').find('tr.product').each(function () {
+      var $this = $(this),
+        name = $this.find('input.expense-name').val();
+      if (name) {
+        var item = {
+          name: name,
+          sum: floatOrZero($this.find('input.expense-sum').val()),
+          quantity: floatOrZero($this.find('.quantity').val()),
+          stock_id: +$this.find('select.stock-select').val()
+        }
+        products.push(item);
+      }
+    });
+
+    var data = {
+      action: $btn.attr('data-action'),
+      info: decodeURI($form.serialize()),
+      products: products,
+      consumables: consumables,
+      expenses: expenses
+    }
+    SendingData(data, $btn, $form)
+  })
+
 
   // Delete line
   $('.delete-product').on("click", function () {
@@ -280,82 +254,6 @@
       count += 1;
     });
   }
-
-  // Data To Server
-  $('#DealInfo').on("click", '.btn-to-submit', function () {
-    var deal_sum = $('#pills-product').find('.all-sum').html();
-    $('[name=deal_sum]').val(FromMoney(deal_sum));
-
-    var $btn = $(this),
-      $form = $btn.closest('form'),
-      products = [],
-      expenses = [],
-      consumables = [];
-
-    // products
-    $form.find('#tabProducts').find('tr.product').each(function () {
-      var $tr = $(this),
-        $product = $tr.find('select.product-select'),
-        product_id = +$product.val();
-      if (product_id) {
-        var item = {
-          product_id: product_id,
-          type: $product.find(':selected').attr('data-product-type'),
-          name: $product.find(':selected').html(),
-          unit: $tr.find('.input-group-text.quantity').html(),
-          price: +$tr.find('.price').val() || 0,
-          quantity: +$tr.find('.quantity').val() || 0,
-          stock_id: +$tr.find('select.stock-select').val(),
-          stock_name: $tr.find('select.stock-select').find(':selected').html()
-        }
-        products.push(item);
-      }
-    })
-
-    // consumables
-    $form.find('#tabConsumables').find('tr.product').each(function () {
-      var $tr = $(this),
-        $product = $tr.find('select.product-select'),
-        product_id = +$tr.find('select.product-select').val();
-      if (product_id) {
-        var item = {
-          product_id: product_id,
-          name: $product.find(':selected').html(),
-          unit: $tr.find('.input-group-text.quantity').html(),
-          price: +$tr.find('.price').val() || 0,
-          quantity: +$tr.find('.quantity').val() || 0,
-          stock_id: +$tr.find('select.stock-select').val(),
-          stock_name: $tr.find('select.stock-select').find(':selected').html()
-        }
-        consumables.push(item);
-      }
-    })
-
-    // expenses
-    $form.find('#tabExpenses').find('tr.product').each(function () {
-      var $tr = $(this),
-        name = $tr.find('input.expense-name').val(),
-        sum = +$tr.find('input.expense-sum').val();
-      if (name || sum) {
-        var item = {
-          name: name,
-          sum: sum || 0
-        }
-        expenses.push(item);
-      }
-    });
-
-    var data = {
-      action: $btn.attr('data-action'),
-      info: $form.serializeArray(),
-      products: products,
-      consumables: consumables,
-      expenses: expenses
-    }
-    SendingData(data, $btn, $form)
-  })
-
-
 
   // Fill Consumables
   var url_get_consumables_in_option = "{{ url_for('stock.json_consumables_in_option') }}"
@@ -421,11 +319,11 @@
 
       $('#tabConsumables').find('tr.product').each(function () {
         var $this = $(this);
-        // $this.find('select').selectpicker('destroy');
+        $this.find('select').selectpicker('destroy');
         updateStocks($this);
         ProductAvailable($this);
         UpdateSum($this)
-        // $this.find('select').selectpicker()
+        $this.find('select').selectpicker()
       });
     }
   }
@@ -488,15 +386,14 @@
   // Show Services
   $('body').on('change', 'select[name=what_need]', function () {
     if ($(this).val().indexOf('установка') + 1) {
-      $('#collapseServices').addClass('show')
+      $('body').find('.services').removeClass('visually-hidden')
     } else {
-      $('#collapseServices').removeClass('show')
+      $('body').find('.services').addClass('visually-hidden')
     }
   })
 
   // New Contact In Select
   $('body').on('click', '.select-new-container', function () {
-    $('#contactSelect').select2('close');
     var $contact_box = $('#contact');
     $contact_box.find('.to-hidden').addClass('visually-hidden');
     $contact_box.find('.to-show').removeClass('visually-hidden');
@@ -528,7 +425,7 @@
   });
 
   // Show Contact Info
-  $('#DealInfo').on('click', '.deal-info-contact', function () {
+  $('body').on('click', '.deal-info-contact', function () {
     var $this = $(this);
     $this.parent().addClass('visually-hidden');
     $this.parent().next().removeClass('visually-hidden');
@@ -581,16 +478,11 @@
   // End of Deal
   $('#closeDeal').on("change", '.end-stage', function () {
     var $form = $('#DealInfo');
-    // $('#mySelect2').select2('close');
     $form.find('.old-stage').val($('#DealInfo').find('[name=stages]').val())
     $form.find('[name=stages]').val($(this).val())
     $form.find('.posting').val('true')
-    // $form.submit()
-
-    $('#DealInfo .btn-to-submit').trigger('click');
+    $form.submit()
   })
 
-  // Icons
-  feather.replace();
 
 </script>

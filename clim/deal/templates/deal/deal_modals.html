@@ -1,5 +1,4 @@
 <!-- Modal to close deal -->
-<!-- Modal -->
 <div class="modal fade" id="closeDeal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
   aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
@@ -12,7 +11,6 @@
       <div class="modal-body d-flex gap-2 justify-content-center">
 
         {% for stage in stages if 'end_' in stage.type %}
-
         <input type="radio" class="btn-check end-stage" id="stage_{{ stage.stage_id }}" {{ 'checked' if
           stage.stage_id==deal.stage_id }} value="{{ stage.stage_id }}">
         <label class="btn mb-2 text-white" style="{{ 'background: ' + stage.color + ';' if stage.color }}"
@@ -25,15 +23,6 @@
     </div>
   </div>
 </div>
-<script>
-
-  $('#closeDeal').on("change", '.end-stage', function () {
-    $('#dealInfo').find('.old-stage').val($('#dealInfo').find('[name=stages]').val())
-    $('#dealInfo').find('[name=stages]').val($(this).val())
-    $('#dealInfo').find('.posting').val('true')
-    $('#dealInfo').submit()
-  })
-</script>
 
 <!-- Modal Booking -->
 <div class="modal fade" id="BookingModal" tabindex="-1" role="dialog" aria-labelledby="BookingModal" aria-hidden="true">

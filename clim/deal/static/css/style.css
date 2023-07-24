@@ -10,7 +10,7 @@
 
 body {
 /*  padding: 30px; */
-  color: #333;
+  /* color: #333; */
 }
 
 .board {
@@ -65,6 +65,7 @@ body {
 }
 .board-column-content-wrapper {
   padding: 5px;
+  width: var(--column-width);
 }
 .board-item {
   background-color: #fff;
@@ -88,7 +89,7 @@ body {
   -ms-user-select: none;
 }
 
-.placeholder {
+.placeholder-kanban {
   background-color: #3e3e3e36;
   margin-bottom: 0.5em;
   width: var(--item-width);
@@ -127,4 +128,17 @@ body {
     top: 0;
     bottom: 0;
     background-color: var(--crm-kanban-item-color);
+}
+td input.form-control.price, 
+td input.form-control.quantity {
+  width: 100px;
+}
+td span.sum {
+    width: 75px;
+    text-align: end;
+    padding-right: 0.5rem;
+}
+td span.available {
+    width: 75px ;
+    display: inline-block;
 }

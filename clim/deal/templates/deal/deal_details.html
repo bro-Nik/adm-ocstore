@@ -36,18 +36,10 @@
           <span class="deal-info-contact">{{ deal.contact.email}}</span>
           {% endif %}
 
-          <select class="selectpicker {{ 'visually-hidden' if deal and deal.contact }}" data-width="100%"
-            data-live-search="true" data-none-selected-text="" data-style="btn-white border"
-            data-none-results-text="<div class='select-new-container'><div class='select-new-name'>{0}</div><div class='select-new-text'>создать новый контакт</div></div>"
-            name="contact_id">
-            <option value="">--Выбрать--</option>
-            {% for contact in contacts %}
-            <option value="{{ contact.contact_id }}" {{ 'selected' if deal and deal.contact_id==contact.contact_id }}
-              data-subtext="{{ contact.phone }}{{ ', ' if contact.phone and contact.email }} {{ contact.email }}">
-              {{ contact.name }}
-            </option>
-            {% endfor %}
-          </select>
+          <div class="{{ 'visually-hidden' if deal and deal.contact }}">
+            <select id="contactSelect" class="" data-placeholder="-- Выбрать --" name="contact_id">
+            </select>
+          </div>
         </div>
 
         <div class="to-show visually-hidden">
@@ -112,18 +104,21 @@
         {% if details.get('what_need') %}
         <span class="deal-info-edit-link">{{ details.get('what_need') }}</span>
         {% endif %}
-        <select class="selectpicker {{ 'visually-hidden' if details.get('what_need') }} to-show" data-width="100%"
-          data-none-selected-text="" data-style="btn-white border" name="what_need">
-          <option value="">--Выберите пункт--</option>
-          <option {{ 'selected' if details.get('what_need')=='Кондицонер + установка' }}>Кондицонер + установка
-          </option>
-          <option {{ 'selected' if details.get('what_need')=='Только
-              кондиционер' }}>Только
-            кондиционер</option>
-          <option {{ 'selected' if details.get('what_need')=='Только установка' }}>Только установка
-          </option>
-          <option {{ 'selected' if details.get('what_need')=='Другое' }}>Другое</option>
-        </select>
+        <div class="{{ 'visually-hidden' if details.get('what_need') }} to-show">
+          <select class="select-other" data-placeholder="-- Выбрать --" name="what_need" data-class="border">
+            <option></option>
+            <option {{ 'selected' if details.get('what_need')=='Кондицонер + установка' }}>
+              Кондицонер + установка
+            </option>
+            <option {{ 'selected' if details.get('what_need')=='Только кондиционер' }}>
+              Только кондиционер
+            </option>
+            <option {{ 'selected' if details.get('what_need')=='Только установка' }}>
+              Только установка
+            </option>
+            <option {{ 'selected' if details.get('what_need')=='Другое' }}>Другое</option>
+          </select>
+        </div>
       </div>
 
       <div class="d-grid">

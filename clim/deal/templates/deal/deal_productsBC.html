@@ -18,8 +18,8 @@
           </th>
           {% endif %}
           <th scope="col">Товар</th>
-          <th scope="col">Цена</th>
-          <th scope="col">Количество</th>
+          <th scope="col" class="col-1">Цена</th>
+          <th scope="col" class="col-1">Количество</th>
           <th scope="col">Склад</th>
           {% if not deal or not deal.posted %}
           <th scope="col">Доступно</th>
@@ -46,19 +46,18 @@
             <input class="form-check-input to-check" type="checkbox" value="{{ deal_product.product_id }}">
           </td>
           {% endif %}
-          <td>
+          <td class="col-4">
             <span class="line-count">{{ var.count }}.</span>
 
             {% if deal and deal.posted %}
             <span>{{ deal_product.product_name }}</span>
             {% else %}
-            <select class="product-select" data-placeholder="-- Выбрать товар или услугу --"
-              data-url="{{ url_for('.ajax_products') }}" data-class="bg-light">
+            <select class="form-select product-select" data-placeholder="-- Выберите товар или услугу --">
               <option value="{{ deal_product.product_id }}" selected>{{ deal_product.name }}</option>
             </select>
             {% endif %}
           </td>
-          <td>
+          <td class="col-xxl-2 col-xl-3">
             {% if deal and deal.posted %}
             <span class="money">{{ deal_product.price|money }} ₽</span>
             {% else %}
@@ -69,7 +68,7 @@
             </div>
             {% endif %}
           </td>
-          <td>
+          <td class="col-1">
             {% if deal and deal.posted %}
             <span>{{ deal_product.quantity|smart_int }} {{ deal_product.unit if deal_product.unit else 'шт' }}</span>
             {% else %}
@@ -80,37 +79,32 @@
             </div>
             {% endif %}
           </td>
-          <td>
+          <td class="col-4">
             {% if deal and deal.posted %}
             <span>{{ deal_product.stock_name }}</span>
             {% else %}
-            <select class="stock-select" data-class="bg-light">
-              <option value="{{ deal_product.stock_id }}" selected>{{ deal_product.stock_name }}</option>
+            <select class="form-select stock-select" width="100%" data-placeholder="">
+              <option value=""></option>
             </select>
 
             {% endif %}
           </td>
           {% if not deal or not deal.posted %}
-          <td class="align-middle">
-            <div>
-              <span class="available"></span>
-            </div>
+          <td class="col-2 align-middle">
+            <span class="available"></span>
           </td>
           {% endif %}
 
           {% set var.all_sum = var.all_sum + ( deal_product.price * deal_product.quantity) if deal_product.price %}
-          <td class="align-middle">
-            <div class="d-flex">
-              <span class="sum">
-                {{ (deal_product.price * deal_product.quantity)|money if deal_product.price else 0 }}
-              </span>
-              <span class="">₽</span>
-            </div>
+          <td class="col-2 align-middle">
+            <span class="sum">{{ (deal_product.price * deal_product.quantity)|money if deal_product.price else 0
+              }}</span>
+            <span class="">₽</span>
           </td>
         </tr>
         {% endfor %}
 
-        <!-- <input type="hidden" name="products_data"> -->
+        <input type="hidden" name="products_data">
       </tbody>
     </table>
   </div>
@@ -157,3 +151,73 @@
 
 </div>
 {% endif %}
+
+<script>
+
+  $('#tabProducts').find('tr.product').each(function () {
+    var $tr = $(this);
+    $tr.find('select.product-select').select2({
+      theme: "bootstrap-5",
+      width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' : 'style',
+      placeholder: $(this).data('placeholder'),
+      dropdownParent: $('#tabProducts'),
+      ajax: {
+        url: "{{ url_for('.ajax_products') }}",
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            page: params.page || 1
+          }
+          return query;
+        }
+      }
+    }).on('select change', function (evt, config) {
+      var data = $(this).select2('data')[0];
+      if (data != undefined) {
+        console.log(data); // выведет в консоль дополнительные данные
+        // alert($('select.product-select').val())
+        // alert($('select.product-select').find(':selected').html())
+      }
+      var $tr = $(this).closest('tr');
+      $tr.find('select.stock-select').empty().trigger("change");
+
+      GetStocks($tr);
+    });
+    GetStocks($tr);
+  });
+
+  function GetStocks($tr) {
+    // var $tr = $(this);
+    var product_id = $tr.find('select.product-select :selected').val();
+    // $tr.find('select.stock-select').empty().trigger("change");
+
+    $tr.find('select.stock-select').select2({
+      theme: "bootstrap-5",
+      width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' : 'style',
+      placeholder: $(this).data('placeholder'),
+      dropdownParent: $('#tabProducts'),
+      ajax: {
+        url: "{{ url_for('.ajax_stocks') }}",
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            product_id: +product_id
+          }
+          return query;
+        },
+        // success: function () {alert('hi')}
+        success: $tr.find('select.stock-select').trigger("change")
+        // success: alert($tr.find('select.stock-select').val())
+        // success: function (data) {alert(data);}
+      }
+    }).on('select change', function (evt, config) {
+      var data = $(this).select2('data');
+      console.log(data); // выведет в консоль дополнительные данные
+      console.log($(this).val()); // выведет в консоль дополнительные данные
+      // alert($('select.product-select').val())
+      // alert($('select.product-select').find(':selected').html())
+    });
+  }
+</script>

@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ url_for('static', filename='time-picker/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('.static', filename='time-picker/style.css') }}">
 
 <!-- Container fluid -->
 <div id="BookingPage" class="container-fluid px-6 d-grid gap-3 mt-3">
@@ -61,7 +61,7 @@
 
 
 <script src="https://code.jquery.com/ui/1.10.4/jquery-ui.min.js" type="text/javascript" language="javascript"></script>
-<script src="{{ url_for('static', filename='time-picker/jq.schedule.js') }}"></script>
+<script src="{{ url_for('.static', filename='time-picker/jq.schedule.js') }}"></script>
 <script type="text/javascript">
     var event = 'deal_{{ deal_id }}';
     var start_date = '{{ start_date }}'
@@ -139,7 +139,7 @@
         $('#event_save').on("click", function (e) {
             e.preventDefault();
             $.ajax({
-                url: '{{ url_for('deal_booking_post', deal_id=deal_id) }}',
+                url: '{{ url_for('.deal_booking_post', deal_id=deal_id) }}',
                 type: "POST",
                 data: JSON.stringify($sc.timeSchedule('timelineNewData')),
                 contentType: 'application/json; charset=utf-8',
@@ -168,7 +168,7 @@
         });
         GetRows(start_date);
         function GetRows(start_date) {
-            var url = "{{ url_for('deal_booking_data') }}"
+            var url = "{{ url_for('.booking_data') }}"
             url += '?date=' + start_date;
             $.ajax({url: url})
                 .done((data) => {

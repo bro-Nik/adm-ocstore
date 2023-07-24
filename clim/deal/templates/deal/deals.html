@@ -7,180 +7,126 @@
 
 {% block content %}
 
-<!-- Container fluid -->
-<div class="container-fluid px-6 d-grid gap-3 mt-3">
+<form class="" id="DealsForm" method="post" action="{{ url_for('.deals_action') }}">
+  <!-- Container fluid -->
+  <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
-  <div class="row">
-    <div class="col-lg-12 col-md-12 col-12">
-      <!-- Page header -->
-      <div>
-        <div class="d-flex align-items-center mb-2">
-          <div class="col-3 me-5 mb-lg-0">
-            <h3 class="mb-0">Сделки</h3>
-          </div>
-
-          <div class="col-md-3 mb-lg-0 d-flex align-items-center ms-5">
-            <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
-          </div>
-
-          {% set filter = session.get('stage_type') if session.get('stage_type') else '' %}
-
-          <div class="col-md-3 mb-lg-0 d-flex gap-2 align-items-center ms-5">
-            <div class="form-check">
-              <input class="form-check-input stage-type" type="checkbox" value="in_work" {{ 'checked' if 'in_work' in filter }}>
-              <label class="form-check-label">В работе</label>
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-12">
+        <!-- Page header -->
+        <div>
+          <div class="d-flex align-items-center mb-2">
+            <div class="col-3 me-5 mb-lg-0">
+              <h3 class="mb-0">Сделки</h3>
             </div>
-            <div class="form-check">
-              <input class="form-check-input stage-type" type="checkbox" value="end" {{ 'checked' if 'end' in filter }}>
-              <label class="form-check-label">Завершенные</label>
+
+            <div class="col-md-3 mb-lg-0 d-flex align-items-center ms-5">
+              <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
             </div>
-            <input type="hidden" name="stage_type">
-          </div>
-          <script>
-            $('body').on('change', 'input.stage-type', function () {
-              var checked = [];
-              $('input.stage-type:checked').each(function() {
-	              checked.push($(this).val());
-              });
-              $('[name=stage_type]').val(JSON.stringify(checked));
 
-              $.ajax({
-                type: "POST",
-                url: '{{ url_for('.update_filter') }}',
-                data: $('[name=stage_type]').serialize(),
-                success: function () {
-                  window.location.href = '{{ url_for('.deals', view=session.get('crm_view')) }}';
-                }
-              });
-            })
-          </script>
+            {% set filter = session.get('stage_type') if session.get('stage_type') else '' %}
 
-          <div class="ms-auto d-flex gap-2">
-            <a class="btn btn-primary" href="{{ url_for('.deal_info') }}">Создать</a>
+            <div class="col-md-3 mb-lg-0 d-flex gap-2 align-items-center ms-5">
+              <div class="form-check">
+                <label class="form-check-label">
+                  <input class="form-check-input stage-type" type="checkbox" value="in_work" {{ 'checked' if 'in_work' in filter }}>
+                  В работе
+                </label>
+              </div>
+              <div class="form-check">
+                <label class="form-check-label">
+                  <input class="form-check-input stage-type" type="checkbox" value="end" {{ 'checked' if 'end' in filter }}>
+                  Завершенные
+                </label>
+              </div>
+              <input type="hidden" name="stage_type">
+            </div>
+            <script>
+              $('body').on('change', 'input.stage-type', function () {
+                var checked = [];
+                $('input.stage-type:checked').each(function() {
+	                checked.push($(this).val());
+                });
+                $('[name=stage_type]').val(JSON.stringify(checked));
+
+                $.ajax({
+                  type: "POST",
+                  url: '{{ url_for('.update_filter') }}',
+                  data: $('[name=stage_type]').serialize(),
+                  success: function () {
+                    window.location.href = "{{ url_for('.deals', view=session.get('crm_view')) }}";
+                  }
+                });
+              })
+            </script>
+
+            <div class="ms-auto d-flex gap-2">
+              <a class="btn btn-primary show-deal" href="#">Создать</a>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div>
-    <hr>
+    <div>
+      <hr>
 
-    <div class="row align-items-center">
-      <div class="">
-        <!-- Bg -->
-        <div class="bg-gray-300 rounded-pill d-inline-block">
-          <!-- nav -->
-          <ul class="nav nav-lt-tab" id="pills-tab" role="tablist">
+      <div class="row align-items-center">
+        <div class="">
+          <!-- Bg -->
+          <div class="bg-gray-300 rounded-pill d-inline-block">
+            <!-- nav -->
+            <ul class="nav nav-lt-tab" id="pills-tab" role="tablist">
 
-            {% set menu = [
-            {'url': url_for('.deals', view='kanban'), 'name': 'Канбан'},
-            {'url': url_for('.deals', view='list'), 'name': 'Список'},
-            {'url': '#', 'name': 'Календарь'}
-            ] %}
+              {% set menu = [
+              {'url': url_for('.deals', view='kanban'), 'name': 'Канбан'},
+              {'url': url_for('.deals', view='list'), 'name': 'Список'},
+              {'url': '#', 'name': 'Календарь'}
+              ] %}
 
-            {% for item in menu %}
-              <li class="nav-item">
-                <a class="nav-link p-0 link-secondary {{ 'active' if item['url'] in request.path }}"
-                  href="{{ item['url'] }}">{{
-                  item['name']}}</a>
-              </li>
-            {% endfor %}
+              {% for item in menu %}
+                <li class="nav-item">
+                  <a class="nav-link p-0 link-secondary {{ 'active' if item['url'] in request.path }}"
+                    href="{{ item['url'] }}">{{
+                    item['name']}}</a>
+                </li>
+              {% endfor %}
 
-          </ul>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- <div id="DealsContent"> -->
+    <!-- </div> -->
+    {% block deals_content %}
+    {% endblock %}
+
   </div>
 
-  {% block deals_content %}
-  {% endblock %}
-
-</div>
-
-<!-- Actions buttons -->
-<div class="sticky-bottom actions">
-  <div class="col-12">
-    <div class="bg-white h-100 d-flex gap-2 align-items-center">
-      <div class="m-1  ms-5">
-        <span class="">Отмеченно: </span>
-        <span class="checks-count"></span>
-        <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
-      </div>
-      <div class="vr my-3"></div>
-      <div class="my-1">
-        <button class="btn btn-sm rounded-3" type="button" data-action="delete_deals">
-          <i data-feather="trash" class="nav-icon icon-xs"></i>
-          Удалить</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal to delete -->
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog"
-  aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <form>
-        <input type="hidden" name="what_delete" value="">
-        <input type="hidden" name="ids" value="">
-        <div class="modal-header">
-          <h5 class="modal-title"></h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+  <!-- Actions buttons -->
+  <div class="sticky-bottom actions">
+    <div class="col-12">
+      <div class="bg-white h-100 d-flex gap-2 align-items-center">
+        <div class="m-1  ms-5">
+          <span class="">Отмеченно: </span>
+          <span class="checks-count"></span>
+          <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
+        </div>
+        <div class="vr my-3"></div>
+        <div class="my-1">
+          <button class="btn btn-sm rounded-3 action-confirmation" type="button" data-action="delete_deals" data-title="Удалить сделки?">
+            <i data-feather="trash" class="icon-xs"></i>
+            Удалить
           </button>
         </div>
-        <div class="modal-body d-flex gap-2 justify-content-center">
-          <button class="btn btn-danger rounded-3" type="submit">Удалить</button>
-          <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">Отменить</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Modal New Stage -->
-<div class="modal fade" id="StageUpdate" tabindex="-1" role="dialog"
-  aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Новая стадия</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-        </button>
-      </div>
-      <div class="modal-body justify-content-center">
-        <form>
-          
-          <input type="hidden" name="stage_id" value="">
-
-          <label class="col-sm-3 col-form-label form-label">Название</label>
-          <input type="text" class="form-control mb-" name="name"
-            value="{{ product.description.name if product }}">
-
-          <label class="col-sm-3 col-form-label form-label">Тип</label>
-          <select class="form-control mb-1" name="type" required>
-            <option value="start">Начальная</option>
-            <option value="" selected>Промежуточная</option>
-            <option value="end_good">Удачная сделка</option>
-            <option value="end_bad">Неудачная сделка</option>
-          </select>
-
-          <label class="col-sm-3 col-form-label form-label">Код цвета</label>
-          <input type="text" class="form-control mb-3" name="color"
-            value="{{ product.description.name if product }}" required>
-
-          <div class="d-flex">
-            <button class="btn btn-primary rounded-3" type="submit">Сохранить</button>
-            <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">Отменить</button>
-            <button class="btn text-danger ms-auto delete" type="button" data-bs-toggle="modal" data-bs-target="#deleteModal">Удалить</button>
-          </div>
-
-        </form>
       </div>
     </div>
   </div>
-</div>
+</form>
 
+{% include 'deal/deals_modals.html' %}
 {% include 'deal/deals_scripts.html' %}
+
 {% endblock %}

@@ -5,15 +5,13 @@
       <div class="d-flex align-items-center">
         <div class="mb-2 mb-lg-0">
           <h3 class="mb-0">
-            <a href="{{ url_for('.deals', view=session.get('crm_view')) }}" class="">Сделки</a>
             {% if deal %}
             <span class="deal-info-title">| {{ deal.name }}</span>
             <input type="text" class="deal-info-title-input visually-hidden to-show" name="deal_name"
               value="{{ deal.name }}">
             {% else %}
-            | Добавление сделки
+            Добавление сделки
             {% endif %}
-
           </h3>
         </div>
       </div>
@@ -36,11 +34,13 @@
 
   {% if not deal or not 'end_' in deal.stage.type %}
   <div class="stage" style="--deal-stage-color: #56c31e;">
-    <label class="stage-item fs-6" data-bs-toggle="modal" data-bs-target="#closeDeal">
+    <!-- <label class="stage-item fs-6" data-bs-toggle="modal" data-bs-target="#closeDeal"> -->
+    <label class="stage-item fs-6 end-of-deal">
       Завершить сделку
     </label>
     <div class="deal-stage-line"></div>
   </div>
+
   {% else %}
 
   <div class="stage" style="{{ '--deal-stage-color: ' + deal.stage.color + ';' if deal.stage.color }}">

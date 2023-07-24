@@ -69,8 +69,3 @@
     </div>
   </div>
 </div>
-<script>
-  var url = "{{ url_for('.movement_info_lazy', movement_type=movement_type, movement_id=movement_id) }}",
-    $modal = $('#FullScreenModal');
-  $modal.find('.modal-body').load(url);
-</script>

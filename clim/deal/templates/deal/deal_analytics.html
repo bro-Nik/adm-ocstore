@@ -18,8 +18,9 @@
         </tr>
       </thead>
       <tbody>
+        {% set deal_analytics = deal.analytics|to_json %}
 
-        {% for item in analytics %}
+        {% for item in deal_analytics %}
         <tr>
           <td class="col-4">
             <span class="ana_count"></span>
@@ -27,7 +28,7 @@
           </td>
 
           <td class="col-2">
-            <span class="">{{ analytics[item]|money }}</span>
+            <span class="">{{ deal_analytics[item]|money }}</span>
             <span class="">₽</span>
           </td>
           <td class="col-auto"></td>

@@ -31,7 +31,7 @@
   const createPlaceholder = () => {
     // Create and position placeholder before movingElement
     placeholder = document.createElement("div");
-    placeholder.classList.add("placeholder");
+    placeholder.classList.add("placeholder-kanban");
     movingElement.parentNode.insertBefore(placeholder, movingElement);
   };
 
