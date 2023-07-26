@@ -227,8 +227,40 @@
       type: "POST",
       url: $(this).attr('action'),
       data: form_data,
-      success: function () {
-        UpdateProductsSelect();
+      success: function (product_id) {
+        // Select Product
+
+        var $tab = $('#tabProducts');
+        if (!$tab) {
+          return false;
+        }
+        var $productSelect = $tab.find('tr.product').eq(-1).find('select.product-select');
+        if ($productSelect.val()) {
+          newLine();
+          $productSelect = $tab.find('tr.product').eq(-1).find('select.product-select');
+        }
+        var $tr = $tab.find('tr.product').eq(-1);
+
+        $.ajax({
+          type: 'GET',
+          url: "{{ url_for('.ajax_products_one') }}" + "?product_id=" + product_id,
+          dataType: 'json'
+        }).then(function (data) {
+          var option = new Option(data.text, data.id, true, true);
+          $(option).attr('data-cost', data.cost);
+          $(option).attr('data-unit', data.unit);
+          $productSelect.empty().append(option).trigger('change');
+
+          // $tr.find('.cost').val(data.cost).trigger('change');
+          // $tr.find('.input-group-text.quantity').text(data.unit);
+
+          $productSelect.trigger({
+            type: 'select2:select',
+            params: {
+              data: data
+            }
+          });
+        });
       }
     });
     $('#ProductInfoModal').modal('hide');

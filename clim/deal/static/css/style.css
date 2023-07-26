@@ -129,16 +129,3 @@ body {
     bottom: 0;
     background-color: var(--crm-kanban-item-color);
 }
-td input.form-control.price, 
-td input.form-control.quantity {
-  width: 100px;
-}
-td span.sum {
-    width: 75px;
-    text-align: end;
-    padding-right: 0.5rem;
-}
-td span.available {
-    width: 75px ;
-    display: inline-block;
-}

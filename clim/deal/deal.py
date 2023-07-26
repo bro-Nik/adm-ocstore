@@ -111,11 +111,27 @@ def ajax_products():
 
     # Products
     request_products = Product.query
+
+    # not Consumables
+    settings = {}
+    settings_in_base = db.session.execute(
+        db.select(Module).filter_by(name='crm_stock')).scalar()
+
+    if settings_in_base.value:
+        settings = json.loads(settings_in_base.value)
+
+    ids = settings.get('consumables_categories_ids')
+
+    request_products = (request_products.join(Product.categories)
+               .where(Category.category_id.not_in(ids)))
+
+
     if search:
         request_products = (request_products.join(Product.description)
                    .where(ProductDescription.name.contains(search)))
     else:
         request_products = request_products.filter(Product.stocks != None)
+
 
     products = request_products.paginate(page=int(request.args.get('page')),
                                  per_page=per_page,

@@ -208,6 +208,7 @@
     var $modal = $('#DealInfoModal');
     // preloader
     $modal.find('.modal-body').empty().load("{{ url_for('.deal_info_placeholder') }}");
+    $modal.modal('show')
 
     // page
     var url = "{{ url_for('.deal_info') }}";
@@ -215,7 +216,6 @@
       url += '?deal_id=' + deal_id;
     }
     $modal.find('.modal-body').load(url);
-    $modal.modal('show')
   }
 
   // Open Full Screen Modal

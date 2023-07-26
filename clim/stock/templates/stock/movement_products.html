@@ -11,17 +11,17 @@
           </th>
 
           {% endif %}
-          <th scope="col" class="col-4">Товар</th>
-          <th scope="col" class="col-1 {{ 'visually-hidden' if not movement_type == 'coming' }}">Закупочная цена</th>
-          <th scope="col" class="col-1">Количество</th>
-          <th scope="col" class="col-2">Склад</th>
+          <th scope="col">Товар</th>
+          <th scope="col" class="{{ 'visually-hidden' if not movement_type=='coming' }}">Закупочная цена</th>
+          <th scope="col">Количество</th>
+          <th scope="col">Склад</th>
           {% if not movement or not movement.posted %}
-          <th scope="col" class="col-1">На складе</th>
+          <th scope="col">На складе</th>
           {% endif %}
           {% if movement_type == 'moving' %}
-          <th scope="col" class="col-2">Получатель</th>
+          <th scope="col">Получатель</th>
           {% if not movement or not movement.posted %}
-          <th scope="col" class="col-1">У получателя</th>
+          <th scope="col">У получателя</th>
           {% endif %}
           {% endif %}
           <th scope="col">Сумма</th>
@@ -49,27 +49,24 @@
           </td>
           {% endif %}
 
-          <td class="col-4">
+          <td>
             <span class="line-count">{{ var.count }}.</span>
 
             {% if movement and movement.posted %}
             <span>{{ movement_product.product_name }}</span>
             {% else %}
-            <select class="product-select" data-width="100%" data-container="#tabProducts" data-size="10"
-              data-live-search="true" data-none-selected-text="" data-none-results-text="Не найдено {0}">
-              <option value="">-- Выберите товар --</option>
-              {% for product in products %}
-              <option value="{{ product.product_id }}" data-product-unit="{{ product.unit_class.description.unit }}"
-                data-product-cost="{{ product.cost|smart_int }}" {{ 'selected' if
-                product.product_id==movement_product.product_id }}>
-                {{ product.description.name }}</option>
-              {% endfor %}
+            <select class="product-select" data-placeholder="-- Выбрать товар --"
+              data-url="{{ url_for('.ajax_products') }}" data-class="bg-light">
+              <option value="{{ movement_product.product_id }}" selected data-unit="{{ movement_product.unit }}"
+                data-cost="{{ movement_product.cost }}">{{
+                movement_product.name }}</option>
             </select>
+
             {% endif %}
           </td>
-          <td class="col-xxl-2 col-xl-3 {{ 'visually-hidden' if not movement_type == 'coming' }}">
+          <td class="{{ 'visually-hidden' if not movement_type == 'coming' }}">
             {% if movement and movement.posted %}
-            <span>{{ movement_product.cost|money }} ₽</span>
+            <span>{{ movement_product.cost|money }}</span>
             {% else %}
             <div class="input-group">
               <input type="number" step="any" class="form-control cost"
@@ -78,7 +75,7 @@
             </div>
             {% endif %}
           </td>
-          <td class="col-1">
+          <td>
             {% if movement and movement.posted %}
             <span>{{ movement_product.quantity|smart_int }} {{ movement_product.unit }}</span>
             {% else %}
@@ -89,16 +86,12 @@
             </div>
             {% endif %}
           </td>
-          <td class="col-2">
+          <td>
             {% if movement and movement.posted %}
             <span>{{ movement_product.stock_name }}</span>
             {% else %}
-            <select class="stock-select" data-width="100%" data-live-search="true" data-container="#tabProducts"
-              data-none-selected-text="" data-none-results-text="Не найдено {0}">
-              {% for stock in stocks %}
-              <option value="{{ stock.stock_id }}" {{ 'selected' if stock.stock_id==movement_product.stock_id }}>
-                {{ stock.name }}</option>
-              {% endfor %}
+            <select class="stock-select" data-class="bg-light">
+              <option value="{{ movement_product.stock_id }}" selected>{{ movement_product.stock_name }}</option>
             </select>
             {% endif %}
           </td>
@@ -108,22 +101,21 @@
           </td>
           {% endif %}
           {% if movement_type == 'moving' %}
-          <td class="col-2">
+          <td>
             {% if movement and movement.posted %}
             <span>{{ movement_product.stock2_name }}</span>
             {% else %}
-            <select class="stock2-select" data-width="100%" data-live-search="true" data-none-selected-text=""
-              data-none-results-text="Не найдено {0}">
-              {% for stock in stocks %}
-              <option value="{{ stock.stock_id }}" {{ 'selected' if stock.stock_id==movement_product.stock2_id }}>
-                {{ stock.name }}</option>
-              {% endfor %}
-              {% endif %}
+            <select class="stock2-select" data-class="bg-light">
+              <option value="{{ movement_product.stock2_id }}" selected>{{ movement_product.stock2_name }}</option>
+            </select>
+            {% endif %}
             </select>
           </td>
           {% if not movement or not movement.posted %}
           <td class="align-middle">
-            <span class="available2"></span>
+            <div>
+              <span class="available2"></span>
+            </div>
           </td>
           {% endif %}
           {% endif %}
@@ -131,9 +123,13 @@
           {% set var.all_sum = var.all_sum + ( movement_product.cost * movement_product.quantity) if
           movement_product.cost %}
           <td class="align-middle">
-            <span class="sum">{{ (movement_product.cost * movement_product.quantity)|money if
-              movement_product.cost else 0 }}</span>
-            <span class="">₽</span>
+            <div class="d-flex">
+              <span class="sum">
+                {{ (movement_product.cost * movement_product.quantity)|money if
+                movement_product.cost else 0 }}
+              </span>
+              <span class="">₽</span>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -176,7 +172,8 @@
             <span class="fs-4 fw-bolder">Общая сумма:</span>
           </td>
           <td class="">
-            <span id="all_sum" class="fs-4 fw-bolder">{{ var.all_sum|money }} ₽</span>
+            <span class="fs-4 fw-bolder all-sum">{{ var.all_sum|money }}</span>
+            <span class="fs-4 fw-bolder">₽</span>
           </td>
         </tr>
       </tbody>

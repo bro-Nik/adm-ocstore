@@ -64,9 +64,6 @@
     }
 
     $stockSelect.prop("disabled", !product_id);
-    // if (!product_id) {
-    //   return false;
-    // }
 
     $stockSelect.select2({
       theme: "bootstrap-5",
@@ -97,6 +94,9 @@
 
     });
 
+    if (!product_id) {
+      return false;
+    }
 
     var url = "{{ url_for('.ajax_stocks_first') }}" + '?product_id=' + product_id;
     if ($stockSelect.val()) {
@@ -109,7 +109,7 @@
     }).then(function (data) {
       var option = new Option(data.text, data.id, true, true);
       $(option).attr('data-quantity', data.quantity);
-      $stockSelect.append(option).trigger('change');
+      $stockSelect.empty().append(option).trigger('change');
 
       $tr.find('.available').text(data.quantity);
 
@@ -210,8 +210,8 @@
   }
 
   function FromMoney(string) {
-    string = string.replace('&nbsp;', '')
-    string = string.replace(' ', '')
+    string = string.replaceAll('&nbsp;', '')
+    string = string.replaceAll(' ', '')
     string = string.replace(',', '.')
     return parseFloat(string)
   }
@@ -255,6 +255,7 @@
     $new_line.find('select').empty();
 
     UpdateProductSelect($new_line)
+    $('#tabProducts').find('.table-responsive').animate({scrollLeft: 0}, 0);
     $new_line.find('select.product-select').select2('open');
   }
 

@@ -1,3 +1,6 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='select2/css/select2.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='select2/css/select2-bootstrap-5-theme.css') }}">
+
 <!-- Container fluid -->
 <form id="movementInfo" method="post" action="{{ url_for('stock.movement_update',
                        movement_type=movement_type,

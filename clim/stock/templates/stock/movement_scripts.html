@@ -1,88 +1,155 @@
 <script>
 
-  var stocks = {}
-  var default_stock = {{stocks[0].stock_id}}
+  $('#tabProducts').find('tr.product').each(function () {
+    UpdateProductSelect($(this));
+  });
 
-  // Start
-  async function MovementStart() {
-    $('tr.product').find('select').selectpicker();
-    await getProductsInStocks();
-    $('#tabProducts').find('tr.product').each(function () {
-      ProductAvailable(this)
+  function UpdateProductSelect($tr) {
+    var productSelect = $tr.find('select.product-select');
+
+    productSelect.select2({
+      theme: "bootstrap-5",
+      width: '300px',
+      dropdownParent: $tr.closest('div[id]'),
+      dropdownAutoWidth: true,
+      selectionCssClass: productSelect.data('class'),
+      ajax: {
+        delay: 250,
+        url: productSelect.data('url'),
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            page: params.page || 1
+          }
+          return query;
+        }
+      }
+    }).on('select change', function (evt, config) {
+      var data = $(this).select2('data')[0],
+        $productSelected = $(this).find(':selected'),
+        cost = data.cost || $productSelected.attr('data-cost') || 0,
+        unit = data.unit || $productSelected.attr('data-unit') || '',
+        $tr = $(this).closest('tr');
+      if (data != undefined) {
+        console.log(data); // выведет в консоль дополнительные данные
+        $productSelected.attr('data-unit', data.unit);
+        $productSelected.attr('data-cost', data.cost);
+        $tr.find('.cost').val(cost).trigger('change');
+        $tr.find('.input-group-text.quantity').text(unit);
+      }
+      $tr.find('select.stock-select').empty();
+      UpdateStockSelect($tr);
+
+      {% if movement_type == 'moving' %}
+      UpdateStock2Select($tr);
+      {% endif %}
+
+    });
+    UpdateStockSelect($tr);
+
+    {% if movement_type == 'moving' %}
+    UpdateStock2Select($tr);
+    {% endif %}
+  }
+
+  function UpdateStockSelect($tr) {
+    var $stockSelect = $tr.find('select.stock-select'),
+      prevStockId = $tr.prev().find('select.stock-select').val(),
+      $productSelected = $tr.find('select.product-select :selected'),
+      product_id = $productSelected.val();
+
+    $stockSelect.prop("disabled", !product_id);
+
+    $stockSelect.select2({
+      theme: "bootstrap-5",
+      width: '200px',
+      dropdownParent: $tr.closest('div[id]'),
+      templateResult: formatStockOption,
+      dropdownAutoWidth: true,
+      selectionCssClass: $stockSelect.data('class'),
+      ajax: {
+        delay: 250,
+        url: "{{ url_for('.ajax_stocks') }}",
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            page: params.page || 1,
+            product_id: +product_id
+          }
+          return query;
+        },
+      }
+    }).on('select change', function (evt, config) {
+      var data = $(this).select2('data')[0],
+        $tr = $(this).closest('tr');
+
+      var quantity = data.quantity || $stockSelect.find(':selected').attr('data-quantity') || 0;
+      $tr.find('.available').text(quantity);
+
+    });
+
+    if (!product_id) {
+      return false;
+    }
+
+    var url = "{{ url_for('.ajax_stocks_first') }}" + '?product_id=' + product_id;
+    if ($stockSelect.val()) {
+      url += '&stock_id=' + $stockSelect.val();
+    } else if (prevStockId) {
+      url += '&stock_id=' + prevStockId;
+    }
+
+    $.ajax({
+      type: 'GET',
+      url: url,
+      dataType: 'json'
+    }).then(function (data) {
+      var option = new Option(data.text, data.id, true, true);
+      $(option).attr('data-quantity', data.quantity);
+      $stockSelect.empty().append(option).trigger('change');
+
+      $tr.find('.available').text(data.quantity);
+
+      $stockSelect.trigger({
+        type: 'select2:select',
+        params: {
+          data: data
+        }
+      });
     });
   }
 
-  {% if not movement or not movement.posted %}
-  MovementStart();
-  {% endif %}
 
-  // Products in stocks
-  function getProductsInStocks() {
-    return fetch("{{url_for('.json_products_in_stocks') }}", {
-      method: 'GET',
-      headers: {
-        "Content-type": "application/json; charset=UTF-8"
-      }
-    })
-      .then(res => res.json())
-      .then(data => window.stocks = data)
-  }
+  function formatStockOption(stock) {
+    var $stock = $(
+      '<span class="text">' + stock.text + '<small class="text-muted">' + stock.quantity + '</small></span>'
+    );
+    return $stock;
+  };
 
-  function ProductAvailable(tr) {
-    available = 0;
-    $product_select = $(tr).find('select.product-select').find(':selected');
-    var product_id = $product_select.val();
-    if (product_id) {
-      unit = $product_select.attr('data-product-unit');
-      $stock_select = $(tr).find('select.stock-select');
-      stock_id = $($stock_select).find(':selected').val();
+  // Focus Select2 Search
+  $(document).on('select2:open', () => {
+    document.querySelector('.select2-search__field').focus();
+  });
 
-      if (stocks[product_id]) {
-        for (let i = 0; i < (stocks[product_id]).length; i++) {
-          if (+stocks[product_id][i].stock_id === +stock_id) {
-            available = stocks[product_id][i].quantity;
-          }
-        }
-      }
-      $(tr).find('.available').text(available + ' ' + unit);
-    }
-  }
 
-  // Change Trigers
-  $('#tabProducts').on("change", 'select.product-select', function () {
-    var $tr = $(this).closest('tr')
-    var $option = $(this).find(':selected');
-    var unit = $option.attr('data-product-unit')
-    var cost = $option.attr('data-product-cost')
-    $tr.find('.cost').val(cost)
-    $tr.find('.input-group-text.quantity').text(unit)
-
-    UpdateSum($tr)
-    ProductAvailable($tr)
-  })
-
-  $('#tabProducts').on("change", 'select.stock-select', function () {
-    ProductAvailable($(this).closest('tr'))
-  })
-
-  $('#tabProducts').on("change", 'input.quantity', function () {
-    UpdateSum($(this).closest('tr'))
-  })
-
-  $('#tabProducts').on("change", 'input.cost', function () {
-    UpdateSum($(this).closest('tr'))
-  })
-
-  // Fields
+  // New Line
   function newLine($new_line = '') {
     if ($new_line === '') {
       var $line = $('tr.product').eq(-1);
-      $line.find('select').selectpicker('destroy');
-      var $new_line = $($line).clone();
+
+      $line.find('select').each(function () {
+        if ($(this).hasClass('select2-hidden-accessible')) {
+          $(this).select2('destroy');
+        }
+      });
+
+      var $new_line = $line.clone();
       $new_line.appendTo($('#tabProducts').find('tbody'));
-      $line.find('select').selectpicker();
-    } else {
-      $new_line.find('select').selectpicker('destroy');
+
+      UpdateProductSelect($line);
     }
 
     var count = $('tr.product').length;
@@ -93,30 +160,51 @@
     $new_line.find('.available').text('');
     $new_line.find('.available2').text('');
     $new_line.find('.sum').text('0');
-    $new_line.find('select.product-select').val('');
-    $new_line.find('select.stock-select').val(default_stock);
+    $new_line.find('select').empty();
 
-    $new_line.find('select').selectpicker();
-    $new_line.find('select.product-select').selectpicker('toggle');
-    $('.to-check:checkbox').trigger('change');
+    UpdateProductSelect($new_line)
+    $('#tabProducts').find('.table-responsive').animate({scrollLeft: 0}, 0);
+    $new_line.find('select.product-select').select2('open');
   }
 
+  // Delete line
+  $('.delete-product').on("click", function () {
+    var $tab = $(this).closest('div[id]');
+    $tab.find('.to-check:checked').each(function () {
+      if ($tab.find('tr.product').length > 1) {
+        $(this).closest('tr').remove();
+      } else {
+        newLine($tab, $(this).closest('tr'));
+      }
+    });
+    $tab.find('.to-check:checkbox').trigger('change');
+    LineCount($tab);
+  })
 
-  function UpdateSum(tr) {
-    var quantity = $(tr).find('.quantity').val()
-    var cost = $(tr).find('.cost').val()
-    var sum = cost * quantity;
-    $(tr).find('.sum').text(ToMoney(sum))
-    UpdateAllSum($(tr).closest('div[id]'))
+  // Line Count
+  function LineCount($tab) {
+    var count = 1;
+    $tab.find('tr.product').each(function () {
+      $(this).find('.line-count').text(count + '.');
+      count += 1;
+    });
   }
 
-  function UpdateAllSum(tab) {
-    var all_sum = 0
-    $(tab).find('.sum').each(function () {
-      all_sum += FromMoney(this.innerHTML)
+  function UpdateSum($tr) {
+    var quantity = $tr.find('.quantity').val(),
+      cost = $tr.find('.cost').val(),
+      sum = cost * quantity;
+    $tr.find('.sum').text(ToMoney(sum))
+    UpdateAllSum($tr.closest('div[id]'))
+  }
+
+  function UpdateAllSum($tab) {
+    var all_sum = 0;
+    $tab.find('.sum').each(function () {
+      all_sum += FromMoney($(this).html())
     });
     all_sum = ToMoney(all_sum);
-    $(tab).parent().find('#all_sum').text(all_sum + ' ₽')
+    $tab.parent().find('.all-sum').text(all_sum)
   }
 
   function ToMoney(number) {
@@ -125,11 +213,20 @@
   }
 
   function FromMoney(string) {
-    string = string.replace('&nbsp;', '')
-    string = string.replace(' ', '')
+    string = string.replaceAll('&nbsp;', '')
+    string = string.replaceAll(' ', '')
     string = string.replace(',', '.')
     return parseFloat(string)
   }
+
+  // Change Trigers
+  $('#tabProducts').on('change', 'input.quantity', function () {
+    UpdateSum($(this).closest('tr'))
+  })
+
+  $('#tabProducts').on("change", 'input.cost', function () {
+    UpdateSum($(this).closest('tr'))
+  })
 
   {% if movement_type == 'coming' %}
 
@@ -142,26 +239,30 @@
       stocks = [];
 
     $form.find('tr.product').each(function () {
-      var $this = $(this),
-        product_id = +$this.find('select.product-select').val();
+      var $tr = $(this),
+        $productSelect = $tr.find('select.product-select'),
+        product_id = +$productSelect.val(),
+        stock_name = $tr.find('select.stock-select option:selected').text().trim();
+
       if (product_id) {
         var item = {
           product_id: product_id,
-          cost: $this.find('.cost').val() ? parseFloat($this.find('.cost').val()) : 0,
-          quantity: $this.find('.quantity').val() ? parseFloat($this.find('.quantity').val()) : 0,
-          unit: $this.find('select.product-select').find(':selected').attr('data-product-unit'),
-          stock_id: +$this.find('select.stock-select').val()
+          name: $productSelect.find(':selected').html(),
+          cost: +$tr.find('.cost').val() || 0,
+          quantity: +$tr.find('.quantity').val() || 0,
+          unit: $productSelect.find(':selected').attr('data-unit'),
+          stock_id: +$tr.find('select.stock-select').val(),
+          stock_name: stock_name
         }
         products.push(item);
       }
-      var stock_name = $this.find('select.stock-select option:selected').text().trim();
       if (!stocks.includes(stock_name)) {
         stocks.push(stock_name);
       }
     });
     var data = {
       action: $(this).attr('data-action'),
-      info: $form.serialize(),
+      info: $form.serializeArray(),
       stocks: stocks,
       products: products
     }
@@ -175,102 +276,77 @@
   })
 
 
-  // Get Products to select
-  var products = [];
-
-  async function UpdateProductsSelect() {
-    Placeholder('start')
-    await getProducts();
-
-    $('body').find('select.product-select').each(function () {
-      var $select = $(this);
-      var id = +$select.val()
-      $select.empty();
-      $select.selectpicker('destroy');
-
-      for (let i = 0; i < products.length; i++) {
-        var newOption = new Option(`${products[i].name}`, `${products[i].id}`);
-        newOption.setAttribute('data-product-cost', products[i].cost);
-        newOption.setAttribute('data-product-unit', products[i].unit);
-        if (+products[i].id === id) {
-          $(newOption).prop('selected', true);
-        }
-        $select.append(newOption);
-      }
-      $select.selectpicker();
-    });
-    Placeholder('end')
-  }
-
-  function getProducts() {
-    return fetch("{{ url_for('stock.json_all_products') }}", {
-      method: 'GET',
-      headers: {
-        "Content-type": "application/json; charset=UTF-8"
-      }
-    })
-      .then(res => res.json())
-      .then(data => window.products = data)
-  }
 
   // For movement type moving
   {% elif movement_type == 'moving' %}
-  $('#tabProducts').find('tr.product').each(function () {
-    ProductAvailable2(this)
-  });
 
-  function ProductAvailable2(tr) {
-    var available = 0,
-      $tr = $(tr),
-      $option = $tr.find('select.product-select').find(':selected'),
-      product_id = $option.val()
-    if (product_id) {
-      var unit = $option.attr('data-product-unit'),
-        $select = $tr.find('select.stock2-select'),
-        stock_id = $select.find(':selected').val();
+  function UpdateStock2Select($tr) {
+    var $stock2Select = $tr.find('select.stock2-select'),
+      prevStock2Id = $tr.prev().find('select.stock2-select').val(),
+      $productSelected = $tr.find('select.product-select :selected'),
+      product_id = $productSelected.val();
 
-      if (stocks[product_id]) {
-        for (let i = 0; i < (stocks[product_id]).length; i++) {
-          if (+stocks[product_id][i].stock_id === +stock_id) {
-            available = stocks[product_id][i].quantity;
+    $stock2Select.prop("disabled", !product_id);
+
+    $stock2Select.select2({
+      theme: "bootstrap-5",
+      width: '200px',
+      dropdownParent: $tr.closest('div[id]'),
+      templateResult: formatStockOption,
+      dropdownAutoWidth: true,
+      selectionCssClass: $stock2Select.data('class'),
+      ajax: {
+        delay: 250,
+        url: "{{ url_for('.ajax_stocks') }}",
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            page: params.page || 1,
+            product_id: +product_id
           }
-        }
+          return query;
+        },
       }
-      $tr.find('.available2').text(available + ' ' + unit);
-    }
-  }
+    }).on('select change', function (evt, config) {
+      var data = $(this).select2('data')[0],
+        $tr = $(this).closest('tr');
 
-  function ChangeStock2(tr) {
-    var $tr = $(tr),
-      $stock1 = $tr.find('select.stock-select'),
-      $stock2 = $tr.find('select.stock2-select'),
-      stock_id = $stock1.find(':selected').val();
+      var quantity = data.quantity || $stock2Select.find(':selected').attr('data-quantity') || 0;
+      $tr.find('.available2').text(quantity);
 
-    $stock1.find('option').each(function () {
-      if ($(this).val() !== stock_id) {
-        $stock2.val($(this).val())
-      }
     });
 
-    $stock2.selectpicker('destroy');
-    $stock2.selectpicker();
+    if (!product_id) {
+      return false;
+    }
+
+    var url = "{{ url_for('.ajax_stocks_first') }}" + '?product_id=' + product_id;
+    if ($stock2Select.val()) {
+      url += '&stock_id=' + $stock2Select.val();
+    } else if (prevStock2Id) {
+      url += '&stock_id=' + prevStock2Id;
+    }
+
+    $.ajax({
+      type: 'GET',
+      url: url,
+      dataType: 'json'
+    }).then(function (data) {
+      var option = new Option(data.text, data.id, true, true);
+      $(option).attr('data-quantity', data.quantity);
+      $stock2Select.empty().append(option).trigger('change');
+
+      $tr.find('.available2').text(data.quantity);
+
+      $stock2Select.trigger({
+        type: 'select2:select',
+        params: {
+          data: data
+        }
+      });
+    });
   }
-
-  $('#tabProducts').on("change", 'select.product-select', function () {
-    var tr = $(this).closest('tr')
-    ChangeStock2(tr)
-    ProductAvailable2(tr)
-  })
-  $('#tabProducts').on("change", 'select.stock2-select', function () {
-    ProductAvailable2($(this).closest('tr'))
-  })
-  $('#tabProducts').on("change", 'select.stock-select', function () {
-    ChangeStock2($(this).closest('tr'))
-  })
-
-  $('#tabProducts').bind('DOMSubtreeModified', '.available', function () {
-    ProductAvailable2($(this).closest('tr'))
-  })
 
   // Products Data To Server
   $('#movementInfo').on("click", '.action-btns .btn', function () {
@@ -280,31 +356,36 @@
       stocks = [];
 
     $form.find('tr.product').each(function () {
-      var $this = $(this),
-        product_id = +$this.find('select.product-select').val();
+      var $tr = $(this),
+        $productSelect = $tr.find('select.product-select'),
+        product_id = +$productSelect.val(),
+        stock_name = $tr.find('select.stock-select option:selected').text().trim(),
+        stock2_name = $tr.find('select.stock2-select option:selected').text().trim();
+
       if (product_id) {
         var item = {
           product_id: product_id,
-          cost: $this.find('.cost').val() ? parseFloat($this.find('.cost').val()) : 0,
-          quantity: $this.find('.quantity').val() ? parseFloat($this.find('.quantity').val()) : 0,
-          unit: $this.find('select.product-select').find(':selected').attr('data-product-unit'),
-          stock_id: +$this.find('select.stock-select').val(),
-          stock2_id: +$this.find('select.stock2-select').val()
+          name: $productSelect.find(':selected').html(),
+          cost: +$tr.find('.cost').val() || 0,
+          quantity: +$tr.find('.quantity').val() || 0,
+          unit: $productSelect.find(':selected').attr('data-unit'),
+          stock_id: +$tr.find('select.stock-select').val(),
+          stock_name: stock_name,
+          stock2_id: +$tr.find('select.stock2-select').val(),
+          stock2_name: stock2_name
         }
         products.push(item);
       }
-      var stock_name = $this.find('select.stock-select option:selected').text().trim();
       if (!stocks.includes(stock_name)) {
         stocks.push(stock_name);
       }
-      var stock2_name = $this.find('select.stock2-select option:selected').text().trim();
       if (!stocks.includes(stock2_name)) {
         stocks.push(stock2_name);
       }
     });
     var data = {
       action: $(this).attr('data-action'),
-      name: $form.find('[name=name]').val(),
+      info: $form.serializeArray(),
       stocks: stocks,
       products: products
     }
@@ -315,29 +396,5 @@
   {% endif %}
 
 
-  // Delete line
-  $('.delete-product').on("click", function () {
-    var $box = $(this).closest('div[id]');
-
-    $box.find('.to-check:checked').each(function () {
-      var $tr = $(this).closest('tr');
-      if ($box.find('tr.product').length > 1) {
-        $tr.remove()
-      } else {
-        newLine($tr)
-      }
-    });
-    $box.find('.to-check:checkbox').trigger('change');
-    LineCount($box);
-  })
-
-  // Line Count
-  function LineCount($tab) {
-    var count = 1;
-    $tab.find('tr.product').each(function () {
-      $(this).find('.line-count').text(count + '.');
-      count += 1;
-    });
-  }
 
 </script>

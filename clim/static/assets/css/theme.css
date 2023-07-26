@@ -27207,3 +27207,17 @@ div.code-toolbar > .toolbar > .toolbar-item > span:hover, div.code-toolbar > .to
 .heading-permalink:hover:before {
   color: #624BFF;
 }
+td input.form-control.price, 
+td input.form-control.cost, 
+td input.form-control.quantity {
+  width: 100px;
+}
+td span.sum {
+    width: 75px;
+    text-align: end;
+    padding-right: 0.5rem;
+}
+td span.available {
+    width: 75px ;
+    display: inline-block;
+}

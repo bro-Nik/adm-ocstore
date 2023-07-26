@@ -2,9 +2,10 @@
 {% block title %}  {% endblock %}
 {% block head %}
     {{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='select2/css/select2.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='select2/css/select2-bootstrap-5-theme.css') }}">
 {% endblock %}
-{% block link %}
-{% endblock %}
+
 {% block content %}
 
 <!-- Container fluid -->
@@ -67,15 +68,14 @@
                   <div>
                     <!-- border -->
                     <div class="mb-6">
-                      <h4 class="mb-1">Категории расходных материалов</h4>
+                      <h4 class="mb-1">Категория расходных материалов</h4>
                     </div>
                   
                     <!-- row -->
                     <div class="mb-3 row">
                       <div class="col-sm-3 mb-3 mb-lg-0">
                         <label for="name" class="form-label">Название категории</label>
-                        <select class="selectpicker" data-width="100%" data-live-search="true" data-none-selected-text="Все"
-                          data-none-results-text="Не найдено {0}" multiple id="categories_ids" name="consumables_categories_ids">
+                        <select class="select2-box" id="categories_ids" name="consumables_categories_ids">
 
                           {% for category in categories %}
                           {% set id = category.category_id %}
@@ -124,7 +124,15 @@
 </form>
 
 <script>
-
+$(document).ready(function() {
+    $('.select2-box').select2({
+      theme: "bootstrap-5",
+      //width: '300px',
+      //dropdownParent: $tr.closest('div[id]'),
+      dropdownAutoWidth: true,
+      selectionCssClass: 'bg-light',
+    });
+});
 </script>
 
 {% endblock %}

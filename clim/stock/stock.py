@@ -2,6 +2,7 @@ import json
 from flask import render_template, redirect, url_for, request, flash, Blueprint
 from flask_login import login_required
 from datetime import datetime, timedelta
+from clim.jinja_filters import smart_int
 
 from clim.models import db, Category, Module, OptionValue, OptionValueSetting, Product, ProductDescription, ProductToCategory, Stock, StockMovement, StockProduct, WeightClass
 # from clim.routes import get_categories, get_consumables, get_module, get_product, get_products, products
@@ -31,6 +32,10 @@ def get_stock(id):
 def get_categories():
     return db.session.execute(
         db.select(Category).order_by(Category.sort_order)).scalars()
+
+
+def json_dumps_or_other(data, default=None):
+    return json.dumps(data, ensure_ascii=False) if data else default
 
 
 def get_consumables():
@@ -104,7 +109,7 @@ def movement_info(movement_type):
     return render_template('stock/movement.html',
                            movement=get_movement(movement_id),
                            movement_type=movement_type,
-                           products=tuple(get_products()),
+                           products={},
                            stocks=tuple(get_stocks()))
 
 
@@ -116,15 +121,14 @@ def movement_update(movement_type, movement_id=None):
 
     data = json.loads(request.data) if request.data else {}
 
-    def dumps_or_other(data, default=None):
-        return json.dumps(data) if data else default
-
     action = data.get('action')
-    info = data.get('info') if data.get('info') else {}
-    if info:
-        info = dict((a.strip(), (b.strip()))
-                    for a, b in (element.split('=')
-                                 for element in info.split('&')))
+
+    info_list = data.get('info') if data.get('info') else {}
+    info = {}
+    if info_list:
+        for item in info_list:
+            info[item['name']] = item['value']
+
     name = info.get('name')
 
     if 'save' in action:
@@ -146,8 +150,8 @@ def movement_update(movement_type, movement_id=None):
                 name += str(movement_count + 1)
 
         movement.name = name
-        movement.products = dumps_or_other(data.get('products'))
-        movement.stocks = dumps_or_other(data.get('stocks'))
+        movement.products = json_dumps_or_other(data.get('products'))
+        movement.stocks = json_dumps_or_other(data.get('stocks'))
 
         db.session.commit()
 
@@ -218,7 +222,7 @@ def stock_coming_posting(movement):
         product['product_name'] = product_in_base.description.meta_h1
         product['unit'] = product_in_base.unit_class.description.unit
 
-    movement.products = json.dumps(products)
+    movement.products = json_dumps_or_other(products)
     return ''
 
 
@@ -291,7 +295,7 @@ def stock_moving_posting(movement):
         if stock1.quantity == 0:
             db.session.delete(stock1)
 
-    movement.products = json.dumps(products)
+    movement.products = json_dumps_or_other(products)
     return ''
 
 
@@ -589,7 +593,129 @@ def product_info_update(product_id=None):
 
     # return redirect(url_for('.product_info',
     #                         product_id=product.product_id))
-    return ''
+    return str(product.product_id)
+
+
+@stock.route('/ajax_products', methods=['GET'])
+@login_required
+def ajax_products():
+    per_page = 20
+    search = request.args.get('search')
+    result_count = 0
+    result = {'results': []}
+
+    request_products = Product.query
+    if search:
+        request_products = (request_products.join(Product.description)
+                   .where(ProductDescription.name.contains(search)))
+
+    products = request_products.paginate(page=int(request.args.get('page')),
+                                 per_page=per_page,
+                                 error_out=False)
+
+
+    for product in products:
+        result['results'].append(
+            {
+                'id': str(product.product_id),
+                'text': product.description.name,
+                'cost': product.cost,
+                'unit': product.unit_class.description.unit
+            }
+        )
+
+    more = len(result['results']) >= per_page
+    result['pagination'] = {'more': more}
+
+    return json.dumps(result)
+
+
+@stock.route('/ajax_products_one', methods=['GET'])
+@login_required
+def ajax_products_one():
+    product_id = request.args.get('product_id')
+    if not product_id:
+        return ''
+
+    product = Product.query.filter(Product.product_id == product_id).one()
+
+    result = {}
+
+    result['id'] = str(product.product_id)
+    result['text'] = product.description.name
+    result['cost'] = product.cost
+    result['unit'] = product.unit_class.description.unit
+    return json.dumps(result)
+
+
+@stock.route('/ajax_stocks_first', methods=['GET'])
+@login_required
+def ajax_stocks_first():
+    product_id = request.args.get('product_id')
+    if not product_id:
+        return ''
+
+    stock_id = request.args.get('stock_id')
+
+    request_stock = Stock.query
+
+    if stock_id:
+        request_stock = request_stock.filter(Stock.stock_id == stock_id)
+
+    stock = db.session.execute(request_stock).scalar()
+
+    quantity = 0
+    for product in stock.products:
+        if product.product_id == int(product_id):
+            quantity = str(smart_int(product.quantity))
+            if quantity != '0':
+                quantity += ' ' + product.main_product.unit_class.description.unit
+            break
+
+    result = {}
+
+    result['id'] = str(stock.stock_id) if stock else ''
+    result['text'] = stock.name if stock else ''
+    result['quantity'] = quantity if stock else ''
+    return json.dumps(result)
+
+
+@stock.route('/ajax_stocks', methods=['GET'])
+@login_required
+def ajax_stocks():
+    search = request.args.get('search')
+    product_id = request.args.get('product_id')
+    per_page = 20
+    result = {'results': []}
+
+    request_stocks = Stock.query
+                      
+    if search:
+        request_stocks = (request_stocks.where(Stock.name.contains(search)))
+
+    stocks = request_stocks.paginate(page=int(request.args.get('page')),
+                                     per_page=per_page,
+                                     error_out=False)
+
+    for stock in stocks:
+        quantity = 0
+        for product in stock.products:
+            if product.product_id == int(product_id):
+                quantity = str(smart_int(product.quantity))
+                if quantity != '0':
+                    quantity += ' ' + product.main_product.unit_class.description.unit
+                break
+        result['results'].append(
+            {
+                'id': str(stock.stock_id),
+                'text': stock.name,
+                'quantity': quantity
+            }
+        )
+
+    more = len(result['results']) >= per_page
+    result['pagination'] = {'more': more}
+    return json.dumps(result)
 
 
 @stock.route('/rename_products', methods=['GET'])
