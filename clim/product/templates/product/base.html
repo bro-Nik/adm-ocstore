@@ -3,22 +3,22 @@
 {% block head %}
     {{ super() }}
 {% endblock %}
-{% block link %}
-{% endblock %}
+
 {% block content %}
 
 <!-- Container fluid -->
-<div class="bg-primary pt-10 pb-21"></div>
-<div class="container-fluid mt-n22 px-6">
+<div class="container-fluid px-6 d-grid gap-3 mt-3">
 
-  <!-- row head  -->
+
   <div class="row">
     <div class="col-lg-12 col-md-12 col-12">
       <!-- Page header -->
       <div>
         <div class="d-flex align-items-center">
           <div class="mb-2 mb-lg-0">
-            <h3 class="mb-0  text-white">{{ page_name }}</h3>
+            <h3 class="mb-0">
+                {{ page_name }}
+            </h3>
           </div>
           <div class="ms-auto d-flex gap-2">
             {% block head_form %}{% endblock %}
@@ -32,24 +32,35 @@
   {% include 'partials/filter.html' %}
 
   <!-- row  -->
-  <div class="row mt-6 mb-6">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+  <div class="row">
+    <div class="col-12 d-grid gap-3">
       <div class="card h-100">
-        <!-- card header  -->
-        <div class="card-header bg-white py-4">
-          <h4 class="mb-0">Товары</h4>
-        </div>
-        <!-- table  -->
         <div class="table-responsive">
-            {% block table %}
-            {% endblock %}
+          {% block table %}
+          {% endblock %}
         </div>
       </div>
     </div>
   </div>
+  
 
   {% include 'partials/pagination.html' %}
 
 </div>
+{% block actions %}
+{% endblock %}
+
 {% block page_scripts %} {% endblock %}
+
+<script>
+  $('.other-select').each(function () {
+    $(this).select2({
+      theme: "bootstrap-5",
+      width: $(this).attr('data-width'),
+      minimumResultsForSearch: 10,
+      dropdownAutoWidth: true,
+      selectionCssClass: $(this).attr('data-class')
+    })
+  })
+</script>
 {% endblock %}

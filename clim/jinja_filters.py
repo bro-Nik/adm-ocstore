@@ -1,5 +1,7 @@
+import pickle
 import json
-from clim.app import app
+from clim.app import app, redis
+from clim.models import db, Category
 from datetime import datetime
 import locale
 
@@ -97,3 +99,5 @@ def smart_phone(phone_number: str) -> str:
     return "+7 {}{}{} {}{}{}-{}{}-{}{}".format(*numbers)
 
 app.add_template_filter(smart_phone)
+
+

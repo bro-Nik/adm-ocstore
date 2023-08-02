@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from clim.app import app, db, login_manager
 from clim.models import Product
-from clim.routes import get_products
+# from clim.routes import get_products
 
 
 @app.route('/reports/viewed_products', methods=['GET'])

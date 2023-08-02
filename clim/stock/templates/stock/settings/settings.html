@@ -1,3 +1,79 @@
+{% extends "base.html" %}
+{% block title %}  {% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Container fluid -->
+<form id="StockSettings" method="post" action="{{ url_for('.settings_update') }}">
+  <div class="container-fluid px-6 d-grid gap-3 mt-3">
+
+  {% include 'stock/header.html' %}
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-12">
+        <!-- Page header -->
+        <div>
+          <div class="d-flex align-items-center">
+            <div class="mb-2 mb-lg-0">
+              <h3 class="mb-0">
+                  Настройки
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- row  -->
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+
+        <div class="card h-100">
+
+          <!-- table  -->
+          <div class="table-responsive">
+            <table id="SettingsTable" class="table text-nowrap">
+              <tbody>
+                {% for item in menu %}
+
+                  <tr>
+                    <td>
+                      <a href="#" class="text-inherit open-in-modal"
+                        data-url="{{ item['url'] }}" data-modal="#FullScreenModal">{{ item['name'] }}</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  </div>
+</form>
+
+{% include 'stock/modals.html' %}
+
+<!-- Modal FullScreen2 -->
+<div class="modal fade" id="FullScreenModal2" tabindex="-1" role="dialog" aria-labelledby="FullScreenModal2Label"
+  aria-hidden="false">
+  <div class="modal-dialog modal-fullscreen" role="document">
+    <div class="modal-content bg-light">
+      <div class="modal-close-label">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 
   // Check All
@@ -6,17 +82,6 @@
     $table.find('.to-check').prop('checked', $(this).is(':checked'));
     $table.find('.to-check:checkbox').trigger('change');
   })
-
-  // Show buttons
-  // $('body').on("change", ':checkbox', function () {
-  //   var checked_count = $('.to-check:checked').length;
-  //   if (checked_count > 0) {
-  //     $('.sticky-bottom.actions').addClass('active');
-  //   } else {
-  //     $('.sticky-bottom.actions').removeClass('active');
-  //   }
-  //   CheckCount(this);
-  // })
 
   // Check Count
   $('body').on("change", '.to-check:checkbox', function () {
@@ -42,75 +107,14 @@
     $($table).find('.check-all').prop('checked', checked_count > 0);
   })
 
-  // Actions
-  $('body').on("click", '.action-confirmation', function () {
-    var $modal = $('#ModalConfirmation');
-    var $btn = $modal.find('.action');
-    $modal.find('.modal-title').text($(this).attr('data-title'));
-    $btn.attr('data-action', $(this).attr('data-action'));
-
-    var $form = $(this).closest('form');
-    $btn.attr('data-form', '#' + $form.attr('id'));
-
-    $modal.modal('show');
-  })
-
-  $('body').on("click", '.action', function () {
-    var $btn = $(this),
-      checked = [];
-    if ($btn.attr('data-form')) {
-      var $form = $($btn.attr('data-form'));
-    } else {
-      var $form = $btn.closest('form');
-    }
-
-    $form.find('.to-check:checked').each(function () {
-      checked.push($(this).val());
-    });
-    var data = {
-      action: $btn.attr('data-action'),
-      ids: checked
-    }
-    SendingData(data, $btn, $form)
-  })
-
-  function SendingData(data, $btn, $form) {
-    $.ajax({
-      type: "POST",
-      url: $form.attr('action'),
-      data: JSON.stringify(data),
-      contentType: 'application/json; charset=utf-8',
-      //dataType: 'json',
-      success: PageUpdate($btn)
-    })//.done(PageUpdate($btn));
-  };
-
-  function PageUpdate($btn) {
-    var apply = $btn.hasClass('apply');
-    if (apply) {
-      $btn.closest('.modal-body').load(current_url);
-    } else {
-      $('.modal.show').each(function () {
-        $(this).modal('hide');
-      })
-      setTimeout("location.reload()", 1000);
-    }
-  }
-
   // Modals
 
-  // Open Modal Movement
-  $('.show-movement').on("click", function () {
-    var $modal = $('#FullScreenModal');
-    // preloader
-    $modal.find('.modal-body').load("{{ url_for('.movement_info_placeholder') }}");
+  // Open Modal
+  $('a.open-in-modal').on("click", function () {
+    var id = $(this).attr('data-modal'),
+      url = $(this).attr('data-url'),
+      $modal = $(id);
 
-    // page
-    var url = "{{ url_for('.movement_info', movement_type=movement_type) }}";
-    var movement_id = $(this).closest("tr").attr('data-movement-id');
-    if (movement_id) {
-      url += '?movement_id=' + movement_id;
-    }
     $modal.find('.modal-body').load(url);
     $modal.modal('toggle')
   })
@@ -176,5 +180,6 @@
       }
     });
   })
-
 </script>
+
+{% endblock %}

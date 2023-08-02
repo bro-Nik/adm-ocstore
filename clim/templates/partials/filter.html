@@ -1,5 +1,5 @@
 <!-- filter -->
-<div class="col-xl-12 col-lg-12 col-md-12 col-12 mt-6">
+<div class="col-xl-12 col-lg-12 col-md-12 col-12">
   <div class="card h-100">
 
     <div class="card-body">
@@ -7,163 +7,191 @@
 
         <div class="row g-2">
 
-          {% set categories_ids = session.get('categories_ids') if session.get('categories_ids') else [] %}
-          <div class="col-md-3">
-            <div class="mb-1">
-              <label for="categories_ids" class="form-label h7">Категория</label>
-              <select class="selectpicker" data-width="100%" data-live-search="true" data-none-selected-text="Все"
-                data-none-results-text="Не найдено {0}" multiple id="categories_ids" name="categories_ids">
-
-                {% for category in categories %}
-                {% set id = category.category_id %}
-                {% if not category.parent_id %}
-                <option {{ 'selected' if id|string in categories_ids }} value="{{ id }}">
-                  {{ category.description.name }}
-                </option>
-
-                {% for subcategory in categories %}
-                {% set id = subcategory.category_id %}
-                {% if subcategory.parent_id == category.category_id %}
-                <option {{ 'selected' if id|string in categories_ids }} value="{{ id }}">
-                  - {{ subcategory.description.name }}
-                </option>
-
-                {% for subsubcategory in categories %}
-                {% set id = subsubcategory.category_id %}
-                {% if subsubcategory.parent_id|string == subcategory.category_id %}
-                <option {{ 'selected' if id in categories_ids }} value="{{ id }}">
-                  - -{{ subsubcategory.description.name }}
-                </option>
-                {% endif %}
-                {% endfor %}
-
-                {% endif %}
-                {% endfor %}
-
-                {% endif %}
-                {% endfor %}
-              </select>
-            </div>
+          <div class="col-md-2">
+            <label for="categories_ids" class="form-label h7">Категория</label>
+            <select class="ajax-select multiple" data-width="100%" multiple id="categories_ids" name="categories_ids"
+              data-url="{{ url_for('get_list_all_categories') }}" data-class="bg-light" data-placeholder="Все">
+              {% set categories_ids = session.get('categories_ids') if session.get('categories_ids') else [] %}
+              {% for id in categories_ids %}
+              <option selected value="{{ id }}">{{ id }}</option>
+              {% endfor %}
+            </select>
           </div>
 
-          {% set manufacturers_ids = session.get('manufacturers_ids') %}
           <div class="col-md-2">
-            <div class="mb-1">
-              <label for="manufacturers_ids" class="form-label h7">Производитель</label>
-              <select class="selectpicker" data-width="100%" data-live-search="true" data-none-selected-text="Все"
-                data-none-results-text="Не найдено {0}" multiple id="manufacturers_ids" name="manufacturers_ids">
-
-                {% for manufacturer in manufacturers %}
-                {% set id = manufacturer.manufacturer_id %}
-                <option {{ 'selected' if manufacturers_ids and id|string in manufacturers_ids }} value="{{ id }}">{{
-                  manufacturer.name }}
-                </option>
-                {% endfor %}
-              </select>
-            </div>
+            <label for="manufacturers_ids" class="form-label h7">Производитель</label>
+            <select class="ajax-select multiple" data-width="100%"
+              data-url="{{ url_for('get_list_all_manufacturers') }}" data-placeholder="Все" multiple
+              id="manufacturers_ids" name="manufacturers_ids" data-class="bg-light">
+              {% set manufacturers_ids = session.get('manufacturers_ids') if session.get('manufacturers_ids') else []
+              %}
+              {% for id in manufacturers_ids %}
+              <option selected value="{{ id }}">{{ id }}</option>
+              {% endfor %}
+            </select>
           </div>
 
           {% set stock = session.get('stock') %}
           <div class="col-md-2">
-            <div class="mb-1">
-              <label for="stock" class="form-label h7">Наличие</label>
-              <select class="selectpicker" data-width="100%" id="stock" name="stock">
-                <option value="">Все</option>
-                <option {{ 'selected' if stock=='in stock' }} value="in stock">В наличии</option>
-                <option {{ 'selected' if stock=='not not in stock' }} value="not not in stock">Все, кроме нет в наличии
-                </option>
-                <option {{ 'selected' if stock=='on order' }} value="on order">Под заказ</option>
-                <option {{ 'selected' if stock=='price request' }} value="price request">Запрос цены</option>
-                <option {{ 'selected' if stock=='not in stock' }} value="not in stock">Нет в наличии</option>
-              </select>
-            </div>
+            <label for="stock" class="form-label h7">Наличие</label>
+            <select class="no-ajax-select" data-width="100%" id="stock" name="stock">
+              <option value="">Все</option>
+              <option {{ 'selected' if stock=='in stock' }} value="in stock">В наличии</option>
+              <option {{ 'selected' if stock=='not not in stock' }} value="not not in stock">Все, кроме нет в наличии
+              </option>
+              <option {{ 'selected' if stock=='on order' }} value="on order">Под заказ</option>
+              <option {{ 'selected' if stock=='price request' }} value="price request">Запрос цены</option>
+              <option {{ 'selected' if stock=='not in stock' }} value="not in stock">Нет в наличии</option>
+            </select>
           </div>
 
           {% set active_field = session.get('field') %}
           <div class="col-md-2">
-            <div class="mb-1">
-              <label for="field" class="form-label h7">Поле</label>
-              <select class="selectpicker" data-width="100%" id="field" name="field">
-                <option value="">Все</option>
-                {% for field in ['EAN', 'JAN', 'ISBN'] %}
-                <option {{ 'selected' if field|lower==active_field }} value="{{ field|lower }}">{{ field }}</option>
-                {% endfor %}
-              </select>
-            </div>
+            <label for="field" class="form-label h7">Поле</label>
+            <select class="no-ajax-select" data-width="100%" id="field" name="field">
+              <option value="">Все</option>
+              {% for field in ['EAN', 'JAN', 'ISBN'] %}
+              <option {{ 'selected' if field|lower==active_field }} value="{{ field|lower }}">{{ field }}</option>
+              {% endfor %}
+            </select>
           </div>
 
-          {% if request.path == url_for('products', path='prices') %}
+          {% if request.path == url_for('product.products', path='prices') %}
           {% set other_filter = session.get('prices_other_filter') %}
-          <div class="col-md-2">
-            <div class="mb-1">
-              <label for="other_filter" class="form-label h7">Цена</label>
-              <select class="selectpicker" data-width="100%" id="other_filter" name="other_filter">
-                <option {{ 'selected' if not other_filter }} value="">Все</option>
-                <option {{ 'selected' if other_filter=='different_price' }} value="different_price">Цена отличается
-                </option>
-              </select>
-            </div>
+          <div class="col-md-1">
+            <label for="other_filter" class="form-label h7">Цена</label>
+            <select class="no-ajax-select" data-width="100%" id="other_filter" name="other_filter">
+              <option {{ 'selected' if not other_filter }} value="">Все</option>
+              <option {{ 'selected' if other_filter=='different_price' }} value="different_price">Цена отличается
+              </option>
+            </select>
           </div>
           {% endif %}
 
-          {% if request.path == url_for('products', path='comparison') %}
+          {% if request.path == url_for('product.products', path='comparison') %}
           {% set other_filter = session.get('comparison_other_filter') %}
           <div class="col-md-2">
-            <div class="mb-1">
-              <label for="other_filter" class="form-label h7">Сопоставление</label>
-              <select class="selectpicker" data-width="100%" id="other_filter" name="other_filter">
-                <option value="">Все</option>
-                <option {{ 'selected' if other_filter=='not_confirmed' }} value="not_confirmed">Не подтвержденные
-                </option>
-                <option {{ 'selected' if other_filter=='not_matched' }} value="not_matched">Не сопоставленные</option>
-              </select>
-            </div>
+            <label for="other_filter" class="form-label h7">Сопоставление</label>
+            <select class="no-ajax-select" data-width="100%" id="other_filter" name="other_filter">
+              <option value="">Все</option>
+              <option {{ 'selected' if other_filter=='not_confirmed' }} value="not_confirmed">Не подтвержденные
+              </option>
+              <option {{ 'selected' if other_filter=='not_matched' }} value="not_matched">Не сопоставленные</option>
+            </select>
           </div>
           {% endif %}
 
           {% set group_attribute = session.get('group_attribute') %}
           <div class="col-md-2">
-            <div class="mb-1">
-              <label for="group_attribute" class="form-label h7">Группировка</label>
-              <select class="selectpicker" data-width="100%" data-live-search="true" data-none-selected-text="Нет"
-                data-none-results-text="Не найдено {0}" id="group_attribute" name="group_attribute">
-                <option></option>
-                {% for attribute in attributes %}
-                <option {{ 'selected' if attribute.attribute_id==group_attribute|int }}
-                  value="{{ attribute.attribute_id }}">{{ attribute.description.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
+            <label for="group_attribute" class="form-label h7">Группировка</label>
+            <select class="ajax-select" data-width="100%" data-placeholder="Нет"
+              data-url="{{ url_for('get_list_all_attributes') }}" id="group_attribute" name="group_attribute"
+              data-class="bg-light">
+              <option></option>
+              {% for attribute in attributes %}
+              <option {{ 'selected' if attribute.attribute_id==group_attribute|int }}
+                value="{{ attribute.attribute_id }}">{{ attribute.description.name }}</option>
+              {% endfor %}
+            </select>
           </div>
 
           {% set new_products = session.get('new_products') %}
           <div class="col-md-2">
-            <div class="mb-1">
-              <label for="new_products" class="form-label h7">Новые товары</label>
-              <select class="selectpicker" data-width="100%" id="new_products" name="new_products">
-                <option value="">Нет</option>
-                <option {{ 'selected' if new_products }} value="yes">Да</option>
-              </select>
-            </div>
+            <label for="new_products" class="form-label h7">Новые товары</label>
+            <select class="no-ajax-select" data-width="100%" id="new_products" name="new_products">
+              <option value="">Нет</option>
+              <option {{ 'selected' if new_products }} value="yes">Да</option>
+            </select>
           </div>
 
           {% set per_page = session.get('results_per_page') %}
           <div class="col-md-1">
-            <div class="mb-1">
-              <label for="results_per_page" class="form-label h7">Результатов</label>
-              <select class="selectpicker" data-width="100%" id="results_per_page" name="results_per_page">
-                {% for i in [20, 40, 60, 80, 100] %}
-                <option {{ 'selected' if per_page|int==i }} value="{{ i }}">{{ i }}</option>
-                {% endfor %}
-              </select>
-            </div>
+            <label for="results_per_page" class="form-label h7">Результатов</label>
+            <select class="no-ajax-select" data-width="100%" id="results_per_page" name="results_per_page">
+              {% for i in [20, 40, 60, 80, 100] %}
+              <option {{ 'selected' if per_page|int==i }} value="{{ i }}">{{ i }}</option>
+              {% endfor %}
+            </select>
           </div>
 
-          <div class="col-auto d-flex align-items-end">
-            <button class="mb-1 btn rounded-3 btn-primary btn-title" type="submit">Фильтр</button>
+          <div class="col-md-1 d-flex align-items-end">
+            <button id="resetFilter" class="btn btn-primary" type="button">Сбросить</button>
           </div>
+
         </div>
       </form>
     </div>
   </div>
 </div>
+<script>
+  $('select').on('select2:open', function () {
+    var single = $(this).parent().find('.select2-selection--single')
+    if (single.length) {
+      var $search = $('.select2-search.select2-search--dropdown').find('.select2-search__field');
+    } else {
+      var $search = $(this).parent().find('.select2-search__field');
+    }
+    $search.focus();
+  });
+
+  $('.no-ajax-select').each(function () {
+    $(this).select2({
+      theme: "bootstrap-5",
+      width: $(this).data('width'),
+      dropdownAutoWidth: true,
+      minimumResultsForSearch: 10,
+      selectionCssClass: 'bg-light'
+    })
+  })
+
+  $('#Filter .ajax-select').each(function () {
+    UpdateSelect($(this));
+  });
+
+  $('#Filter .multiple').each(function () {
+    UpdateSelectCount($(this));
+  });
+
+  function UpdateSelect($select) {
+    $select.select2({
+      theme: "bootstrap-5",
+      width: $select.data('width'),
+      dropdownAutoWidth: true,
+      selectionCssClass: $select.data('class'),
+      ajax: {
+        delay: 250,
+        url: $select.data('url'),
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            page: params.page || 1
+          }
+          return query;
+        }
+      }
+    });
+  }
+
+  $('#Filter .multiple').on('change', function (e) {
+    UpdateSelectCount($(this))
+  })
+
+  $('#Filter select').on('change', function (e) {
+    $('#Filter').submit();
+  })
+
+  function UpdateSelectCount($select) {
+    var count = $select.val().length;
+
+    if (count > 0) {
+      $select.parent().find('.select2-selection__rendered').remove();
+      $select.parent().find('.select2-selection.select2-selection--multiple').append($(`<span class="multiple-count" >+ ${count}</span>`))
+    }
+  }
+  $('#resetFilter').on('click', function () {
+    $('#Filter select').each(function () {
+      $(this).val('').trigger('change');
+    });
+  })
+</script>

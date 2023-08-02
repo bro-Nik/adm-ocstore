@@ -1,10 +1,12 @@
 import json
+import pickle
 from flask import render_template, redirect, url_for, request, flash, Blueprint
 from flask_login import login_required
 from datetime import datetime, timedelta
 from clim.jinja_filters import smart_int
 
-from clim.models import db, Category, Module, OptionValue, OptionValueSetting, Product, ProductDescription, ProductToCategory, Stock, StockMovement, StockProduct, WeightClass
+from clim.models import Attribute, CategoryDescription, Option, db, Category, Module, OptionValue, OptionValueSetting, Product, ProductDescription, ProductToCategory, Stock, StockMovement, StockProduct, WeightClass
+from clim.app import redis
 # from clim.routes import get_categories, get_consumables, get_module, get_product, get_products, products
 
 
@@ -389,17 +391,73 @@ def get_settings(settings={}):
 @stock.route('/settings', methods=['GET'])
 @login_required
 def settings():
-    return render_template('stock/settings.html',
-                           categories=tuple(get_categories()),
-                           settings=get_settings())
+    menu = [
+    {'name': 'Расходные материалы', 'url': url_for('.settings_consumables')}
+    ]
+    return render_template('stock/settings/settings.html', menu=menu)
+
+
+@stock.route('/settings/consumables', methods=['GET'])
+@login_required
+def settings_consumables():
+    options = db.session.execute(db.select(Option)).scalars()
+    return render_template('stock/settings/consumables.html',
+                           categories=get_list_all_categories(),
+                           settings=get_settings(),
+                           options=options
+                           )
+
+
+@stock.route('/settings/consumables_option', methods=['GET'])
+@login_required
+def settings_consumables_option():
+    value = settings = attribute = None
+
+    option_id = request.args.get('option_id')
+
+    value_id = request.args.get('value_id')
+    if value_id:
+        value = db.session.execute(
+            db.select(OptionValue).filter_by(option_value_id=value_id)).scalar()
+        if value.settings and value.settings.settings:
+            settings = json.loads(value.settings.settings)
+            attribute = db.session.execute(
+                db.select(Attribute)
+                .filter_by(attribute_id=settings.get('attribute_id'))).scalar()
+    return render_template('stock/settings/consumables_option.html',
+                           option_id=option_id,
+                           value=value,
+                           settings=settings,
+                           categories=get_list_all_categories(),
+                           attribute=attribute,
+                           )
+
+
+@stock.route('/settings/settings_consumables_option_update', methods=['POST'])
+@login_required
+def settings_consumables_option_update():
+    """ Отправка настроек значения опции """
+    value_id = request.args.get('value_id')
+    value = db.session.execute(
+        db.select(OptionValue).filter_by(option_value_id=value_id)).scalar()
+
+    if not value.settings:
+        value.settings = OptionValueSetting()
+
+    data = json.loads(request.data) if request.data else {}
+    value.settings.consumables = json_dumps_or_other(data.get('products'))
+    db.session.commit()
+
+    return ''
 
 
 @stock.route('/settings_update', methods=['POST'])
 @login_required
 def settings_update():
     settings = get_settings()
-    ids = request.form.getlist('consumables_categories_ids')
-    settings['consumables_categories_ids'] = ids
+    id = request.form.get('consumables_category_id')
+    settings['consumables_category_id'] = id
+    get_settings(settings)
     
     return redirect(url_for('.settings'))
 
@@ -483,7 +541,7 @@ def product_info(product_id=None):
     return render_template('stock/product_info.html',
                            product=product,
                            categories_ids=categories_ids,
-                           categories=tuple(get_categories()),
+                           categories=get_list_all_categories(),
                            main_category=main_category,
                            unit_classes=unit_classes)
 
@@ -494,57 +552,14 @@ def product_info(product_id=None):
 def product_info_update(product_id=None):
     product = get_product(product_id)
     if not product:
-        product = Product(
-            model='',
-            sku='',
-            upc='',
-            ean='',
-            jan='',
-            isbn='',
-            mpn='',
-            location='',
-            quantity=0,
-            stock_status_id=0,
-            manufacturer_id=0,
-            shipping=0,
-            options_buy=0,
-            price=0,
-            points=0,
-            tax_class_id=0,
-            date_available=0,
-            weight=0,
-            weight_class_id=0,
-            length=0,
-            width=0,
-            height=0,
-            length_class_id=0,
-            subtract=0,
-            minimum=0,
-            sort_order=0,
-            status=0,
-            viewed=0,
-            date_added=0,
-            date_modified=0,
-            noindex=1,
-            cost=15000,
-            suppler_code=0,
-            suppler_type=0
-        )
+        product = Product()
         db.session.add(product)
         db.session.commit()
 
     if not product.description:
         product.description = ProductDescription(
             product_id=product.product_id,
-            language_id=1,
-            name='',
-            description='',
-            short_description='',
-            tag='',
-            meta_title='',
-            meta_description='',
-            meta_keyword='',
-            meta_h1=''
+            language_id=1
         )
 
     product.price = request.form.get('price')
@@ -574,6 +589,7 @@ def product_info_update(product_id=None):
             main_category=True
         )
         db.session.add(main_category)
+        db.session.commit()
 
     categories_ids = request.form.getlist('categories_ids')
     if categories_ids:
@@ -581,7 +597,8 @@ def product_info_update(product_id=None):
             if category.category_id not in categories_ids and category.category_id != main_category_id:
                 product.categories.remove(category)
             else:
-                categories_ids.remove(category.category_id)
+                categories_ids.remove(str(category.category_id))
+
 
         for category_id in categories_ids:
             category = db.session.execute(
@@ -718,6 +735,37 @@ def ajax_stocks():
     return json.dumps(result)
 
 
+@stock.route('/ajax_categories', methods=['GET'])
+@login_required
+def get_list_all_categories():
+    query_redis = redis.get('all_categories')
+    if query_redis:
+        return pickle.loads(query_redis)
+
+    result = []
+    line = -1
+    def next(parent_id=0, line=0):
+        line += 1
+        categories = db.session.execute(
+            db.select(Category).filter_by(parent_id=int(parent_id))).scalars()
+
+        for category in categories:
+            result.append(
+                {
+                    'id': category.category_id,
+                    'text': ' - ' * line + category.description.name
+                }
+            )
+            next(parent_id=category.category_id,
+                 line=line)
+
+    next(line=line)
+
+    redis.set('all_categories', pickle.dumps(result))
+
+    return result
+
+
 @stock.route('/rename_products', methods=['GET'])
 @login_required
 def rename_products():
@@ -728,3 +776,83 @@ def rename_products():
     db.session.commit()
 
     return 'OK'
+
+
+@stock.route('/set_products_page', methods=['GET'])
+@login_required
+def set_products_page():
+    return render_template('stock/set_products_page.html')
+
+
+@stock.route('/set_products', methods=['GET'])
+@login_required
+def set_products():
+    search = request.args.get('search')
+    page = request.args.get('page')
+    page = int(page) if page else 1
+    category_id = request.args.get('category_id')
+    parent_id = category_id if category_id else 0
+
+    request_categories = (Category.query
+        .where(Category.parent_id == parent_id))
+
+    request_products = Product.query
+
+    if search:
+        search = search.replace('_', ' ')
+        request_categories = (request_categories.join(Category.description)
+                   .where(CategoryDescription.name.contains(search)))
+        if category_id:
+            request_products = (request_products.join(Product.categories)
+                .where(Category.category_id == category_id))
+        request_products = (request_products.join(Product.description)
+                   .where(ProductDescription.name.contains(search)))
+    else:
+        request_products = (request_products.join(Product.categories)
+            .where(Category.category_id == category_id))
+
+    categories = request_categories.all()
+    products = request_products.paginate(page=page,
+                                 per_page=20,
+                                 error_out=False)
+    category = db.session.execute(db.select(Category)
+                                  .filter_by(category_id=category_id)).scalar()
+
+    return render_template('stock/set_products.html',
+                           categories=categories,
+                           products=products,
+                           category=category)
+
+
+def get_consumables_categories_ids():
+    query_redis = redis.get('consumables_categories_ids')
+    if query_redis:
+        return pickle.loads(query_redis)
+
+    settings = {}
+    settings_in_base = db.session.execute(
+        db.select(Module).filter_by(name='crm_stock')).scalar()
+
+    if settings_in_base.value:
+        settings = json.loads(settings_in_base.value)
+
+    main_category_id = settings.get('consumables_category_id')
+
+    result = []
+    result.append(main_category_id)
+
+    def next(parent_id):
+        categories = db.session.execute(
+            db.select(Category).filter_by(parent_id=int(parent_id))).scalars()
+
+        for category in categories:
+            result.append(category.category_id)
+            next(category.category_id)
+
+    if main_category_id:
+        next(main_category_id)
+
+    redis.set('consumables_categories_ids', pickle.dumps(result))
+    return result
+
+

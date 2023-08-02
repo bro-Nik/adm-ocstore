@@ -7,7 +7,9 @@ from clim.models import db, Attribute, AttributeDescription, Manufacturer, Optio
     OptionDescription, OptionSetting, OptionValueSetting, OptionValue, \
     OptionValueDescription, ProductAttribute, ProductOption,\
     ProductOptionValue, Product, CategoryDescription, Category, WeightClass, ProductToCategory
-from clim.routes import get_consumables, get_categories, get_product
+from clim.routes import get_categories
+from clim.general_functions import get_product
+from clim.stock.stock import get_consumables, get_list_all_categories
 
 
 option = Blueprint('option', __name__, template_folder='templates', static_folder='static')
@@ -207,48 +209,111 @@ def option_values(option_id):
 @login_required
 def value_settings(option_id):
     """ Добавить или изменить вариант опции """
-    option = get_option(option_id)
+    value = settings = attribute = None
 
     value_id = request.args.get('value_id')
-    value = settings = None
     if value_id:
         value = get_value(value_id)
         if value.settings and value.settings.settings:
             settings = json.loads(value.settings.settings)
-
-    attributes = db.session.execute(db.select(Attribute)).scalars()
-    categories = get_categories()
-
-    attribute_values = []
-
-    if settings and settings.get('attribute_id'):
-        request_base = ProductAttribute.query.filter_by(
-            attribute_id=settings.get('attribute_id'))
-
-        if settings.get('categories_ids'):
-            request_base = (request_base.join(ProductAttribute.product)
-                            .join(Product.categories)
-                            .filter(CategoryDescription.category_id.in_(
-                                settings.get('categories_ids'))))
-
-        attribute_values_in_base = request_base.all()
-
-        for attribute_value in attribute_values_in_base:
-            if int(attribute_value.text) in attribute_values:
-                continue
-
-            attribute_values.append(int(attribute_value.text))
+            attribute = db.session.execute(
+                db.select(Attribute)
+                .filter_by(attribute_id=settings.get('attribute_id'))).scalar()
     
-    products = tuple(get_consumables())
-
     return render_template('option/value_settings.html',
-                           option=option,
+                           option_id=option_id,
                            value=value,
                            settings=settings,
-                           categories=tuple(categories),
-                           attributes=attributes,
-                           attribute_values=attribute_values,
-                           products=products)
+                           categories=get_list_all_categories(),
+                           attribute=attribute,
+                           )
+
+
+@option.route('/ajax_all_attributes', methods=['GET'])
+@login_required
+def ajax_all_attributes():
+    per_page = 20
+    search = request.args.get('search')
+    result = {'results': []}
+
+    request_base = Attribute.query.where(Attribute.description)
+
+    if search:
+        request_base = (request_base.join(Attribute.description)
+                   .where(AttributeDescription.name.contains(search)))
+
+    attributes = request_base.paginate(page=int(request.args.get('page')),
+                                       per_page=per_page,
+                                       error_out=False)
+
+
+    for attribute in attributes:
+        result['results'].append(
+            {
+                'id': str(attribute.attribute_id),
+                'text': attribute.description.name
+            }
+        )
+
+    more = len(result['results']) >= per_page
+    result['pagination'] = {'more': more}
+
+    return json.dumps(result)
+
+
+@option.route('/ajax_attribute_values', methods=['GET'])
+@login_required
+def ajax_attribute_values():
+    # Other values
+    option_id = request.args.get('option_id')
+    value_id = request.args.get('value_id')
+    option = db.session.execute(db.select(Option).filter_by(option_id=option_id)).scalar()
+    other_list = []
+    for value in option.values:
+        if value.option_value_id == int(value_id):
+            continue
+
+        if value.settings and value.settings.settings:
+            settings = json.loads(value.settings.settings)
+            other_list += settings.get('attribute_values')
+
+    # This value
+    per_page = 20
+    search = request.args.get('search')
+
+    attribute_id = request.args.get('attribute_id')
+    request_base = ProductAttribute.query.filter_by(attribute_id=attribute_id).group_by(ProductAttribute.text)
+
+    categories_ids = request.args.get('categories_ids').split(',')
+
+    request_base = (request_base.join(ProductAttribute.product)
+                    .join(Product.categories)
+                    .filter(Category.category_id.in_(categories_ids)))
+
+    if search:
+        request_base = (request_base.join(Attribute.description)
+                   .where(AttributeDescription.name.contains(search)))
+
+    request_base = request_base.order_by(ProductAttribute.text)
+    values = request_base.paginate(page=int(request.args.get('page')),
+                                       per_page=per_page,
+                                       error_out=False)
+
+
+    result = {'results': []}
+    for value in values:
+        item = {
+            'id': value.text,
+            'text': value.text
+        }
+        if item['id'] in other_list:
+            item['disabled'] = True
+        result['results'].append(item)
+
+    more = len(result['results']) >= per_page
+    result['pagination'] = {'more': more}
+
+    return json.dumps(result)
 
 
 @option.route('/<int:option_id>/value_settings_update', methods=['POST'])

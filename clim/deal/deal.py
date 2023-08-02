@@ -1,4 +1,5 @@
 import json
+import pickle
 # import os
 # from alembic.op import f
 from flask import render_template, redirect, url_for, request, session, flash,\
@@ -7,10 +8,12 @@ from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 import locale
 from clim.jinja_filters import smart_int
+from clim.app import redis
 
 from clim.models import OptionValueDescription, ProductDescription, db, Contact, Deal, DealService, DealStage, Option,\
     OptionValue, Stock, StockProduct, User, Worker, WorkerEmployment, Product,\
     Module, Category
+from clim.stock.stock import get_consumables_categories_ids
 
 
 deal = Blueprint('deal', __name__, template_folder='templates', static_folder='static')
@@ -29,23 +32,23 @@ def get_stages():
         db.select(DealStage).order_by(DealStage.sort_order)).scalars()
 
 
-def get_consumables():
-    """ Получить расходные материалы """
-    settings = {}
-    settings_in_base = db.session.execute(
-        db.select(Module).filter_by(name='crm_stock')).scalar()
-
-    if settings_in_base.value:
-        settings = json.loads(settings_in_base.value)
-
-    ids = settings.get('consumables_categories_ids')
-
-    request_base = Product.query
-    request_base = (request_base.join(Product.categories)
-                   .where(Category.category_id.in_(ids)))
-    request_base = request_base.order_by(Product.mpn)
-
-    return request_base.all()
+# def get_consumables():
+#     """ Получить расходные материалы """
+#     settings = {}
+#     settings_in_base = db.session.execute(
+#         db.select(Module).filter_by(name='crm_stock')).scalar()
+#
+#     if settings_in_base.value:
+#         settings = json.loads(settings_in_base.value)
+#
+#     ids = settings.get('consumables_categories_ids')
+#
+#     request_base = Product.query
+#     request_base = (request_base.join(Product.categories)
+#                    .where(Category.category_id.in_(ids)))
+#     request_base = request_base.order_by(Product.mpn)
+#
+#     return request_base.all()
 
 
 def get_deal(deal_id):
@@ -113,17 +116,10 @@ def ajax_products():
     request_products = Product.query
 
     # not Consumables
-    settings = {}
-    settings_in_base = db.session.execute(
-        db.select(Module).filter_by(name='crm_stock')).scalar()
-
-    if settings_in_base.value:
-        settings = json.loads(settings_in_base.value)
-
-    ids = settings.get('consumables_categories_ids')
+    consumables_categories_ids = get_consumables_categories_ids()
 
     request_products = (request_products.join(Product.categories)
-               .where(Category.category_id.not_in(ids)))
+               .where(Category.category_id.notin_(consumables_categories_ids)))
 
 
     if search:
@@ -194,18 +190,12 @@ def ajax_consumables():
     search = request.args.get('search')
     result = {'results': []}
 
-    settings = {}
-    settings_in_base = db.session.execute(
-        db.select(Module).filter_by(name='crm_stock')).scalar()
+    consumables_categories_ids = get_consumables_categories_ids()
 
-    if settings_in_base.value:
-        settings = json.loads(settings_in_base.value)
-
-    ids = settings.get('consumables_categories_ids')
 
     request_base = Product.query
     request_base = (request_base.join(Product.categories)
-                   .where(Category.category_id.in_(ids)))
+               .where(Category.category_id.in_(consumables_categories_ids)))
 
     if search:
         request_base = (request_base.join(Product.description)

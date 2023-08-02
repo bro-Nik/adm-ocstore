@@ -1,0 +1,269 @@
+<!-- Container fluid -->
+<form id="ConsumablesOption"
+  action="{{ url_for('.settings_consumables_option_update', value_id=value.option_value_id) }}">
+  <div class="container-fluid px-6 d-grid gap-3 mt-3">
+
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-12">
+        <!-- Page header -->
+        <div>
+          <div class="d-flex align-items-center">
+            <div class="mb-2 mb-lg-0">
+              <h3 class="mb-0">
+                {{ value.description.name if value else 'Новое значение опции' }}
+              </h3>
+            </div>
+            <div class="ms-auto d-flex gap-2 action-btns">
+              <button type="button" class="btn btn-primary">Сохранить</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- row  -->
+    <div class="row">
+      <div class="col-12 d-grid gap-3">
+
+        <!-- row -->
+        <div id="tabProducts" class="card h-100">
+
+          <table class="table text-nowrap table">
+            <thead class="">
+              <tr>
+                <th scope="col" class="main-tab-checkbox">
+                  <input class="form-check-input check-all" type="checkbox">
+                </th>
+                <th scope="col">Товар</th>
+                <th scope="col" class="col-1">Количество</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {% set var = namespace(count=0) %}
+
+              {% set option_value_consumables = value.settings.consumables|to_json if value.settings %}
+
+              {% if not option_value_consumables %}
+              {% set option_value_consumables = [{}] %}
+              {% endif %}
+
+              {% for consumable in option_value_consumables %}
+              {% set var.count = var.count + 1 %}
+
+              <tr class="product">
+                <td class="main-tab-checkbox">
+                  <input class="form-check-input to-check" type="checkbox" name="" value="">
+                </td>
+                <td class="col-4">
+                  <span class="line-count">{{ var.count }}.</span>
+
+                  <select class="product-select" data-placeholder="-- Выбрать товар --"
+                    data-url="{{ url_for('deal.ajax_consumables') }}" data-class="bg-light">
+                    <option selected value="{{ consumable.product_id }}">{{ consumable.name }}</option>
+                  </select>
+                </td>
+                <td class="col-2">
+                  <input type="text" class="form-control quantity"
+                    value="{{ consumable.quantity|smart_int if consumable.quantity }}" placeholder="0">
+                </td>
+                <td></td>
+              </tr>
+              {% endfor %}
+
+            </tbody>
+          </table>
+
+          <div class="d-flex">
+            <div>
+              <div class="m-3 gap-2 justify-content-start actions">
+                <span class="">Отмеченно: </span>
+                <span class="checks-count">0 / {{ var.count }}</span>
+              </div>
+              <div class="m-3 gap-2 d-flex justify-content-start actions">
+                <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
+              </div>
+            </div>
+            <div class="m-3 ms-auto gap-2">
+              <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
+              <button class="btn rounded-3 btn-outline-secondary open-modal-select-products" type="button">Выбрать
+                товары</button>
+              <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <input type="hidden" name="consumables_data">
+</form>
+
+
+<script>
+  $('.open-modal-select-products').on("click", function () {
+    var $modal = $('#SelectProductsModal');
+    $modal.find('.modal-body').load("{{ url_for('.set_products_page') }}");
+    $modal.modal('toggle')
+  })
+
+  // Fields
+  function newLine($new_line = '', product_id = '') {
+    if ($new_line === '') {
+      var $line = $('#tabProducts').find('tr.product').eq(-1);
+
+      $line.find('select').each(function () {
+        if ($(this).hasClass('select2-hidden-accessible')) {
+          $(this).select2('destroy');
+        }
+      });
+
+      var $new_line = $line.clone();
+      $new_line.appendTo($('#tabProducts').find('tbody'));
+
+      UpdateProductSelect($line);
+    }
+
+    var count = $('#tabProducts').find('tr.product').length;
+    $new_line.find('input').val('');
+    $new_line.find('.to-check').prop('checked', false).trigger('change');
+    $new_line.find('.line-count').text(count + '.');
+    $new_line.find('select').empty();
+    if (product_id) {
+      $new_line.find('select').val(product_id)
+    } else {
+      $new_line.find('select').val('')
+    }
+
+    UpdateProductSelect($new_line)
+    $('#tabProducts').find('.table-responsive').animate({scrollLeft: 0}, 0);
+    $new_line.find('select.product-select').select2('open');
+  }
+
+  // Delete line
+  $('.delete-product').on("click", function () {
+    var tab = $(this).closest('div[id]');
+    $(tab).find('.to-check:checked').each(function () {
+      if ($(tab).find('tr.product').length > 1) {
+        $(this).closest('tr').remove();
+      } else {
+        newLine(tab, $(this).closest('tr'));
+      }
+    });
+    LineCount();
+  })
+
+  // Line Count
+  function LineCount() {
+    var count = 1;
+    $('#tabProducts').find('tr.product').each(function () {
+      $(this).find('.line-count').text(count + '.');
+      count += 1;
+    });
+  }
+
+  // Data To Server
+  $('#OptionValueSettings').submit(function (e) {
+    e.preventDefault();
+
+    var consumables = '[';
+    $('#tabProducts').find('tr.product').each(function () {
+      if ($(this).find('select.product-select').val()) {
+        var product_id = $(this).find('select.product-select').val();
+        var quantity = $(this).find('.quantity').val();
+        quantity = parseFloat(quantity) ? quantity : 0;
+        var item = '{"product_id": ' + product_id +
+          ', "quantity": ' + quantity + '},'
+
+        consumables += item;
+      }
+    });
+    consumables += ']';
+    if (consumables !== '[]') {
+      $('[name=consumables_data]').val(JSON.stringify(consumables));
+    }
+
+  })
+
+
+
+  // Open Modal
+  $('.open-modal-product').on("click", function () {
+    var $modal = $('#ProductInfoModal');
+    NewModal($modal);
+    $modal.find('.modal-body').load("{{ url_for('stock.product_info') }}");
+  })
+
+
+  $('#tabProducts').find('tr.product').each(function () {
+    UpdateProductSelect($(this));
+  });
+
+  function UpdateProductSelect($tr) {
+    var productSelect = $tr.find('select.product-select');
+
+    productSelect.select2({
+      theme: "bootstrap-5",
+      width: '300px',
+      dropdownParent: $tr.closest('.modal'),
+      dropdownAutoWidth: true,
+      selectionCssClass: productSelect.data('class'),
+      ajax: {
+        delay: 250,
+        url: productSelect.data('url'),
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            page: params.page || 1
+          }
+          return query;
+        }
+      }
+    });
+  }
+
+  // Focus Select2 Search
+  $(document).on('select2:open', () => {
+    document.querySelector('.select2-search__field').focus();
+  });
+
+  // Products Data To Server
+  $('#ConsumablesOption').on("click", '.action-btns .btn', function () {
+    var $form = $(this).closest('form'),
+      $modal = $(this).closest('.modal'),
+      products = [];
+
+    $form.find('tr.product').each(function () {
+      var $tr = $(this),
+        $productSelect = $tr.find('select.product-select'),
+        product_id = +$productSelect.val();
+
+      if (product_id) {
+        var item = {
+          product_id: product_id,
+          name: $productSelect.find(':selected').html(),
+          quantity: +$tr.find('.quantity').val() || 0
+        }
+        products.push(item);
+      }
+    });
+    var data = {
+      products: products
+    }
+    SendingData(data, $form);
+    $modal.modal('hide');
+  })
+
+  function SendingData(data, $form) {
+    $.ajax({
+      type: "POST",
+      url: $form.attr('action'),
+      data: JSON.stringify(data),
+      contentType: 'application/json; charset=utf-8'
+      //dataType: 'json',
+    })//.done(PageUpdate($btn));
+  };
+</script>

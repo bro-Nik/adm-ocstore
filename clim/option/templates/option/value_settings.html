@@ -1,6 +1,6 @@
 <!-- Container fluid -->
 <form id="OptionValueSettings"
-  action="{{ url_for('.value_settings_update', option_id=option.option_id, value_id=value.option_value_id) }}">
+  action="{{ url_for('.value_settings_update', option_id=option_id, value_id=value.option_value_id) }}">
   <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
     <div class="row">
@@ -83,64 +83,33 @@
                       <div class="col-md-4">
                         <div class="mb-1">
                           <label for="categories_ids" class="form-label">Категория</label>
-                          <select class="selectpicker" data-width="100%" data-live-search="true"
-                            data-none-selected-text="Все" data-none-results-text="Не найдено {0}" id="categories_ids"
-                            name="categories_ids">
+                          <select multiple id="categories_ids" name="categories_ids">
                             <option></option>
-
                             {% for category in categories %}
-                            {% set id = category.category_id %}
-                            {% if not category.parent_id %}
-                            <optgroup label="{{ category.description.name }}">
-
-                              {% for subcategory in categories %}
-                              {% set id = subcategory.category_id %}
-                              {% if subcategory.parent_id == category.category_id %}
-                              <option {{ 'selected' if settings and id|string in settings.get('categories_ids') }}
-                                value="{{ id }}">
-                                {{ subcategory.description.name }}
-                              </option>
-
-                              {% for subsubcategory in categories %}
-                              {% set id = subsubcategory.category_id %}
-                              {% if subsubcategory.parent_id == subcategory.category_id %}
-                              <option {{ 'selected' if settings and id|string in settings.get('categories_ids') }}
-                                value="{{ id }}">
-                                - {{ subsubcategory.description.name }}
-                              </option>
-                              {% endif %}
-                              {% endfor %}
-
-                              {% endif %}
-                              {% endfor %}
-
-                              {% endif %}
-                              {% endfor %}
+                            <option {{ 'selected' if settings and category.get('id')|string in
+                              settings.get('categories_ids') }} value="{{ category.get('id') }}">
+                              {{ category.get('text') }}
+                            </option>
+                            {% endfor %}
                           </select>
                         </div>
                       </div>
 
                       <div class="col-sm-4">
                         <label for="attribute_id" class="form-label">Атрибут сопоставления</label>
-                        <select class="selectpicker" data-width="100%" data-live-search="true"
-                          data-none-selected-text="Нет" data-none-results-text="Не найдено {0}" id="attribute_id"
-                          name="attribute_id">
-                          <option></option>
-                          {% for attribute in attributes if attribute.description.name %}
-                          <option {{ 'selected' if settings and attribute.attribute_id==settings.get('attribute_id')|int
-                            }} value="{{ attribute.attribute_id }}">{{ attribute.description.name }}</option>
-                          {% endfor %}
+                        <select id="attribute_id" name="attribute_id" data-url="{{ url_for('.ajax_all_attributes') }}">
+                          {% if attribute %}
+                          <option selected value="{{ attribute.attribute_id }}">{{ attribute.description.name }}
+                          </option>
+                          {% endif %}
                         </select>
                       </div>
 
                       <div class="col-sm-4">
                         <label for="attribute_values" class="form-label">Значения атрибута</label>
-                        <select class="selectpicker" data-width="100%" data-live-search="true"
-                          data-none-selected-text="Нет" data-none-results-text="Не найдено {0}" multiple
-                          id="attribute_values" name="attribute_values">
-                          {% for attribute_value in attribute_values|sort if attribute_values %}
-                          <option value="{{ attribute_value }}" {{ 'selected' if settings and attribute_value|string in
-                            settings.get('attribute_values') }}>
+                        <select multiple id="attribute_values" name="attribute_values">
+                          {% for attribute_value in settings.get('attribute_values')|sort %}
+                          <option value="{{ attribute_value|string }}" selected>
                             {{ attribute_value }}</option>
                           {% endfor %}
                         </select>
@@ -153,7 +122,7 @@
 
                       <div class="col-sm-4">
                         <label for="stock" class="form-label">Наличие товара</label>
-                        <select class="selectpicker" data-width="100%" id="stock" name="stock">
+                        <select id="stock" class="other-select" name="stock">
                           <option value="">Все</option>
                           <option {{ 'selected' if settings and settings.get('stock')=='in stock on order' }}
                             value="in stock on order">В наличии и под заказ</option>
@@ -208,14 +177,9 @@
                       </td>
                       <td class="col-4">
                         <span class="line-count">{{ var.count }}.</span>
-                        <select class="product-select selectpicker" data-width="100%" data-live-search="true"
-                          data-none-selected-text="" data-none-results-text="Не найдено {0}">
-                          <option value="">-- Выберите товар --</option>
-                          {% for product in products %}
-                          <option value="{{ product.product_id }}" {{ 'selected' if
-                            product.product_id==consumable.product_id }}>{{
-                            product.description.name }}</option>
-                          {% endfor %}
+
+                        <select class="product-select" data-placeholder="-- Выбрать товар --"
+                          data-url="{{ url_for('deal.ajax_consumables') }}" data-class="bg-light">
                         </select>
                       </td>
                       <td class="col-2">
@@ -240,16 +204,6 @@
                     </div>
                   </div>
                   <div class="m-3 ms-auto gap-2">
-                    <select class="selectpicker product-select consumables-ids" data-width="" data-live-search="true"
-                      data-none-selected-text="" data-none-results-text="Не найдено {0}" multiple>
-                      <option></option>
-                      {% for product in products %}
-                      <option value="{{ product.product_id }}">{{
-                        product.description.name }}</option>
-                      {% endfor %}
-                    </select>
-
-                    <button class="btn rounded-3 btn-light" type="button" onclick="FillProducts()">Сформировать</button>
                     <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
                     <button class="btn rounded-3 btn-outline-secondary open-modal-product" type="button">
                       Создать товар
@@ -270,35 +224,134 @@
 
 
 <script>
+  $('select.other-select').each(function () {
+    $(this).select2({
+      theme: "bootstrap-5",
+      width: '100%',
+      minimumResultsForSearch: 10,
+      selectionCssClass: 'bg-light',
+      dropdownParent: $(this).closest('.modal')
+    })
+  })
 
-  $('#OptionValueSettings').find('.selectpicker').each(function () {
-    $(this).selectpicker();
+  // Categories Ids
+  $('#categories_ids').select2({
+    theme: "bootstrap-5",
+    width: '100%',
+    dropdownParent: $('#categories_ids').closest('.modal'),
+    dropdownAutoWidth: true,
+    selectionCssClass: 'bg-light',
+  }).on('select change', function (evt, config) {
+    UpdateAttributeIdSelect();
   });
+  UpdateAttributeIdSelect();
+
+  function UpdateAttributeIdSelect() {
+    var $attributeSelect = $('#attribute_id'),
+      categories_ids = $('#categories_ids').val(),
+      url = $attributeSelect.data('url'),
+      attribute_id = $attributeSelect.val();
+
+    $attributeSelect.prop("disabled", !categories_ids.length);
+
+    $attributeSelect.select2({
+      theme: "bootstrap-5",
+      width: '100%',
+      dropdownParent: $attributeSelect.closest('.modal'),
+      dropdownAutoWidth: true,
+      selectionCssClass: 'bg-light',
+      ajax: {
+        delay: 250,
+        url: url,
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            page: params.page || 1
+          }
+          return query;
+        }
+      }
+    }).on('select change', function (evt, config) {
+      $('#attribute_values').empty();
+      UpdateAttributeValuesSelect();
+    });
+    UpdateAttributeValuesSelect();
+  }
+
+
+  function UpdateAttributeValuesSelect() {
+
+    var $Select = $('#attribute_values'),
+      attribute_id = $('#attribute_id :selected').val(),
+      categories_ids = $('#categories_ids').val(),
+      url = "{{ url_for('.ajax_attribute_values') }}";
+
+    // url += '?attribute_id=' + attribute_id;
+    // url += '&categories_ids=' + categories_ids.join();
+
+    $Select.prop("disabled", !attribute_id);
+
+    $Select.select2({
+      theme: "bootstrap-5",
+      width: '100%',
+      dropdownParent: $Select.closest('.modal'),
+      dropdownAutoWidth: true,
+      selectionCssClass: 'bg-light',
+      ajax: {
+        delay: 250,
+        url: url,
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            page: params.page || 1,
+            attribute_id: +attribute_id,
+            categories_ids: categories_ids.join(),
+            option_id: "{{ option_id }}",
+            value_id: "{{ value.option_value_id }}"
+          }
+          return query;
+        },
+      }
+    });
+
+  }
+
 
   // Fields
   function newLine($new_line = '', product_id = '') {
     if ($new_line === '') {
       var $line = $('#tabConsumables').find('tr.product').eq(-1);
-      $line.find('select').selectpicker('destroy')
-      var $new_line = $($line).clone();
+
+      $line.find('select').each(function () {
+        if ($(this).hasClass('select2-hidden-accessible')) {
+          $(this).select2('destroy');
+        }
+      });
+
+      var $new_line = $line.clone();
       $new_line.appendTo($('#tabConsumables').find('tbody'));
-      $line.find('select').selectpicker()
-    } else {
-      $new_line.find('select').selectpicker('destroy')
+
+      //UpdateProductSelect($line);
     }
 
     var count = $('#tabConsumables').find('tr.product').length;
     $new_line.find('input').val('');
-    $new_line.find('.to-check').prop('checked', false);
-    $new_line.find('.to-check').trigger('change');
+    $new_line.find('.to-check').prop('checked', false).trigger('change');
     $new_line.find('.line-count').text(count + '.');
+    $new_line.find('select').empty();
     if (product_id) {
       $new_line.find('select').val(product_id)
     } else {
       $new_line.find('select').val('')
     }
 
-    $new_line.find('select').selectpicker()
+    // $new_line.find('select').selectpicker()
+
+    //UpdateProductSelect($new_line)
+    $('#tabConsumables').find('.table-responsive').animate({scrollLeft: 0}, 0);
+    $new_line.find('select.product-select').select2('open');
   }
 
   // Fill products
@@ -332,35 +385,6 @@
 
   })
 
-  // Checks
-  CheckCount();
-
-  function CheckCount() {
-    var $checked_count = $('#tabConsumables').find('.to-check:checked').length;
-    var $all_count = $('#tabConsumables').find('.to-check').length;
-    $("#tabConsumables").find('.checks-count').text($checked_count + ' / ' + $all_count);
-  }
-
-  // Check All
-  $('.check-all').on("change", function () {
-    var tab = $(this).closest('div[id]');
-    $(tab).find('.to-check').prop('checked', $(this).is(':checked'));
-    $(tab).find('.to-check').trigger('change');
-  })
-
-  // Show buttons
-  $('#tabConsumables').on('change', 'input.to-check', function () {
-    var tab = $(this).closest('div[id]');
-    var $checked_count = $(tab).find('.to-check:checked').length;
-    var $btns = $(tab).find('.actions .btn')
-    if ($(tab).find('tr.product').length > 1) {
-      $($btns).prop('disabled', !$checked_count > 0);
-    } else {
-      $($btns).prop('disabled', true);
-    }
-    $(tab).find('.check-all').prop('checked', $checked_count > 0);
-    CheckCount();
-  })
 
   // Delete line
   $('.delete-product').on("click", function () {
@@ -372,7 +396,6 @@
         newLine(tab, $(this).closest('tr'));
       }
     });
-    CheckCount();
     LineCount();
   })
 
@@ -392,64 +415,32 @@
     $modal.find('.modal-body').load("{{ url_for('stock.product_info') }}");
   })
 
-  // Placeholder
-  function Placeholder(action) {
-    if (action === 'start') {
-      $('#tabConsumables').find('tr.product').addClass('visually-hidden');
 
-      var count_tr = $('#tabConsumables').find('tr.product').length;
-      var count_td = $('#tabConsumables').find('tr.product').eq(-1).find('td').length;
+  $('#tabConsumables').find('tr.product').each(function () {
+    UpdateProductSelect($(this));
+  });
 
-      var line = '<tr class="placeholder-del">'
-      for (let i = 0; i < count_td; i++) {
-        line += '<td class="placeholder-glow"><span class="placeholder placeholder-glow col-12 placeholder-lg"></span></td>'
-      }
-      line += '</tr>'
+  function UpdateProductSelect($tr) {
+    var productSelect = $tr.find('select.product-select');
 
-      for (let i = 0; i < count_tr; i++) {
-        $('#tabConsumables').find('tbody').append(line)
-      }
-    } else {
-      $('#tabConsumables').find('tr.product').removeClass('visually-hidden');
-      $('#tabConsumables').find('tr.placeholder-del').remove();
-    }
-  }
-
-  // Get Products to select
-  var products = [];
-
-  async function UpdateProductsSelect() {
-    Placeholder('start')
-    await getProducts();
-
-    $('body').find('select.product-select').each(function () {
-      var $select = $(this);
-      var id = +$select.val()
-      $select.empty();
-      $select.selectpicker('destroy');
-
-      for (let i = 0; i < products.length; i++) {
-        var newOption = new Option(`${products[i].name}`, `${products[i].id}`);
-        if (+products[i].id === id) {
-          $(newOption).prop('selected', true);
+    productSelect.select2({
+      theme: "bootstrap-5",
+      width: '300px',
+      dropdownParent: $tr.closest('.modal'),
+      dropdownAutoWidth: true,
+      selectionCssClass: productSelect.data('class'),
+      ajax: {
+        delay: 250,
+        url: productSelect.data('url'),
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            page: params.page || 1
+          }
+          return query;
         }
-        $select.append(newOption);
       }
-
-      $select.selectpicker();
     });
-    Placeholder('end')
-  }
-
-  //url_for('json_consumables')
-  function getProducts() {
-    return fetch('', {
-      method: 'GET',
-      headers: {
-        "Content-type": "application/json; charset=UTF-8"
-      }
-    })
-      .then(res => res.json())
-      .then(data => window.products = data)
   }
 </script>

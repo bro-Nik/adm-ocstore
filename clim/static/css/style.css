@@ -538,3 +538,19 @@ input.deal-info-title-input {
     color: #212B36;
     cursor: pointer;
 }
+.select2-results__option--selected {
+    color: #624BFF !important;
+    text-decoration: none;
+    background-color: #f1f5f9;
+}
+span.multiple-count {
+    position: absolute;
+    right: 15px;
+    top: calc(50% - 0.75rem);
+}
+.select2-container--bootstrap-5 .select2-selection.select-sm {
+    min-height: calc(1.5em + 0.5rem + 2px);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8203125rem;
+    border-radius: 0.2rem;
+}

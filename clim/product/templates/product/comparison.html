@@ -4,17 +4,26 @@
   <div>
     <form class="" id="comparison"  method="post" action="{{ url_for('start_comparison_products') }}"></form>
   </div>
-  <button class="btn btn-white" type="submit" form="comparison" name="all_products" value="True">Сопоставить все</button>
-  <button class="btn btn-white" type="submit" form="Filter"
-    formaction="{{ url_for('start_comparison_products') }}">Сопоставить отфильтрованные</button>
-  <button class="btn btn-warning" type="submit" form="comparison"
-    formaction="{{ url_for('del_not_confirm_products', page=request.args.get('page')) }}">Удалить неподтвержденные</button>
+
+  <div class="dropdown">
+    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+      Действия
+    </button>
+    <ul class="dropdown-menu">
+      <button class="dropdown-item" type="submit" form="comparison" name="all_products" value="True">Сопоставить все</button>
+      <button class="dropdown-item" type="submit" form="Filter"
+        formaction="{{ url_for('start_comparison_products') }}">Сопоставить отфильтрованные</button>
+      <button class="dropdown-item" type="submit" form="comparison"
+        formaction="{{ url_for('del_not_confirm_products', page=request.args.get('page')) }}">Удалить неподтвержденные</button>
+    </ul>
+  </div>
+
 {% endblock %}
 
 {% block table %}
 <form class="" id="confirmProducts" method="post" action="{{ url_for('confirm_product_to_product', page=request.args.get('page')) }}">
   <table class="table text-nowrap">
-    <thead class="table-light">
+    <thead>
       <tr>
         <th scope="col" class="sticky-table">Название</th>
         {% for shop in other_shops %}
@@ -45,7 +54,7 @@
 
           <tr>
             <td class="sticky-table my-product">
-              {{ product.mpn }}  {{ product.price|int }}
+              {{ product.description.name }}  {{ product.price|int }}
               <a class="" target="_blank" href="https://climkey.ru?product_id={{ product.product_id }}">
                 <i class="icon-xxs" data-feather="external-link"></i>
               </a>

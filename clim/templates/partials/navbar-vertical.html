@@ -51,24 +51,24 @@
                 data-bs-target="#navMenuLevelSecond" aria-expanded="false" aria-controls="navMenuLevelSecond">
                 Товары
               </a>
-              <div id="navMenuLevelSecond" class="collapse {{ 'show' if url_for('products') in request.path }}"
+              <div id="navMenuLevelSecond" class="collapse {{ 'show' if url_for('product.products') in request.path }}"
                 data-bs-parent="#navMenuLevel">
                 <ul class="nav flex-column">
                   <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.path == url_for('products') }}"
-                      href="{{ url_for('products') }}">
+                    <a class="nav-link {{ 'active' if request.path == url_for('product.products') }}"
+                      href="{{ url_for('product.products') }}">
                       Товары
                     </a>
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.path == url_for('products', path='comparison') }}"
-                      href="{{ url_for('products', path='comparison') }}">
+                    <a class="nav-link {{ 'active' if request.path == url_for('product.products', path='comparison') }}"
+                      href="{{ url_for('product.products', path='comparison') }}">
                       Сопоставление
                     </a>
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.path == url_for('products', path='prices') }}"
-                      href="{{ url_for('products', path='prices') }}">
+                    <a class="nav-link {{ 'active' if request.path == url_for('product.products', path='prices') }}"
+                      href="{{ url_for('product.products', path='prices') }}">
                       Цены
                     </a>
                   </li>
@@ -80,7 +80,7 @@
                   </li>
                   <li class="nav-item">
                     <a class="nav-link {{ 'active' if url_for('viewed_products') in request.path }}"
-                      href="{{ url_for('viewed_products') }}">Просмотренные (отчет)</a>
+                      href="{{ url_for('viewed_products') }}">Просмотренные</a>
                   </li>
                 </ul>
               </div>

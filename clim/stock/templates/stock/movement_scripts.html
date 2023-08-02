@@ -275,6 +275,12 @@
     $modal.modal('toggle')
   })
 
+  $('.open-modal-select-products').on("click", function () {
+    var $modal = $('#SelectProductsModal');
+    $modal.find('.modal-body').load("{{ url_for('.set_products_page') }}");
+    $modal.modal('toggle')
+  })
+
 
 
   // For movement type moving

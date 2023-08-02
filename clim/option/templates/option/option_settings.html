@@ -47,7 +47,7 @@
 
                 <div class="col-sm-4">
                   <label class="form-label">Тип</label>
-                  <select class="selectpicker" data-width="100%" name="type">
+                  <select name="type">
                     <option>checkbox</option>
                   </select>
                 </div>
@@ -63,7 +63,7 @@
 
                 <div class="col-sm-4">
                   <label class="form-label">Вычетать со склада</label>
-                  <select class="selectpicker" data-width="100%" name="subtract">
+                  <select name="subtract">
                     <option value="0" {{ 'selected' if settings and settings.get('subtract')==0 }}>Нет</option>
                     <option value="1" {{ 'selected' if settings and settings.get('subtract')==1 }}>Да</option>
                   </select>
@@ -71,7 +71,7 @@
 
                 <div class="col-sm-4">
                   <label class="form-label">Price prefix</label>
-                  <select class="selectpicker" data-width="100%" name="price-prefix">
+                  <select name="price-prefix">
                     <option {{ 'selected' if settings and settings.get('price_prefix')=='+' }}>+</option>
                     <option {{ 'selected' if settings and settings.get('price_prefix')=='=' }}>=</option>
                     <option {{ 'selected' if settings and settings.get('price_prefix')=='-' }}>-</option>
@@ -89,7 +89,13 @@
   </div>
 
   <script>
-    $('.selectpicker').each(function () {
-      $(this).selectpicker();
-    });
+    $('select').each(function () {
+      $(this).select2({
+        theme: "bootstrap-5",
+        width: '100%',
+        minimumResultsForSearch: 10,
+        selectionCssClass: 'bg-light',
+        dropdownParent: $(this).closest('.modal')
+      })
+    })
   </script>

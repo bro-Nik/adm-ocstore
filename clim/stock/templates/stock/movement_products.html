@@ -152,6 +152,8 @@
     <div class="m-3 ms-auto buttons">
       {% if not movement or not movement.posted %}
       <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
+      <button class="btn rounded-3 btn-outline-secondary open-modal-select-products" type="button">Выбрать
+        товары</button>
       {% if movement_type == 'coming' %}
       <button class="btn rounded-3 btn-outline-secondary open-modal-product" type="button">Создать товар</button>
       {% endif %}
