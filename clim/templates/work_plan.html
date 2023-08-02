@@ -3,98 +3,57 @@
 {% block head %}
     {{ super() }}
 {% endblock %}
-{% block link %}
-{% endblock %}
+
 {% block content %}
 
 <!-- Container fluid -->
-<div class="bg-primary pt-10 pb-21"></div>
-<div class="container-fluid mt-n22 px-6">
-  <!-- row filter  -->
+<div class="container-fluid px-6 d-grid gap-3 mt-3">
+
   <div class="row">
     <div class="col-lg-12 col-md-12 col-12">
       <!-- Page header -->
       <div>
         <div class="d-flex align-items-center">
           <div class="mb-2 mb-lg-0">
-            <h3 class="mb-0  text-white">План работ</h3>
+            <h3 class="mb-0">План работ</h3>
           </div>
           <div class="ms-auto d-flex gap-2">
-            <button class="btn btn-white" type="submit" form="Manufs">Сохранить</button>
-            <a class="btn btn-danger" href="{{ url_for('work_plan_clean', category_id=category_id) }}">Очистить</a>
+            <button class="btn btn-primary action" type="button" data-form="#Manufs" data-action="save">Сохранить</button>
+            <button class="btn btn-danger action" type="button" data-form="#Manufs" data-action="clean">Очистить</button>
           </div>
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- filter -->
-  <div class="col-xl-12 col-lg-12 col-md-12 col-12 mt-6">
+  <!-- Filter -->
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
     <div class="card h-100">
 
       <div class="card-body">
-        <form id="Filter" class=""  method="post" action="{{ url_for('work_plan') }}">
-            
+        <form id="Filter" method="post" action="{{ url_for('work_plan') }}">
           <div class="row g-2">
 
-            <div class="col-md-3">
-              <div class="mb-1">
-                <label for="category_id" class="form-label h7">Категория</label>
-                <select class="selectpicker" data-width="100%" data-live-search="true"
-                  data-none-selected-text = "Все" data-none-results-text="Не найдено {0}"
-                  id="category_id" name="category_id">
-
-                  {% for category in categories %}
-                    {% set id = category.category_id %}
-                    {% if not category.parent_id %} 
-                      <option {{ 'selected' if id == category_id }} value="{{ id }}">
-                        {{ category.description.name }}
-                      </option>
-
-                      {% for subcategory in categories %}
-                        {% set id = subcategory.category_id %}
-                        {% if subcategory.parent_id == category.category_id %}
-                          <option {{ 'selected' if id == category_id }} value="{{ id }}">
-                            - {{ subcategory.description.name }}
-                          </option>
-
-                          {% for subsubcategory in categories %}
-                            {% set id = subsubcategory.category_id %}
-                            {% if subsubcategory.parent_id|string == subcategory.category_id %}
-                              <option {{ 'selected' if id == category_id }} value="{{ id }}">
-                                - -{{ subsubcategory.description.name }}
-                              </option>
-                            {% endif %}
-                          {% endfor %}
-
-                        {% endif %}
-                      {% endfor %}
-                        
-                    {% endif %}
-                  {% endfor %}
-                </select>
-              </div>
+            <div class="col-md-2">
+              <label for="category_id" class="form-label h7">Категория</label>
+              <select class="ajax-select" data-width="100%" id="category_id" name="category_id"
+                data-url="{{ url_for('get_list_all_categories') }}" data-class="bg-light" data-placeholder="Все">
+                <option selected value="{{ category.category_id }}">{{ category.description.name }}</option>
+              </select>
             </div>
 
             <div class="col-md-2">
-              <div class="mb-1">
-                <label for="manufacturers_ids" class="form-label h7">Производитель</label>
-                <select class="selectpicker" data-width="100%" data-live-search="true"
-                  data-none-selected-text="Все" data-none-results-text="Не найдено {0}"
-                  multiple id="manufacturers_ids" name="manufacturers_ids">
-
-                  {% for manufacturer in all_manufacturers|sort %}
-                    <option {{ 'selected' if manufacturers_ids and manufacturer in manufacturers_ids }}>{{ manufacturer }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
+              <label class="form-label h7">Производители</label>
+              <select class="no-ajax-select multiple" data-width="100%"
+                 data-placeholder="Все" multiple name="manufacturers_ids">
+                {% for manufacturer in manufacturers %}
+                  <option value="{{ manufacturer.manufacturer_id }}" {{ 'selected' if manufacturer.manufacturer_id|string in manufacturers_ids }}>{{ manufacturer.name }}</option>
+                {% endfor %}
+              </select>
             </div>
 
-
-            <div class="col-auto d-flex align-items-end">
-              <button class="mb-1 btn rounded-3 btn-primary btn-title" type="submit">Фильтр</button>
+            <div class="col-md-1 d-flex align-items-end">
+              <button id="resetFilter" class="btn btn-primary" type="button">Сбросить</button>
             </div>
           </div>
         </form>
@@ -107,46 +66,44 @@
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
       <div class="card h-100">
 
-        <!-- card header  -->
-        <div class="card-header bg-white py-4">
-          <h4 class="mb-0">Производители</h4>
-        </div>
-        <!-- table  -->
-        <form class="" id="Manufs"  method="post" action="{{ url_for('work_plan_update', category_id=category_id) }}">
+        <form id="Manufs"  method="post" action="{{ url_for('work_plan_update', category_id=category.category_id) }}">
           <div class="table-responsive">
             <table class="table text-nowrap">
-              <thead class="table-light">
+              <thead>
                 <tr>
                   <th scope="col">Название</th>
-                  <th scope="col">Модели</th>
-                  <th scope="col">Цены</th>
-                  <th scope="col">Наличие</th>
-                  <th scope="col">Варианты</th>
+                  {% for field in fields %}
+                    <th>{{ field['name'] }}</td>
+                  {% endfor %}
+                  <th class="align-middle text-end">
+	                  <div class="dropdown dropstart">
+	                    <a class="text-muted text-primary-hover" href="#" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i data-feather="more-vertical" class="icon-xxs" ></i>
+                      </a>
+                      <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                        <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#FieldsSettings">Поля</a>
+                      </div>
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
 
-                {% set var = namespace(manuf_count=0) %}
-
-                {% for manufacturer in manufacturers|sort %}
-                  {% set var.manuf_count = var.manuf_count + 1 %}
+                {% for manufacturer in manufacturers if not manufacturers_ids or manufacturer.manufacturer_id|string in manufacturers_ids %}
                   <tr>
-                    <td class="">{{ manufacturer }}
-                      <input type="hidden" name="manufacturer-{{ var.manuf_count }}"
-                        value="{{ manufacturer }}">
-                    </td>
+                    <td class="">{{ manufacturer.name }}</td>
 
-                    {% for field in work_plan_fields %}
+                    {% for field in fields %}
                       <td>
-                        <input class="form-check-input" type="checkbox"
-                          name="{{ field }}-{{ var.manuf_count }}" value="1"
-                          {{ 'checked' if work_plan.get(manufacturer) and work_plan[manufacturer].get(field) }}>
+                        <input class="form-check-input to-check" type="checkbox"
+                                                                 value="{{ manufacturer.manufacturer_id }}--{{ field['id'] }}"
+                          {{ 'checked' if work_plan.get(manufacturer.manufacturer_id|string) and field['id']|string in work_plan[manufacturer.manufacturer_id|string] }}>
                       </td>
                     {% endfor %}
+                    <td></td>
                   </tr>
                 {% endfor %}
 
-                <input type="hidden" name="manufacturers-count" value="{{ var.manuf_count }}">
               </tbody>
             </table>
           </div>
@@ -156,48 +113,134 @@
   </div>
 </div>
 
-<!-- Modal Delete -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<!-- Modal Fields -->
+<div class="modal fade" id="FieldsSettings" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-3">Вы уверенны?</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title">Поля</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+        </button>
       </div>
-      <div class="modal-body">
-        <button type="submit" form="shops" class="w-100 mb-2 btn rounded-3 btn-danger"><strong>Да</strong></button>
+      <div class="modal-body justify-content-center">
+        <form id="Fields" method="post" action="{{ url_for('work_plan_fields') }}" class="mb-3">
+          {% for field in fields %}
+          <div class="col-12 d-flex mb-2">
+            <div class="col-11">
+              <input class="form-control" data-id="{{ field['id'] }}" value="{{ field['name'] }}">
+            </div>
+            <span class="d-flex col-1 justify-content-center align-items-center delete-field">
+              <i data-feather="x" class="nav-icon"></i>
+            </span>
+          </div>
+          {% endfor %}
+          {% if not fields %}
+            <input class="form-control mb-2">
+          {% endif %}
+        </form>
+        <a href="#">Добавить</a>
+        <div class="d-flex mt-5">
+          <button class="btn btn-primary rounded-3 submit" type="button" form="Fields">Сохранить</button>
+          <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">Отменить</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-// Чекбоксы принятия ссылки
-function Check(btn) {
-  var status = document.getElementById('check').checked;
-  var toCheck = document.querySelectorAll('.to-check');
-  toCheck.forEach(element => {
-    element.checked = status;
+  $('#FieldsSettings a').on('click', function () {
+    var $form = $('#Fields'),
+      content = '<input type="text" class="form-control mb-2">';
+    $form.append(content);
   });
-  showButtons(status)
-}
-function showButtons(status) {
-  var Buttons = document.querySelector('.hidden-btns');
-  if (status === true) {
-    Buttons.classList.remove("visually-hidden");
+
+  $('#FieldsSettings .submit').on('click', function () {
+    var $form = $('#Fields'),
+      fields = [];
+
+    $form.find('input').each(function () {
+      var item = {
+        id: +$(this).attr('data-id'),
+        name: $(this).val()
+      }
+      fields.push(item);
+    });
+
+    $.ajax({
+      type: "POST",
+      url: $form.attr('action'),
+      data: JSON.stringify(fields),
+      contentType: 'application/json; charset=utf-8',
+      success: setTimeout("location.reload()", 1000)
+    })
+  });
+
+  $('#FieldsSettings .delete-field').on('click', function () {
+    var $input = $(this).parent().find('input');
+    $input.val('Удалить').prop('disabled', true)
+    $(this).remove();
+  });
+
+  $('#Filter .ajax-select').each(function () {
+    UpdateSelect($(this));
+  });
+
+  function UpdateSelect($select) {
+    $select.select2({
+      theme: "bootstrap-5",
+      width: $select.data('width'),
+      dropdownAutoWidth: true,
+      selectionCssClass: $select.data('class'),
+      ajax: {
+        delay: 250,
+        url: $select.data('url'),
+        dataType: 'json',
+        data: function (params) {
+          var query = {
+            search: params.term,
+            page: params.page || 1
+          }
+          return query;
+        }
+      }
+    });
   }
-  else if (status === false) {
-    Buttons.classList.add("visually-hidden");
+
+  $('.no-ajax-select').each(function () {
+    $(this).select2({
+      theme: "bootstrap-5",
+      width: $(this).data('width'),
+      dropdownAutoWidth: true,
+      minimumResultsForSearch: 10,
+      selectionCssClass: 'bg-light'
+    })
+  })
+
+  $('#Filter .multiple').each(function () {
+    UpdateSelectCount($(this));
+  });
+
+  $('#Filter .multiple').on('change', function (e) {
+    UpdateSelectCount($(this))
+  })
+
+  $('#Filter select').on('change', function (e) {
+    $('#Filter').submit();
+  })
+
+  function UpdateSelectCount($select) {
+    var count = $select.val().length;
+
+    if (count > 0) {
+      $select.parent().find('.select2-selection__rendered').remove();
+      $select.parent().find('.select2-selection.select2-selection--multiple').append($(`<span class="multiple-count" >+ ${count}</span>`))
+    }
   }
-}
-// Клик по чекбоксам
-document.addEventListener("click", function(e) {
-  if (e.target.classList.contains('to-check')) {
-  var Buttons = document.querySelector('.hidden-btns');
-  if (e.target.checked === true){
-    Buttons.classList.remove("visually-hidden");
-  };
-  }
-});
+  $('#resetFilter').on('click', function () {
+    $('#Filter select').each(function () {
+      $(this).val('').trigger('change');
+    });
+  })
 </script>
 {% endblock %}

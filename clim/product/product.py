@@ -1,12 +1,13 @@
 import json
 import os
+from thefuzz import fuzz as f
 from datetime import datetime, timedelta
 from flask import render_template, redirect, url_for, request, session, flash,\
     Blueprint
 from flask_login import login_required, current_user
-from clim.app import redis, app
-from clim.general_functions import get_product
-from clim.models import Attribute, AttributeDescription, Category, Module, OtherProduct, OtherShops, Product, ProductAttribute, ProductImage, ProductOptionValue, ProductToCategory, ProductVariant, RedirectManager, Review, SeoUrl, StockStatus, db
+from clim.app import redis, app, celery
+from clim.general_functions import get_categories, get_discount_products, get_other_product, get_product
+from clim.models import Attribute, AttributeDescription, Category, Module, Option, OtherProduct, OtherShops, Product, ProductAttribute, ProductImage, ProductOptionValue, ProductSpecial, ProductToCategory, ProductVariant, RedirectManager, Review, SeoUrl, SpecialOffer, StockStatus, db
 
 
 product = Blueprint('product', __name__, template_folder='templates', static_folder='static')
@@ -201,8 +202,6 @@ def products(path=''):
 @login_required
 def products_action():
     data = json.loads(request.data) if request.data else {}
-    print('#' * 50)
-    print(data)
     ids = data.get('ids')
 
     info_list = data.get('info') if data.get('info') else {}
@@ -457,3 +456,309 @@ def update_product_variants(product_id):
 
     db.session.commit()
     return product_ids_in_series
+
+
+@product.route('/comparison_products', methods=['POST'])
+@login_required
+def start_comparison_products():
+    """ Запуск подбира похожих товаров """
+    all_products = request.form.get('all_products')
+
+    if all_products:
+        filter = {}
+    else:
+        filter = get_filter(request.method, path='comparison')
+
+    comparison_products.delay(filter)
+
+    return redirect(url_for('products', path='comparison'))
+
+
+@celery.task()
+def comparison_products(filter):
+    """ Подбирает похожие товары """
+    # products = get_products(pagination=False, filter=filter)
+    products = {}
+
+    other_products = tuple(db.session.execute(
+        db.select(OtherProduct)
+        .filter(OtherProduct.link_confirmed == None)).scalars())
+        # .filter(OtherProduct.link_confirmed is None)).scalars())
+
+    def matching_set(matching, product, other_product):
+        id = other_product.other_product_id
+        matching_list[id] = {'product_id': product.product_id,
+                             'matching': matching,
+                             'shop_id': other_product.shop_id}
+
+    matching_list = {}
+
+    for product in products:
+        shops_ids = []
+        if product.other_shop:
+            for comp_product in product.other_shop:
+                if comp_product.link_confirmed:
+                    shops_ids.append(comp_product.shop_id)
+
+        product_name = product.description.name.lower()
+
+        for other_product in other_products:
+
+            if other_product.shop_id in shops_ids:
+                continue
+
+            other_product_name = other_product.name.lower()
+
+            matching = f.ratio(product_name, other_product_name)
+            if matching < 60:
+                continue
+
+            if not matching_list.get(other_product.other_product_id):
+                matching_set(matching, product, other_product)
+
+            elif (matching
+                  > matching_list[other_product.other_product_id]['matching']):
+                matching_set(matching, product, other_product)
+
+    for x_id in list(matching_list.items()):
+        for y_id in list(matching_list.items()):
+            if x_id[0] == y_id[0]:
+                continue
+
+            if (x_id[1]['product_id'] == y_id[1]['product_id']
+                    and x_id[1]['matching'] > y_id[1]['matching']
+                    and x_id[1]['shop_id'] == y_id[1]['shop_id']):
+                matching_list.pop(y_id[0])
+
+    for other_product in other_products:
+        if matching_list.get(other_product.other_product_id):
+            other_product.product_id = \
+                matching_list[other_product.other_product_id]['product_id']
+
+    db.session.commit()
+    print('End')
+
+
+@product.route('/confirm_product_to_product', methods=['POST'])
+@login_required
+def confirm_product_to_product():
+    """ Привязка или отвязка товара конкурента """
+    data = json.loads(request.data) if request.data else {}
+    ids = data.get('ids')
+    action = data.get('action')
+
+    for id in ids:
+        other_product = get_other_product(id)
+
+        if action == 'bind':
+            other_product.link_confirmed = True
+
+            other_compared = (db.session.execute(
+                db.select(OtherProduct)
+                .filter_by(product_id=other_product.product_id)
+                .filter(OtherProduct.shop_id == other_product.shop_id)
+                .filter(OtherProduct.other_product_id != other_product.other_product_id))
+                .scalars())
+            for product in other_compared:
+                product.product_id = None
+
+        elif action == 'unbind':
+            other_product.link_confirmed = None
+            other_product.product_id = 0
+
+    db.session.commit()
+
+    page = request.args.get('page')
+    return redirect(url_for('.products', path='comparison', page=page))
+
+
+@product.route('/prices/action', methods=['POST'])
+@login_required
+def products_prices_action():
+    page = request.args.get('page')
+    data = json.loads(request.data) if request.data else {}
+    data_list = data.get('ids')
+    info_list = data.get('info') if data.get('info') else {}
+    info = {}
+    if info_list:
+        for item in info_list:
+            info[item['name']] = item['value']
+
+    action = str(info.get('action'))
+
+    settings_in_base, settings = get_products_prices_settings()
+    if not settings.get('special_offer_id'):
+        flash('Настройки специального предложения не заданны')
+        return redirect(url_for('.products', path='prices', page=page))
+
+    if 'all_products_' in action:
+        price_type = action.replace('all_products_', '')
+        change_prices.delay(price_type=price_type, settings=settings)
+
+    elif 'this_products_' in action:
+        price_type = action.replace('this_products_', '')
+        filter = get_filter(path='prices')
+        change_prices.delay(filter=filter, price_type=price_type, settings=settings)
+
+    elif 'manual_' in action:
+        price_type = action.replace('manual_', '')
+        manual_confirm_prices(data_list, price_type, settings=settings)
+
+    return redirect(url_for('.products', path='prices', page=page))
+
+
+@celery.task()
+def change_prices(filter={}, price_type='', settings={}):
+    delta = settings.get('price_delta')
+    delta = float(delta)/100 if delta else 0
+
+    special_offer_id = settings.get('special_offer_id')
+
+    # products = tuple(get_products(pagination=False, filter=filter))
+    products = {}
+
+    def convert_price(price):
+        try:
+            price = float(price)
+        except:
+            price = 0
+        return price
+
+    for product in products:
+        if not product.other_shop:
+            continue
+
+        def replace_price():
+            if abs(product.price - other_price) <= product.price * delta:
+                new_product_stiker(product, other_price,
+                                   get_discount_products(), settings)
+                product_new_price(product, other_price, price_type, settings)
+                return True
+            return False
+
+        # Одна цена конкурента
+        if len(product.other_shop) < 2:
+            other_price = convert_price(product.other_shop[0].price)
+            if not other_price:
+                continue
+
+            replace_price()
+            continue
+
+        # Несколько цен конкурентов
+        prices = []
+        for other_product in product.other_shop:
+            other_price = convert_price(other_product.price)
+            if other_price:
+                prices.append(other_price)
+
+        if product.price in prices:
+            continue
+
+        for other_price in sorted(prices):
+            if replace_price():
+                break
+
+    db.session.commit()
+    print('End')
+
+
+def manual_confirm_prices(data_list, price_type, settings):
+    """ Ручное применение цен """
+    discount_products = get_discount_products()
+
+    for data in data_list:
+        data = data.split('-')
+        product_id = data[0]
+        new_price = float(data[1])
+
+        product = get_product(product_id)
+        new_product_stiker(product, new_price, discount_products, settings)
+        product_new_price(product, new_price, price_type, settings)
+
+    db.session.commit()
+
+    page = request.args.get('page')
+    return redirect(url_for('.products', path='prices', page=page))
+
+
+def new_product_stiker(product, new_price, discount_products, settings):
+    if product.product_id in discount_products:
+        options_ids = settings.get('options_ids')
+        options_ids = options_ids if options_ids else []
+
+        for option in product.options:
+            if str(option.option_id) in options_ids:
+                price = option.product_option_value.price + new_price
+                text = settings.get('stiker_text')
+                if text:
+                    product.ean = text.replace('price', str(int(price)))
+
+
+def product_new_price(product, new_price, price_type, settings):
+    """ Записывает цену товара и удоляет лишние """
+    special_offer_id = settings.get('special_offer_id')
+
+    def get_product_special_offer():
+        if product.special_offers:
+            for special_offer in product.special_offers:
+                if special_offer.special_offer_id == int(special_offer_id):
+                    return special_offer
+        return None
+
+    product_special_offer = get_product_special_offer()
+
+    if price_type == 'normal_price':
+        product.price = new_price
+
+        if product_special_offer:
+            db.session.delete(product_special_offer)
+
+    elif price_type == 'special_price':
+
+        if product.price <= new_price:
+            product.price = new_price
+            if product_special_offer:
+                db.session.delete(product_special_offer)
+
+        elif product_special_offer:
+            product_special_offer.price = new_price
+            product_special_offer.date_start = datetime.now().date()
+            product_special_offer.date_end = 0
+
+        elif not product_special_offer:
+            special_offer = ProductSpecial(
+                customer_group_id=1,
+                price=float(new_price),
+                date_start=datetime.now().date(),
+                special_offer_id=special_offer_id
+            )
+            product.special_offers.append(special_offer)
+
+
+def get_products_prices_settings():
+    settings_in_base = db.session.execute(
+        db.select(Module).filter_by(name='products_prices')).scalar()
+
+    settings = {}
+    if settings_in_base:
+        settings = json.loads(settings_in_base.value)
+
+    return settings_in_base, settings
+
+
+@product.route('/prices/settings', methods=['GET'])
+@login_required
+def products_prices_settings():
+    settings_in_base, settings = get_products_prices_settings()
+
+    special_offers = db.session.execute(db.select(SpecialOffer)).scalars()
+
+    options = db.session.execute(db.select(Option)).scalars()
+    categories = get_categories()
+
+    return render_template('product/prices_settings.html',
+                           settings=settings,
+                           special_offers=special_offers,
+                           options=options,
+                           categories=categories)

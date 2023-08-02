@@ -1,55 +1,58 @@
-{% extends "products/base.html" %}
+{% extends "product/base.html" %}
 {% set page_name = 'Цены' %}
 {% block head_form %}
-  <a class="btn btn-white" href="{{ url_for('products_prices_settings') }}">Настройки</a>
+  <a class="btn btn-primary" href="{{ url_for('.products_prices_settings') }}">Настройки</a>
 {% endblock %}
 
 {% block table %}
-<form class="" id="confirmProducts" method="post" action="{{ url_for('products_prices_action', page=request.args.get('page')) }}">
+<form class="" id="Products" method="post" action="{{ url_for('.products_prices_action', page=request.args.get('page')) }}">
   <table class="table text-nowrap">
-    <thead class="table-light">
+    <thead>
       <tr>
         <th scope="col" class="sticky-table">Название</th>
         <th scope="col">Цена</th>
-        <th scope="col">Ручная</th>
         {% for shop in other_shops %}
-          <th scope="col"><input id="shop-{{ shop.shop_id }}" class="form-check-input me-1" type="checkbox" onclick="Check('{{ shop.shop_id }}')">{{ shop.name }}</th>
+          <th>
+            <input id="shop-{{ shop.shop_id }}" class="form-check-input check-group" type="checkbox">
+            {{ shop.name }}
+          </th>
         {% endfor %}
       </tr>
     </thead>
     <tbody>
-      {% set var = namespace(product_count=0, group_name='') %}
+      {% set var = namespace(group_count=0, group_name='') %}
 
       {% for product in products %}
         {% for attribute in product.attributes if attribute.attribute_id == session.get('group_attribute')|int %}
           {% if attribute.text != var.group_name %}
+            {% set var.group_count = var.group_count + 1 %}
             {% set var.group_name = attribute.text %}
             <tr>
-              <td colspan=2><b>{{ attribute.text }}</b></td>
+              <td><b>{{ attribute.text }}</b></td>
+              <td></td>
+              {% for shop in other_shops %}
+                <td>
+                  <input id="shop-{{ shop.shop_id }}-group-{{ var.group_count }}" class="form-check-input check-group" type="checkbox">
+                </td>
+              {% endfor %}
             </tr>
           {% endif %}
         {% endfor %}
 
         <tr>
-          <td class="sticky-table">{{ product.mpn }}</td>
-          <td class="">
+          <td class="sticky-table">{{ product.description.name }}</td>
+          <td>
             {% if product.special_offers %}
               {% set special_price = (product.special_offers|sort(attribute='price'))[0].price %}
-              {{ special_price|int if special_price|int == special_price else special_price }}
-              <del>{{ product.price|int if product.price|int == product.price else product.price }}</del>
+              {{ special_price|smart_int }}
+              <del>{{ product.price|smart_int }}</del>
             {% else %}
-              {{ product.price|int if product.price|int == product.price else product.price }}
+              {{ product.price|smart_int }}
             {% endif %}
           </td>
 
-          {% set var.product_count = var.product_count + 1 %}
-
-          <td class="col-1">
-            <input type="text" class="form-control form-control-sm"
-                name="stiker_text" value="">
-          </td>
           {% for shop in other_shops %}
-            <td class="">
+            <td>
               {% if product.other_shop %}
                 {% for other_product in product.other_shop %}
                   {% if other_product.shop_id == shop.shop_id %}
@@ -59,9 +62,8 @@
                       {% elif not special_price and other_product.price|int == product.price|int %}
                         <span class="text-success">{{ other_product.price }}</span>
                       {% else %}
-                        <input class="form-check-input to-check shop-{{ shop.shop_id }}" type="radio"
-                        name="{{ 'product-id-' + var.product_count|string }}" value="{{ product.product_id }}">
-                        <input type="hidden" name="{{ 'price-' + var.product_count|string }}" value="{{ other_product.price }}">
+                        <input class="form-check-input to-check shop-{{ shop.shop_id }} shop-{{ shop.shop_id }}-group-{{ var.group_count }}" type="radio"
+                        value="{{ product.product_id }}-{{ other_product.price }}">
                         <span class="text-danger">{{ other_product.price }}</span>
                       {% endif %}
                     {% endif %}
@@ -74,57 +76,47 @@
       {% endfor %}
     </tbody>
   </table>
-
-  <input type="hidden" name="products-count" value="{{ var.product_count }}">
-  <div class="m-3 d-grid gap-2 d-flex justify-content-end">
-    <div class="col-md-2">
-        <select class="selectpicker" data-width="100%" data-none-selected-text = "Что делать?" name="action">
-          <option></option>
-
-          <optgroup label="Авто-подбор цен">
-            <option value="all_products_normal_price">Все товары, обычная цена</option>
-            <option value="all_products_special_price">Все товары, спец цена</option>
-            <option value="this_products_normal_price">Эти товары, обычная цена</option>
-            <option value="this_products_special_price">Эти товары, спец цена</option>
-          </optgroup>
-
-          <optgroup label="Применить выбранные цены">
-            <option value="manual_normal_price">Обычная цена</option>
-            <option value="manual_special_price">Спец цена</option>
-          </optgroup>
-
-        </select>
-    </div>
-    <button class="btn rounded-3 btn-primary" type="submit">OK</button>
-    <button class="btn rounded-3 btn-secondary" type="button" onclick="changeOptions('cancel')">Отмена</button>
-  </div>
-
 </form>
 {% endblock %}
 
-{% block page_scripts %}
-<script>
-// Чекбоксы принятия ссылки
-function Check(btn) {
-  var status = document.getElementById(`${'shop-' + btn}`).checked;
-  var toCheck = document.querySelectorAll(`${'.to-check.shop-' + btn}`);
-  toCheck.forEach(element => {
-    element.checked = status;
-  });
-  var Buttons = document.querySelectorAll('.hidden-btns');
-    Buttons.forEach(element => {
-      element.classList.remove("visually-hidden");
-    });
-}
+{% block actions %}
+  <!-- Actions buttons -->
+  <div class="sticky-bottom actions">
+    <form id="ProductsAction" class="col-12">
+      <div class="bg-white h-100 d-flex gap-2 align-items-center">
 
-// Клик по чекбоксам
-document.addEventListener("click", function(e) {
-  if (e.target.classList.contains('to-check')) {
-  var Buttons = document.querySelector('.hidden-btns');
-  if (e.target.checked === true){
-    Buttons.classList.remove("visually-hidden");
-  };
-  }
-});
-</script>
+        <div class="m-1  ms-5">
+          <span class="">Отмеченно: </span>
+          <span class="checks-count"></span>
+          <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
+        </div>
+
+        <div class="vr my-3"></div>
+
+        <div class="my-1 ms-3 d-flex gap-2 align-items-center">
+          <div class="col-12">
+            <select class="other-select" data-width="100%" data-class="border select-sm" data-placeholder="Что делать?" name="action">
+              <option></option>
+
+              <optgroup label="Авто-подбор цен">
+                <option value="all_products_normal_price">Все товары, обычная цена</option>
+                <option value="all_products_special_price">Все товары, спец цена</option>
+                <option value="this_products_normal_price">Выбранные товары, обычная цена</option>
+                <option value="this_products_special_price">Выбранные товары, спец цена</option>
+              </optgroup>
+
+              <optgroup label="Применить выбранные цены">
+                <option value="manual_normal_price">Обычная цена</option>
+                <option value="manual_special_price">Спец цена</option>
+              </optgroup>
+
+            </select>
+          </div>
+          <button class="btn btn-sm rounded-3 action" type="button" data-form="#Products" data-form-info="#ProductsAction">Применить</button>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
 {% endblock %}

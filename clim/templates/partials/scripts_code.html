@@ -6,18 +6,18 @@
   $('body').on("change", '.check-all', function () {
     var $table = $(this).closest('table');
     $table.find('.to-check').prop('checked', $(this).is(':checked'));
-    $table.find('.to-check:checkbox').trigger('change');
+    $table.find('.to-check').trigger('change');
   })
 
   // Check Group
   $('body').on("change", '.check-group', function () {
     var $table = $(this).closest('table');
     $table.find('.' + this.id).prop('checked', $(this).is(':checked'));
-    $table.find('.to-check:checkbox').trigger('change');
+    $table.find('.to-check').trigger('change');
   })
 
   // Check Count
-  $('body').on("change", '.to-check:checkbox', function () {
+  $('body').on("change", '.to-check', function () {
     var $table = $(this).closest('table'),
       $modal = $table.closest('.modal'),
       checked_count = $table.find('.to-check:checked').length,

@@ -58,7 +58,7 @@
 
           {% if request.path == url_for('product.products', path='prices') %}
           {% set other_filter = session.get('prices_other_filter') %}
-          <div class="col-md-1">
+          <div class="col-md-2">
             <label for="other_filter" class="form-label h7">Цена</label>
             <select class="no-ajax-select" data-width="100%" id="other_filter" name="other_filter">
               <option {{ 'selected' if not other_filter }} value="">Все</option>

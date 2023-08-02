@@ -103,10 +103,10 @@ class ProductSpecial(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'),
                            primary_key=True)
     customer_group_id = db.Column(db.Integer)
-    priority = db.Column(db.Integer)
+    priority = db.Column(db.Integer, default=0)
     price = db.Column(db.Float)
     date_start = db.Column(db.Date)
-    date_end = db.Column(db.Date)
+    date_end = db.Column(db.Date, default=0)
     special_offer_id = db.Column(db.Integer)
 
 

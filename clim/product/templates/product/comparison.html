@@ -1,8 +1,8 @@
-{% extends "products/base.html" %}
+{% extends "product/base.html" %}
 {% set page_name = 'Сопоставление товаров' %}
 {% block head_form %}
   <div>
-    <form class="" id="comparison"  method="post" action="{{ url_for('start_comparison_products') }}"></form>
+    <form class="" id="comparison"  method="post" action="{{ url_for('.start_comparison_products') }}"></form>
   </div>
 
   <div class="dropdown">
@@ -12,7 +12,7 @@
     <ul class="dropdown-menu">
       <button class="dropdown-item" type="submit" form="comparison" name="all_products" value="True">Сопоставить все</button>
       <button class="dropdown-item" type="submit" form="Filter"
-        formaction="{{ url_for('start_comparison_products') }}">Сопоставить отфильтрованные</button>
+        formaction="{{ url_for('.start_comparison_products') }}">Сопоставить отфильтрованные</button>
       <button class="dropdown-item" type="submit" form="comparison"
         formaction="{{ url_for('del_not_confirm_products', page=request.args.get('page')) }}">Удалить неподтвержденные</button>
     </ul>
@@ -21,19 +21,21 @@
 {% endblock %}
 
 {% block table %}
-<form class="" id="confirmProducts" method="post" action="{{ url_for('confirm_product_to_product', page=request.args.get('page')) }}">
+<form class="" id="Products" method="post" action="{{ url_for('.confirm_product_to_product', page=request.args.get('page')) }}">
   <table class="table text-nowrap">
     <thead>
       <tr>
         <th scope="col" class="sticky-table">Название</th>
         {% for shop in other_shops %}
-          <th scope="col"><input id="shop-{{ shop.shop_id }}" class="form-check-input me-1"
-            type="checkbox" onclick="Check('{{ shop.shop_id }}')">{{ shop.name }}</th>
+          <th>
+            <input id="shop-{{ shop.shop_id }}" class="form-check-input check-group" type="checkbox">
+            {{ shop.name }}
+          </th>
         {% endfor %}
       </tr>
     </thead>
     <tbody>
-      {% set var = namespace(product_count=0, group_count=0, group_name='') %}
+      {% set var = namespace(group_count=0, group_name='') %}
 
         {% for product in products %}
           {% for attribute in product.attributes if attribute.attribute_id == session.get('group_attribute')|int %}
@@ -41,11 +43,10 @@
               {% set var.group_count = var.group_count + 1 %}
               {% set var.group_name = attribute.text %}
               <tr>
-                <td colspan=1><b>{{ attribute.text }}</b></td>
+                <td><b>{{ attribute.text }}</b></td>
                 {% for shop in other_shops %}
                   <td>
-                    <input id="shop-{{ shop.shop_id }}-group-{{ var.group_count }}" class="form-check-input me-1"
-                    type="checkbox" onclick="Check('{{ shop.shop_id }}', '{{ var.group_count }}')">
+                    <input id="shop-{{ shop.shop_id }}-group-{{ var.group_count }}" class="form-check-input check-group" type="checkbox">
                   </td>
                 {% endfor %}
               </tr>
@@ -55,25 +56,24 @@
           <tr>
             <td class="sticky-table my-product">
               {{ product.description.name }}  {{ product.price|int }}
-              <a class="" target="_blank" href="https://climkey.ru?product_id={{ product.product_id }}">
+              <a target="_blank" href="https://climkey.ru?product_id={{ product.product_id }}">
                 <i class="icon-xxs" data-feather="external-link"></i>
               </a>
             </td>
             {% for shop in other_shops %}
-              <td class="">
+              <td>
                 {% if product.other_shop %}
                   {% for other_product in product.other_shop if other_product.shop_id == shop.shop_id %}
 
-                      {% set var.product_count = var.product_count + 1 %}
-                      <input class="form-check-input to-check shop-{{ shop.shop_id }} group-{{ var.group_count }}"
-                      type="checkbox" name="{{ 'other-product-id-' + var.product_count|string }}"
-                      value="{{ other_product.other_product_id }}">
+                    <input class="form-check-input to-check shop-{{ shop.shop_id }} shop-{{ shop.shop_id }}-group-{{ var.group_count }}"
+                    type="checkbox" value="{{ other_product.other_product_id }}">
 
                     <span class="other-product {{ 'text-primary' if not other_product.link_confirmed}}">
-                      {{ other_product.name }}</span>
+                      {{ other_product.name }}
+                    </span>
 
                     {{ other_product.price|int }}
-                    <a class="" target="_blank" href="{{ other_product.link }}">
+                    <a target="_blank" href="{{ other_product.link }}">
                       <i class="icon-xxs" data-feather="external-link"></i>
                     </a>
                     <br>
@@ -86,52 +86,43 @@
         {% endfor %}
     </tbody>
   </table>
-
-  <input type="hidden" name="products-count" value="{{ var.product_count }}">
-  <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns visually-hidden">
-    <button class="btn rounded-3 btn-primary" type="submit" name="action" value="bind">Привязать</button>
-    <button class="btn rounded-3 btn-danger" type="submit" name="action" value="unbind">Отвязать</button>
-    <button class="btn rounded-3 btn-secondary" type="button" onclick="changeOptions('cancel')">Отмена</button>
-  </div>
 </form>
 
 {% endblock %}
+
+{% block actions %}
+  <!-- Actions buttons -->
+  <div class="sticky-bottom actions">
+    <form id="ProductsAction" class="col-12">
+      <div class="bg-white h-100 d-flex gap-2 align-items-center">
+
+        <div class="m-1  ms-5">
+          <span class="">Отмеченно: </span>
+          <span class="checks-count"></span>
+          <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
+        </div>
+
+        <div class="vr my-3"></div>
+
+        <div class="my-1">
+          <button class="btn btn-sm rounded-3 action" type="button" data-action="bind" data-form="#Products">
+            <i data-feather="check-square" class="icon-xs"></i>
+            Привязать
+          </button>
+          <button class="btn btn-sm rounded-3 action" type="button" data-action="unbind" data-form="#Products">
+            <i data-feather="minus-square" class="icon-xs"></i>
+            Отвязать
+          </button>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
 {% block page_scripts %}
 <script>
-// Чекбоксы принятия ссылки
-function Check(btn, group='None') {
-  // Выбор серии
-  if (group !== 'None'){
-    var status = document.getElementById(`${'shop-' + btn + '-group-' + group}`).checked;
-    var toCheck = document.querySelectorAll(`${'.to-check.shop-' + btn + '.group-' + group}`);
-    toCheck.forEach(element => {
-      element.checked = status;
-    });
-    }
-  // Выбов всех определенного магазина
-  else {
-  var status = document.getElementById(`${'shop-' + btn}`).checked;
-  var toCheck = document.querySelectorAll(`${'.to-check.shop-' + btn}`);
-  toCheck.forEach(element => {
-    element.checked = status;
-  });
-  }
-  var Buttons = document.querySelectorAll('.hidden-btns');
-    Buttons.forEach(element => {
-      element.classList.remove("visually-hidden");
-    });
-}
-
-// Клик по чекбоксам
-document.addEventListener("click", function(e) {
-  if (e.target.classList.contains('to-check')) {
-  var Buttons = document.querySelector('.hidden-btns');
-  if (e.target.checked === true){
-    Buttons.classList.remove("visually-hidden");
-  };
-  }
-});
-
 // Выделяем совпадения названий
 var all_tr = document.querySelectorAll(".table tbody tr");
     all_tr.forEach(function(tr) {

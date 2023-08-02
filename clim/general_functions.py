@@ -4,12 +4,55 @@ from flask import render_template, redirect, url_for, request, session
 from flask_login import login_required, current_user
 
 from clim.app import app, db, redis, celery, login_manager
-from clim.models import Attribute, AttributeDescription, Category, Manufacturer, Product
+from clim.models import Attribute, AttributeDescription, Category, Manufacturer, Module, OtherProduct, Product, ProductAttribute
 
 
-def get_product(product_id: int):
+def json_dumps_or_other(data, default=None):
+    return json.dumps(data, ensure_ascii=False) if data else default
+
+
+def json_loads_or_other(data, default=None):
+    return json.loads(data) if data else default
+
+
+def dict_get_or_other(dict, key, default=None):
+    return dict.get(key) if dict and dict.get(key) else default
+
+
+def get_module(name):
     return db.session.execute(
-        db.select(Product).filter_by(product_id=product_id)).scalar()
+        db.select(Module).filter_by(name=name)).scalar()
+
+
+def get_categories():
+    return db.session.execute(
+        db.select(Category).order_by(Category.sort_order)).scalars()
+
+
+def get_product(id: int):
+    return db.session.execute(
+        db.select(Product).filter_by(product_id=id)).scalar()
+
+
+def get_discount_products():
+    # Получем метки
+    label = db.session.execute(
+        db.select(AttributeDescription).filter_by(name='Метка')).scalar()
+    attributes = db.session.execute(
+            db.select(ProductAttribute)
+            .filter_by(attribute_id=label.attribute_id)).scalars()
+
+    # Отделяем акционные товары
+    discount_product_ids = []
+    for attribute in attributes:
+        if 'Спецпредложение' in attribute.text:
+            discount_product_ids.append(attribute.product_id)
+    return discount_product_ids
+
+
+def get_other_product(id: int):
+    return db.session.execute(
+        db.select(OtherProduct).filter_by(other_product_id=id)).scalar()
 
 
 @app.route('/ajax/list_all_categories', methods=['GET'])

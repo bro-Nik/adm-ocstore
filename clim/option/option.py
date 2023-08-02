@@ -7,8 +7,7 @@ from clim.models import db, Attribute, AttributeDescription, Manufacturer, Optio
     OptionDescription, OptionSetting, OptionValueSetting, OptionValue, \
     OptionValueDescription, ProductAttribute, ProductOption,\
     ProductOptionValue, Product, CategoryDescription, Category, WeightClass, ProductToCategory
-from clim.routes import get_categories
-from clim.general_functions import get_product
+from clim.general_functions import get_product, get_categories
 from clim.stock.stock import get_consumables, get_list_all_categories
 
 
