@@ -80,9 +80,11 @@
                         <select class="ajax-select" name="main_category_id"
                           data-url="{{ url_for('get_list_all_categories') }}"
                           data-placeholder="-- Выбрать категорию --">
+                          {% if main_category %}
                           <option selected value="{{ main_category.category_id }}">{{
                             main_category.category.description.name }}
                           </option>
+                          {% endif %}
                         </select>
                       </div>
                     </div>
