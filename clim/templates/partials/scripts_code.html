@@ -153,7 +153,13 @@
         theme: "bootstrap-5",
         width: $(this).data('width') || '100%',
         dropdownAutoWidth: true,
+        dropdownParent: $(this).closest('.modal'),
         selectionCssClass: $(this).data('class') || defaultSelectClass,
+        "language": {
+          "noResults": function () {
+            return "Ничего не найдено";
+          }
+        },
         ajax: {
           delay: 250,
           url: $(this).data('url'),
