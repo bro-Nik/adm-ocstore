@@ -98,7 +98,7 @@
                           data-url="{{ url_for('get_list_all_categories') }}"
                           data-placeholder="-- Выбрать категории --">
                           {% for category in product.categories %}
-                          <option selected value="{{ id }}">
+                          <option selected value="{{ category.category_id }}">
                             {{ category.category_id }}
                           </option>
                           {% endfor %}

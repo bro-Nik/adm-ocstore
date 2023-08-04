@@ -637,12 +637,12 @@ def product_info_update(product_id=None):
 
     categories_ids = request.form.getlist('categories_ids')
     if categories_ids:
+        print(categories_ids)
         for category in product.categories:
             if category.category_id not in categories_ids and category.category_id != main_category_id:
                 product.categories.remove(category)
             else:
-                if str(category.category_id) in categories_ids:
-                    categories_ids.remove(str(category.category_id))
+                categories_ids.remove(str(category.category_id))
 
 
         for category_id in categories_ids:
