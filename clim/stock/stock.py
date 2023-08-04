@@ -641,7 +641,8 @@ def product_info_update(product_id=None):
             if category.category_id not in categories_ids and category.category_id != main_category_id:
                 product.categories.remove(category)
             else:
-                categories_ids.remove(str(category.category_id))
+                if str(category.category_id) in categories_ids:
+                    categories_ids.remove(str(category.category_id))
 
 
         for category_id in categories_ids:
