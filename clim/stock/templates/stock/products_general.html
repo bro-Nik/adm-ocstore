@@ -76,6 +76,10 @@
 <script>
   $('#productsList').load("{{ url_for('.products_load') }}");
 
+  var tableHeight = $(window).height() - 300;
+  $('#productsList').height(tableHeight)
+  
+
   $('#productsList').on("click", 'a.open-category', function () {
     var category_id = $(this).attr('data-category-id');
     $('#productsList').load("{{ url_for('.products_load') }}" + '?category_id=' + category_id);
