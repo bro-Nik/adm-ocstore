@@ -129,11 +129,6 @@
     return $stock;
   };
 
-  // Focus Select2 Search
-  $(document).on('select2:open', () => {
-    document.querySelector('.select2-search__field').focus();
-  });
-
 
   // New Line
   function newLine($new_line = '') {
@@ -270,15 +265,11 @@
   })
 
   $('.open-modal-product').on("click", function () {
-    var $modal = $('#ProductInfoModal');
-    $modal.find('.modal-body').load("{{ url_for('stock.product_info') }}");
-    $modal.modal('toggle')
+    LoadToModal($('#ProductInfoModal'), "{{ url_for('stock.product_info') }}");
   })
 
   $('.open-modal-select-products').on("click", function () {
-    var $modal = $('#SelectProductsModal');
-    $modal.find('.modal-body').load("{{ url_for('.set_products_page') }}");
-    $modal.modal('toggle')
+    LoadToModal($('#SelectProductsModal'), "{{ url_for('.set_products_page') }}");
   })
 
 

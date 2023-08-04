@@ -31,7 +31,7 @@
     <div class="card h-100">
 
       <div class="card-body">
-        <form id="Filter" method="post" action="{{ url_for('work_plan') }}">
+        <form id="Filter" class="update-after-change" method="post" action="{{ url_for('work_plan') }}">
           <div class="row g-2">
 
             <div class="col-md-2">
@@ -44,8 +44,8 @@
 
             <div class="col-md-2">
               <label class="form-label h7">Производители</label>
-              <select class="no-ajax-select multiple" data-width="100%"
-                 data-placeholder="Все" multiple name="manufacturers_ids">
+              <select class="general-select show-count-selected" data-width="100%"
+                 data-placeholder="Все" multiple name="manufacturers_ids" data-class="bg-light">
                 {% for manufacturer in manufacturers %}
                   <option value="{{ manufacturer.manufacturer_id }}" {{ 'selected' if manufacturer.manufacturer_id|string in manufacturers_ids }}>{{ manufacturer.name }}</option>
                 {% endfor %}
@@ -182,61 +182,6 @@
     $(this).remove();
   });
 
-  $('#Filter .ajax-select').each(function () {
-    UpdateSelect($(this));
-  });
-
-  function UpdateSelect($select) {
-    $select.select2({
-      theme: "bootstrap-5",
-      width: $select.data('width'),
-      dropdownAutoWidth: true,
-      selectionCssClass: $select.data('class'),
-      ajax: {
-        delay: 250,
-        url: $select.data('url'),
-        dataType: 'json',
-        data: function (params) {
-          var query = {
-            search: params.term,
-            page: params.page || 1
-          }
-          return query;
-        }
-      }
-    });
-  }
-
-  $('.no-ajax-select').each(function () {
-    $(this).select2({
-      theme: "bootstrap-5",
-      width: $(this).data('width'),
-      dropdownAutoWidth: true,
-      minimumResultsForSearch: 10,
-      selectionCssClass: 'bg-light'
-    })
-  })
-
-  $('#Filter .multiple').each(function () {
-    UpdateSelectCount($(this));
-  });
-
-  $('#Filter .multiple').on('change', function (e) {
-    UpdateSelectCount($(this))
-  })
-
-  $('#Filter select').on('change', function (e) {
-    $('#Filter').submit();
-  })
-
-  function UpdateSelectCount($select) {
-    var count = $select.val().length;
-
-    if (count > 0) {
-      $select.parent().find('.select2-selection__rendered').remove();
-      $select.parent().find('.select2-selection.select2-selection--multiple').append($(`<span class="multiple-count" >+ ${count}</span>`))
-    }
-  }
   $('#resetFilter').on('click', function () {
     $('#Filter select').each(function () {
       $(this).val('').trigger('change');

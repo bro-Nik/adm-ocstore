@@ -7,8 +7,10 @@ from clim.models import db, Attribute, AttributeDescription, Manufacturer, Optio
     OptionDescription, OptionSetting, OptionValueSetting, OptionValue, \
     OptionValueDescription, ProductAttribute, ProductOption,\
     ProductOptionValue, Product, CategoryDescription, Category, WeightClass, ProductToCategory
-from clim.general_functions import get_product, get_categories
-from clim.stock.stock import get_consumables, get_list_all_categories
+from clim.general_functions import dict_from_serialize_array,\
+    dict_get_or_other, get_product, get_categories, json_dumps_or_other,\
+    json_loads_or_other, get_list_all_categories
+from clim.stock.stock import get_consumables
 
 
 option = Blueprint('option', __name__, template_folder='templates', static_folder='static')
@@ -146,8 +148,8 @@ def option_update():
         option.description = OptionDescription(language_id=1)
         db.session.add(option)
 
-    option.description.name = request.form.get('name')
-    option.sort_order = request.form.get('sort')
+    option.description.name = dict_get_or_other(request.form, 'name', 'Без имени')
+    option.sort_order = dict_get_or_other(request.form, 'sort', 0)
     option.type = request.form.get('type')
 
     settings_dict = {
@@ -208,7 +210,7 @@ def option_values(option_id):
 @login_required
 def value_settings(option_id):
     """ Добавить или изменить вариант опции """
-    value = settings = attribute = None
+    value = settings = attribute = {}
 
     value_id = request.args.get('value_id')
     if value_id:
@@ -321,11 +323,15 @@ def value_settings_update(option_id):
     """ Отправка настроек значения опции """
     value_id = request.args.get('value_id')
 
+    data = json_loads_or_other(request.data, {}) 
+    info_list = dict_get_or_other(data, 'info', {})
+    info = dict_from_serialize_array(info_list)
+
     settings_dict = {
-        'categories_ids': request.form.getlist('categories_ids'),
-        'attribute_id': request.form.get('attribute_id'),
-        'attribute_values': request.form.getlist('attribute_values'),
-        'stock': request.form.get('stock')
+        'categories_ids': dict_get_or_other(info, 'categories_ids', []),
+        'attribute_id': dict_get_or_other(info, 'attribute_id'),
+        'attribute_values': dict_get_or_other(info, 'attribute_values', []),
+        'stock': dict_get_or_other(info, 'stock')
         }
 
     settings = None
@@ -336,8 +342,7 @@ def value_settings_update(option_id):
 
     value = get_value(value_id)
     if not value:
-        value = OptionValue(image=0,
-                            option_id=option_id)
+        value = OptionValue(option_id=option_id)
         db.session.add(value)
     if not value.description:
         value.description = OptionValueDescription(language_id=1,
@@ -345,20 +350,15 @@ def value_settings_update(option_id):
     if not value.settings:
         value.settings = OptionValueSetting()
 
-    value.sort_order = int_or_other(request.form.get('sort'))
-    value.description.name = request.form.get('name')
-    value.settings.price = float_or_other(request.form.get('price'))
+    value.sort_order = int_or_other(info.get('sort'))
+    value.description.name = info.get('name')
+    value.settings.price = float_or_other(info.get('price'))
     value.settings.settings = settings
 
     db.session.commit()
 
     # Consumables
-    consumables = request.form.get('consumables_data')
-    if consumables:
-        consumables = json.loads(consumables.replace(',]', ']'))
-        value.settings.consumables = consumables
-    else:
-        value.settings.consumables = None
+    value.settings.consumables = json_dumps_or_other(data.get('products'))
 
     db.session.commit()
 

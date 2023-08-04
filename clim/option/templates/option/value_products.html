@@ -21,7 +21,7 @@
     <div class="card h-100">
 
       <div class="card-body">
-        <form id="ValueProductsFilter"
+        <form id="Filter" class="update-after-change"
           action="{{ url_for('.value_products', option_id=option_id, value_id=value.option_value_id) }}">
 
           <div class="row g-2">
@@ -29,9 +29,9 @@
             <div class="col-md-2">
               <div class="mb-1">
                 <label class="form-label h7">Производитель</label>
-                <select class="selectpicker" data-width="100%" data-live-search="true" data-none-selected-text="Все"
-                  data-none-results-text="Не найдено {0}" multiple name="manufacturers_ids">
 
+                <select class="general-select show-count-selected" data-placeholder="Все" multiple
+                  name="manufacturers_ids">
                   {% for manufacturer in manufacturers %}
                   {% set id = manufacturer.manufacturer_id %}
                   <option {{ 'selected' if filter.get('manufacturers_ids') and id|string in
@@ -39,13 +39,14 @@
                   </option>
                   {% endfor %}
                 </select>
+
               </div>
             </div>
 
             <div class="col-md-2">
               <div class="mb-1">
                 <label class="form-label h7">Опции</label>
-                <select class="selectpicker" data-width="100%" name="options">
+                <select class="general-select" name="options">
                   <option value="">Все</option>
                   <option {{ 'selected' if filter.get('options')=='whith options' }} value="whith options">Товары с
                     опциями</option>
@@ -59,7 +60,7 @@
             <div class="col-md-1">
               <div class="mb-1">
                 <label class="form-label h7">Результатов</label>
-                <select class="selectpicker" data-width="100%" name="per_page">
+                <select class="general-select" name="per_page">
                   {% for i in [20, 40, 60, 80, 100] %}
                   <option {{ 'selected' if filter.get('per_page')|int==i }} value="{{ i }}">{{ i }}</option>
                   {% endfor %}
@@ -197,44 +198,3 @@
     </div>
   </div>
 </div>
-
-<script>
-  var action_url = "{{ url_for('.products_action', option_id=option_id, value_id=value.option_value_id) }}"
-  var current_url = "{{ request.full_path }}".replaceAll("&amp;", "&")
-
-  // Selectpicker
-  $('#ValueProducts').find('.selectpicker').each(function () {
-    $(this).selectpicker();
-  });
-
-  // Icons
-  feather.replace();
-
-  // Filter
-  $('#ValueProducts').find('select').on("change", function () {
-    var $modal = $('#FullScreenModal');
-
-    var $form = $('#ValueProductsFilter'),
-      form_data = $form.serialize();
-    url = $form.attr('action');
-    /* отправляем данные методом POST */
-    var posting = $.post(url, form_data);
-    /* результат помещаем в div */
-    ;
-    posting.done(function (data) {
-      var content = $(data);
-      $modal.find('.modal-body').empty().append(content);
-    });
-
-
-  })
-
-  // Pagination
-  $('#ValueProducts').find('.pagination a').on("click", function () {
-    var $modal = $('#FullScreenModal');
-    var url = $(this).attr('href');
-    $modal.find('.modal-body').load(url);
-    return false;
-  })
-
-</script>

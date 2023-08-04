@@ -63,91 +63,6 @@
   });
 
 
-  // Check All
-  $('body').on("change", '.check-all', function () {
-    var $table = $(this).closest('[id]');
-    $table.find('.to-check').prop('checked', $(this).is(':checked'));
-    $table.find('.to-check:checkbox').trigger('change');
-  })
-
-  // Check Count
-  $('body').on("change", '.to-check:checkbox', function () {
-    var $table = $(this).closest('[id]'),
-      $modal = $table.closest('.modal'),
-      checked_count = $table.find('.to-check:checked').length,
-      all_count = $table.find('.to-check').length;
-
-    if ($modal.length) {
-      var $box_actions = $table.closest('div[id]');
-
-      var $btns = $box_actions.find('.actions .btn')
-      $btns.prop('disabled', !checked_count > 0);
-    } else {
-      var $box_actions = $('.sticky-bottom.actions');
-      if (checked_count > 0) {
-        $box_actions.addClass('active');
-      } else {
-        $box_actions.removeClass('active');
-      }
-    }
-    $box_actions.find('.checks-count').text(checked_count + ' / ' + all_count);
-    $($table).find('.check-all').prop('checked', checked_count > 0);
-  })
-
-  // Actions
-  $('body').on("click", '.action-confirmation', function () {
-    var $modal = $('#ModalConfirmation');
-    var $btn = $modal.find('.action');
-    $modal.find('.modal-title').text($(this).attr('data-title'));
-    $btn.attr('data-action', $(this).attr('data-action'));
-
-    var $form = $(this).closest('form');
-    $btn.attr('data-form', '#' + $form.attr('id'));
-
-    $modal.modal('show');
-  })
-
-  $('body').on("click", '.action', function () {
-    var $btn = $(this),
-      checked = [];
-    if ($btn.attr('data-form')) {
-      var $form = $($btn.attr('data-form'));
-    } else {
-      var $form = $btn.closest('form');
-    }
-
-    $form.find('.to-check:checked').each(function () {
-      checked.push($(this).val());
-    });
-    var data = {
-      action: $btn.attr('data-action'),
-      ids: checked
-    }
-    SendingData(data, $btn, $form)
-  })
-
-  function SendingData(data, $btn, $form) {
-    $.ajax({
-      type: "POST",
-      url: $form.attr('action'),
-      data: JSON.stringify(data),
-      contentType: 'application/json; charset=utf-8',
-      //dataType: 'json',
-      success: PageUpdate($btn)
-    })//.done(PageUpdate($btn));
-  };
-
-  function PageUpdate($btn) {
-    var apply = $btn.hasClass('apply');
-    if (apply) {
-      $btn.closest('.modal-body').load(current_url);
-    } else {
-      $('.modal.show').each(function () {
-        $(this).modal('hide');
-      })
-      setTimeout("location.reload()", 1000);
-    }
-  }
 
   // Delete Data To Server
   $("#deleteModal").find('form').submit(function (e) {
@@ -187,96 +102,25 @@
 
   // Update Data To Server
   $("#StageUpdate").find('form').submit(function (e) {
-    var url = "{{ url_for('.stage_update') }}";
-    var form_data = $(this).serialize();
-    $.ajax({
-      type: "POST",
-      url: url,
-      data: form_data,
-      success: function () {
-      }
+    var posting = $.post("{{ url_for('.stage_update') }}", $(this).serialize());
+    posting.done(function (data) {
     });
   });
 
   // Open Modal Deal
   $('.show-deal').on("click", function () {
     var deal_id = $(this).parent().attr('data-deal-id');
-    LoadDeal(deal_id);
+    LoadDeal(deal_id)
   })
 
   function LoadDeal(deal_id = '') {
-    var $modal = $('#DealInfoModal');
-    // preloader
-    $modal.find('.modal-body').empty().load("{{ url_for('.deal_info_placeholder') }}");
-    $modal.modal('show')
-
-    // page
     var url = "{{ url_for('.deal_info') }}";
     if (deal_id) {
       url += '?deal_id=' + deal_id;
     }
-    $modal.find('.modal-body').load(url);
+    LoadToModal($('#DealInfoModal'), url);
   }
 
-  // Open Full Screen Modal
-  $('.modal').on('shown.bs.modal', function () {
-    var $modal = $(this);
-    if (!$modal.find('.modal-fullscreen').length) {
-      return false;
-    }
-    $modal.css('height', $(window).height())
-    var $active_modals = $('body').find('.modal.show');
-    if ($active_modals.length === 1) {
-      return false;
-    }
-    var $modal = $(this);
-    var z_index = $modal.css('z-index');
 
-    $active_modals.each(function () {
-      if ($(this).index() !== $modal.index()) {
-        var this_z_index = parseInt($(this).css('z-index'));
-        if (this_z_index > z_index) {
-          z_index = this_z_index;
-        }
-        var $close_btn = $(this).find('.modal-close-label')
-        $close_btn.css('top', '+=60')
-        $close_btn.css('opacity', '50%')
-      }
 
-    });
-    $modal.css('z-index', z_index + 1)
-  })
-
-  // Close Full Screen Modal
-  $('.modal').on('hide.bs.modal', function () {
-    var $modal = $(this);
-
-    if (!$modal.find('.modal-fullscreen').length) {
-      return true;
-    }
-    if (!$('.modal.show').length > 1) {
-      return false;
-    }
-    var z_index = parseInt($modal.css('z-index'));
-    var max_z_index = 0;
-
-    $('body').find('.modal.show').each(function () {
-      var this_z_index = parseInt($(this).css('z-index'));
-      if (this_z_index !== z_index && this_z_index > max_z_index) {
-        max_z_index = this_z_index;
-      }
-    });
-
-    $('body').find('.modal.show').each(function () {
-      if ($(this).index() !== $modal.index()) {
-        var $close_btn = $(this).find('.modal-close-label')
-        $close_btn.css('top', '-=60')
-      }
-
-      var this_z_index = parseInt($(this).css('z-index'));
-      if (this_z_index == max_z_index) {
-        $close_btn.css('opacity', '1')
-      }
-    });
-  })
 </script>

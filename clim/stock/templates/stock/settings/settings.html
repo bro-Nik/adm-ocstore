@@ -7,10 +7,9 @@
 {% block content %}
 
 <!-- Container fluid -->
-<form id="StockSettings" method="post" action="{{ url_for('.settings_update') }}">
   <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
-  {% include 'stock/header.html' %}
+    {% include 'stock/header.html' %}
     <div class="row">
       <div class="col-lg-12 col-md-12 col-12">
         <!-- Page header -->
@@ -18,7 +17,7 @@
           <div class="d-flex align-items-center">
             <div class="mb-2 mb-lg-0">
               <h3 class="mb-0">
-                  Настройки
+                Настройки
               </h3>
             </div>
           </div>
@@ -53,11 +52,8 @@
         </div>
       </div>
     </div>
-    
   </div>
-
-  </div>
-</form>
+</div>
 
 {% include 'stock/modals.html' %}
 
@@ -75,110 +71,12 @@
 </div>
 
 <script>
-
-  // Check All
-  $('body').on("change", '.check-all', function () {
-    var $table = $(this).closest('table');
-    $table.find('.to-check').prop('checked', $(this).is(':checked'));
-    $table.find('.to-check:checkbox').trigger('change');
-  })
-
-  // Check Count
-  $('body').on("change", '.to-check:checkbox', function () {
-    var $table = $(this).closest('table'),
-      $modal = $table.closest('.modal'),
-      checked_count = $table.find('.to-check:checked').length,
-      all_count = $table.find('.to-check').length;
-
-    if ($modal.length) {
-      var $box_actions = $table.closest('div[id]');
-
-      var $btns = $box_actions.find('.actions .btn')
-      $btns.prop('disabled', !checked_count > 0);
-    } else {
-      var $box_actions = $('.sticky-bottom.actions');
-      if (checked_count > 0) {
-        $box_actions.addClass('active');
-      } else {
-        $box_actions.removeClass('active');
-      }
-    }
-    $box_actions.find('.checks-count').text(checked_count + ' / ' + all_count);
-    $($table).find('.check-all').prop('checked', checked_count > 0);
-  })
-
-  // Modals
-
   // Open Modal
   $('a.open-in-modal').on("click", function () {
-    var id = $(this).attr('data-modal'),
-      url = $(this).attr('data-url'),
-      $modal = $(id);
+    var  url = $(this).attr('data-url'),
+      modal_id = $(this).attr('data-modal');
 
-    $modal.find('.modal-body').load(url);
-    $modal.modal('toggle')
-  })
-
-  // Open Full Screen Modal
-  $('.modal').on('shown.bs.modal', function () {
-    var $modal = $(this);
-    if (!$modal.find('.modal-fullscreen').length) {
-      return false;
-    }
-    $modal.css('height', $(window).height())
-    var $active_modals = $('body').find('.modal.show');
-    if ($active_modals.length === 1) {
-      return false;
-    }
-    var $modal = $(this);
-    var z_index = $modal.css('z-index');
-
-    $active_modals.each(function () {
-      if ($(this).index() !== $modal.index()) {
-        var this_z_index = parseInt($(this).css('z-index'));
-        if (this_z_index > z_index) {
-          z_index = this_z_index;
-        }
-        var $close_btn = $(this).find('.modal-close-label')
-        $close_btn.css('top', '+=60')
-        $close_btn.css('opacity', '50%')
-      }
-
-    });
-    $modal.css('z-index', z_index + 1)
-  })
-
-  // Close Full Screen Modal
-  $('.modal').on('hide.bs.modal', function () {
-    var $modal = $(this);
-
-    if (!$modal.find('.modal-fullscreen').length) {
-      return true;
-    }
-    if (!$('.modal.show').length > 1) {
-      return false;
-    }
-    var z_index = parseInt($modal.css('z-index'));
-    var max_z_index = 0;
-
-    $('body').find('.modal.show').each(function () {
-      var this_z_index = parseInt($(this).css('z-index'));
-      if (this_z_index !== z_index && this_z_index > max_z_index) {
-        max_z_index = this_z_index;
-      }
-    });
-
-    $('body').find('.modal.show').each(function () {
-      if ($(this).index() !== $modal.index()) {
-        var $close_btn = $(this).find('.modal-close-label')
-        $close_btn.css('top', '-=60')
-      }
-
-      var this_z_index = parseInt($(this).css('z-index'));
-      if (this_z_index == max_z_index) {
-        $close_btn.css('opacity', '1')
-      }
-    });
+    LoadToModal($(modal_id), url);
   })
 </script>
 

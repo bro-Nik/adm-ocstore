@@ -3,7 +3,8 @@ import pickle
 from flask import render_template, redirect, url_for, request, flash, Blueprint
 from flask_login import login_required
 from datetime import datetime, timedelta
-from clim.jinja_filters import smart_int
+from clim.general_functions import dict_get_or_other, get_category, get_main_category
+from clim.jinja_filters import money, smart_int
 
 from clim.models import Attribute, CategoryDescription, Option, db, Category, Module, OptionValue, OptionValueSetting, Product, ProductDescription, ProductToCategory, Stock, StockMovement, StockProduct, WeightClass
 from clim.app import redis
@@ -56,11 +57,67 @@ def get_consumables():
 @stock.route('/products', methods=['GET'])
 @login_required
 def products():
+
+    return render_template('stock/products_general.html')
+
+
+@stock.route('/productse', methods=['GET'])
+@login_required
+def products_load():
+    page = dict_get_or_other(request.args, 'page', 1)
+    category_id = request.args.get('category_id')
+    parent_id = category_id if category_id else 0
+    in_stock = True
+
+    request_categories = (Category.query
+        .where(Category.parent_id == parent_id))
+
+    request_products = Product.query
+    if in_stock:
+        request_products = (request_products.where(Product.stocks != None))
+        request_categories = (request_categories.join(Category.products)
+            .where(Product.stocks != None))
+
+    request_products = (request_products.join(Product.categories)
+        .where(Category.category_id == category_id))
+
+    categories = request_categories.all()
+    products = request_products.paginate(page=page,
+                                 per_page=20,
+                                 error_out=False)
+
+    return render_template('stock/products_load.html',
+                           categories=categories,
+                           products=products,
+                           category=get_category(category_id),
+                           stocks=tuple(get_stocks())
+                           )
+
+
+@stock.route('/products_all_sum/<int:category_id>', methods=['GET'])
+@login_required
+def products_all_sum(category_id):
+    if category_id:
+        products = get_category(category_id).products
+    else:
+        products = Product.query.where(Product.stocks != None).all()
+
+    all_sum = 0
+    for product in products: 
+        for stock in product.stocks:
+            all_sum += stock.main_product.cost * stock.quantity
+
+    return money(all_sum)
+
+
+@stock.route('/products2', methods=['GET'])
+@login_required
+def products2():
     products = tuple(db.session.execute(
         db.select(Product)
         .filter(Product.stocks != None)).scalars())
 
-    return render_template('stock/products.html',
+    return render_template('stock/products2.html',
                            products=products,
                            stocks=tuple(get_stocks()))
 
@@ -95,12 +152,6 @@ def movements_action(movement_type):
 def get_movement(movement_id):
     return db.session.execute(
         db.select(StockMovement).filter_by(movement_id=movement_id)).scalar()
-
-
-@stock.route('/movements/movement_info_placeholder', methods=['GET'])
-@login_required
-def movement_info_placeholder():
-    return render_template('stock/movement_placeholder.html')
 
 
 @stock.route('/movements/<string:movement_type>/movement_info', methods=['GET'])
@@ -400,20 +451,32 @@ def settings():
 @stock.route('/settings/consumables', methods=['GET'])
 @login_required
 def settings_consumables():
+    settings = get_settings()
+    category = get_category(settings.get('consumables_category_id'))
+
     options = db.session.execute(db.select(Option)).scalars()
     return render_template('stock/settings/consumables.html',
-                           categories=get_list_all_categories(),
-                           settings=get_settings(),
-                           options=options
+                           settings=settings,
+                           options=options,
+                           category=category
                            )
+
+
+@stock.route('/settings_update', methods=['POST'])
+@login_required
+def settings_consumables_update():
+    settings = get_settings()
+    id = request.form.get('consumables_category_id')
+    settings['consumables_category_id'] = id
+    get_settings(settings)
+    
+    return redirect(url_for('.settings'))
 
 
 @stock.route('/settings/consumables_option', methods=['GET'])
 @login_required
 def settings_consumables_option():
     value = settings = attribute = None
-
-    option_id = request.args.get('option_id')
 
     value_id = request.args.get('value_id')
     if value_id:
@@ -425,10 +488,9 @@ def settings_consumables_option():
                 db.select(Attribute)
                 .filter_by(attribute_id=settings.get('attribute_id'))).scalar()
     return render_template('stock/settings/consumables_option.html',
-                           option_id=option_id,
+                           option_id=request.args.get('option_id'),
                            value=value,
                            settings=settings,
-                           categories=get_list_all_categories(),
                            attribute=attribute,
                            )
 
@@ -451,15 +513,6 @@ def settings_consumables_option_update():
     return ''
 
 
-@stock.route('/settings_update', methods=['POST'])
-@login_required
-def settings_update():
-    settings = get_settings()
-    id = request.form.get('consumables_category_id')
-    settings['consumables_category_id'] = id
-    get_settings(settings)
-    
-    return redirect(url_for('.settings'))
 
 
 @stock.route('/json/products_in_stocks', methods=['GET'])
@@ -528,20 +581,11 @@ def json_all_products():
 @login_required
 def product_info(product_id=None):
     product = get_product(product_id)
-    categories_ids = []
-    if product:
-        for category in product.categories:
-            categories_ids.append(category.category_id)
-
     unit_classes = db.session.execute(db.select(WeightClass)).scalars()
-    main_category = db.session.execute(
-        db.select(ProductToCategory)
-        .filter_by(product_id=product_id, main_category=True)).scalar()
+    main_category = get_main_category(product_id)
 
     return render_template('stock/product_info.html',
                            product=product,
-                           categories_ids=categories_ids,
-                           categories=get_list_all_categories(),
                            main_category=main_category,
                            unit_classes=unit_classes)
 
@@ -735,35 +779,35 @@ def ajax_stocks():
     return json.dumps(result)
 
 
-@stock.route('/ajax_categories', methods=['GET'])
-@login_required
-def get_list_all_categories():
-    query_redis = redis.get('all_categories')
-    if query_redis:
-        return pickle.loads(query_redis)
-
-    result = []
-    line = -1
-    def next(parent_id=0, line=0):
-        line += 1
-        categories = db.session.execute(
-            db.select(Category).filter_by(parent_id=int(parent_id))).scalars()
-
-        for category in categories:
-            result.append(
-                {
-                    'id': category.category_id,
-                    'text': ' - ' * line + category.description.name
-                }
-            )
-            next(parent_id=category.category_id,
-                 line=line)
-
-    next(line=line)
-
-    redis.set('all_categories', pickle.dumps(result))
-
-    return result
+# @stock.route('/ajax_categories', methods=['GET'])
+# @login_required
+# def get_list_all_categories():
+#     query_redis = redis.get('all_categories')
+#     if query_redis:
+#         return pickle.loads(query_redis)
+#
+#     result = []
+#     line = -1
+#     def next(parent_id=0, line=0):
+#         line += 1
+#         categories = db.session.execute(
+#             db.select(Category).filter_by(parent_id=int(parent_id))).scalars()
+#
+#         for category in categories:
+#             result.append(
+#                 {
+#                     'id': category.category_id,
+#                     'text': ' - ' * line + category.description.name
+#                 }
+#             )
+#             next(parent_id=category.category_id,
+#                  line=line)
+#
+#     next(line=line)
+#
+#     redis.set('all_categories', pickle.dumps(result))
+#
+#     return result
 
 
 @stock.route('/rename_products', methods=['GET'])

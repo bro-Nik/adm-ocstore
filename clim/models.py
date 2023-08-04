@@ -140,16 +140,9 @@ class ProductToCategory(db.Model):
                             db.ForeignKey('oc_category.category_id'),
                             primary_key=True)
     main_category = db.Column(db.Boolean)
-    # main_product = db.relationship('Product',
-    #                           backref=db.backref('main_category', lazy=True))
-    # main_product = db.relationship('Product',
-    #                               backref='main_category', uselist=False)
-
-# product_to_category = db.Table('oc_product_to_category',
-#     db.Column('product_id', db.Integer, db.ForeignKey('oc_product.product_id')),
-#     db.Column('category_id', db.Integer, db.ForeignKey('oc_category.category_id')),
-#     db.Column('main_category', db.Boolean)
-# )
+    category = db.relationship('Category',
+                               uselist=False,
+                               viewonly=True)
 
 
 product_to_download = db.Table('oc_product_to_download',
@@ -241,7 +234,7 @@ class OptionValue(db.Model):
     option_id = db.Column(db.Integer,
                           db.ForeignKey('oc_option.option_id'))
     sort_order = db.Column(db.Integer)
-    image = db.Column(db.String(255))
+    image = db.Column(db.String(255), default='')
     description = db.relationship('OptionValueDescription',
     backref='description1', uselist=False)
     settings = db.relationship('OptionValueSetting',

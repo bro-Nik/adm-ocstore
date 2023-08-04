@@ -1,13 +1,19 @@
 <table class="table text-nowrap">
-  <thead>
+  <thead class="">
     <tr>
-      <th scope="col">Название</th>
+      <th scope="col" class="col-4">Название</th>
+      <th scope="col" class="text-end">Закупочная цена</th>
+      <th scope="col" class="text-end">Общее количество</th>
+      {% for stock in stocks %}
+      <th scope="col" class="text-end">{{ stock.name }}</th>
+      {% endfor %}
     </tr>
   </thead>
   <tbody>
+
     {% if category %}
     <tr>
-      <td class="">
+      <td colspan="{{ 3 + stocks|length }}">
         <a href="#" class="text-inherit open-category" data-category-id="{{ category.parent_id }}">
           ... Назад
         </a>
@@ -17,7 +23,7 @@
 
     {% for category in categories %}
     <tr>
-      <td class="">
+      <td colspan="{{ 3 + stocks|length }}" class="">
         <a href="#" class="text-inherit open-category" data-category-id="{{ category.category_id }}">
           <i data-feather="folder" class="icon-xs"></i>
           {{ category.description.name }}
@@ -26,16 +32,50 @@
     </tr>
     {% endfor %}
 
+    {% set var = namespace(quantity=0, unit='') %}
+
     {% for product in products %}
+
+    {% set var.quantity = 0 %}
+    {% set var.unit = product.unit_class.description.unit %}
     <tr>
       <td>
-        <input class="form-check-input" type="checkbox" value="{{ product.product_id }}">
-        <a href="#" class="text-inherit">{{ product.description.name }}</a>
+        <a href="#" class="text-inherit open-modal-product" data-product-id="{{ product.product_id }}">{{
+          product.description.name }}</a>
       </td>
+      <td class="text-end">{{ product.cost|money }} ₽</td>
+
+      {% for stock in stocks %}
+      {% for product_in_stock in stock.products if product_in_stock.product_id == product.product_id %}
+      {% set var.quantity = var.quantity + product_in_stock.quantity %}
+      {% endfor %}
+      {% endfor %}
+      <td class="text-end">
+        {% if var.quantity > 0 %}
+        {{ var.quantity|smart_int }} {{ var.unit }}
+        {% else %}
+        -
+        {% endif %}
+      </td>
+
+      {% for stock in stocks %}
+      {% for product_in_stock in stock.products if product_in_stock.product_id == product.product_id %}
+      <td class="text-end">
+        {% if product_in_stock.quantity > 0 %}
+        {{ product_in_stock.quantity|smart_int }} {{ var.unit }}
+        {% else %}
+        -
+        {% endif %}
+      </td>
+      {% else %}
+      <td class="text-end">-</td>
+      {% endfor %}
+      {% endfor %}
     </tr>
     {% endfor %}
   </tbody>
 </table>
+
 
 {% if products.pages > 1 %}
 
@@ -83,10 +123,8 @@
 <script>
   var category_id = {{category.category_id if category else 0 }}
 
-  $('#productsList :checkbox').each(function () {
-    var status = checked.includes($(this).val());
-    $(this).prop('checked', status)
-  });
+
+  $('#all_sum').load("{{ url_for('.products_all_sum', category_id=category.category_id if category else 0) }}");
 
   feather.replace();
 </script>

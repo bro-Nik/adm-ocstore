@@ -15,7 +15,7 @@
               </h3>
             </div>
             <div class="ms-auto d-flex gap-2">
-              <button type="button" class="btn btn-primary submit">Сохранить</button>
+              <button type="button" class="btn btn-primary simple-form-submit">Сохранить</button>
             </div>
           </div>
         </div>
@@ -47,7 +47,7 @@
 
                 <div class="col-sm-4">
                   <label class="form-label">Тип</label>
-                  <select name="type">
+                  <select class="general-select" name="type">
                     <option>checkbox</option>
                   </select>
                 </div>
@@ -63,7 +63,7 @@
 
                 <div class="col-sm-4">
                   <label class="form-label">Вычетать со склада</label>
-                  <select name="subtract">
+                  <select class="general-select" name="subtract">
                     <option value="0" {{ 'selected' if settings and settings.get('subtract')==0 }}>Нет</option>
                     <option value="1" {{ 'selected' if settings and settings.get('subtract')==1 }}>Да</option>
                   </select>
@@ -71,7 +71,7 @@
 
                 <div class="col-sm-4">
                   <label class="form-label">Price prefix</label>
-                  <select name="price-prefix">
+                  <select class="general-select" name="price-prefix">
                     <option {{ 'selected' if settings and settings.get('price_prefix')=='+' }}>+</option>
                     <option {{ 'selected' if settings and settings.get('price_prefix')=='=' }}>=</option>
                     <option {{ 'selected' if settings and settings.get('price_prefix')=='-' }}>-</option>
@@ -86,16 +86,4 @@
 
     </div>
   </div>
-  </div>
-
-  <script>
-    $('select').each(function () {
-      $(this).select2({
-        theme: "bootstrap-5",
-        width: '100%',
-        minimumResultsForSearch: 10,
-        selectionCssClass: 'bg-light',
-        dropdownParent: $(this).closest('.modal')
-      })
-    })
-  </script>
+</form>

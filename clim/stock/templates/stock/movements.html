@@ -131,6 +131,16 @@
 </form>
 
 {% include 'stock/modals.html' %}
-{% include 'stock/movements_scripts.html' %}
 
+<script>
+  // Open Modal Movement
+  $('.show-movement').on("click", function () {
+    var url = "{{ url_for('.movement_info', movement_type=movement_type) }}",
+      movement_id = $(this).closest("tr").attr('data-movement-id');
+    if (movement_id) {
+      url += '?movement_id=' + movement_id;
+    }
+    LoadToModal($('#FullScreenModal'), url);
+  })
+</script>
 {% endblock %}

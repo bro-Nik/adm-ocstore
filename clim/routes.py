@@ -80,9 +80,6 @@ def category_settings(category_id):
     return render_template('category_settings.html', category=category)
 
 
-
-
-
 def get_consumables():
     """ Получить с расходные материалы """
     settings_in_base = get_module('crm_stock')
@@ -99,8 +96,6 @@ def get_consumables():
     request_base = request_base.order_by(Product.mpn)
 
     return request_base.all()
-
-
 
 
 def get_manufacturers(filter={}):
@@ -129,14 +124,6 @@ def get_manufacturers(filter={}):
                 .filter(Category.category_id.in_(categories_ids)))
 
     return request_base.all()
-
-
-
-
-
-
-
-
 
 
 @app.route('/products/prices/settings_apply', methods=['POST'])
@@ -348,21 +335,21 @@ def work_plan_update(category_id):
     return redirect(url_for('work_plan'))
 
 
-@app.route('/new_stock', methods=['GET'])
-@login_required
-def new_stock():
-    products = db.session.execute(db.select(Product)).scalars()
-
-    for product in products:
-        if product.quantity == 1:
-            product.stock_status_id = 8
-
-        if product.quantity > 1:
-            product.stock_status_id = 7
-
-    db.session.commit()
-
-    return redirect(url_for('work_plan'))
+# @app.route('/new_stock', methods=['GET'])
+# @login_required
+# def new_stock():
+#     products = db.session.execute(db.select(Product)).scalars()
+#
+#     for product in products:
+#         if product.quantity == 1:
+#             product.stock_status_id = 8
+#
+#         if product.quantity > 1:
+#             product.stock_status_id = 7
+#
+#     db.session.commit()
+#
+#     return redirect(url_for('work_plan'))
 
 
 @app.route('/stock_statuses', methods=['GET'])

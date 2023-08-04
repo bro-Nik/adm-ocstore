@@ -52,15 +52,4 @@
 
 {% block page_scripts %} {% endblock %}
 
-<script>
-  $('.other-select').each(function () {
-    $(this).select2({
-      theme: "bootstrap-5",
-      width: $(this).attr('data-width'),
-      minimumResultsForSearch: 10,
-      dropdownAutoWidth: true,
-      selectionCssClass: $(this).attr('data-class')
-    })
-  })
-</script>
 {% endblock %}

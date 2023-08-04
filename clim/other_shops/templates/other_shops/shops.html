@@ -6,106 +6,103 @@
 
 {% block content %}
 
-<div class="container-fluid px-6 d-grid gap-3 mt-3">
+<form id="Shops" action="{{ url_for('.shops_action') }}">
+  <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
-  <div class="row">
-    <div class="col-lg-12 col-md-12 col-12">
-      <!-- Page header -->
-      <div>
-        <div class="d-flex align-items-center">
-          <div class="mb-2 mb-lg-0">
-            <h3 class="mb-0">Магазины</h3>
-          </div>
-          <div class="ms-auto d-flex gap-2">
-            <span class="btn btn-primary show-shop-settings">Добавить</span>
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-12">
+        <!-- Page header -->
+        <div>
+          <div class="d-flex align-items-center">
+            <div class="mb-2 mb-lg-0">
+              <h3 class="mb-0">Магазины</h3>
+            </div>
+            <div class="ms-auto d-flex gap-2">
+              <span class="btn btn-primary show-shop-settings">Добавить</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- row  -->
-  <div class="row">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <div class="card h-100">
+    <!-- row  -->
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+        <div class="card h-100">
 
-        <!-- table  -->
-        <div class="table-responsive">
-          <table class="table text-nowrap">
-            <thead class="">
-              <tr>
-                <th class="main-tab-checkbox">
-                  <input class="form-check-input check-all" type="checkbox">
-                </th>
-                <th scope="col">Название</th>
-                <th scope="col"></th>
-                <th scope="col"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for shop in shops|sort(attribute='shop_id') %}
-                  <tr data-shop-id="{{ shop.shop_id }}">
-                    <td>
-                      <input class="form-check-input to-check" type="checkbox" value="{{ shop.shop_id }}">
-                    </td>
-                    <td><a href="{{ url_for('.shop_categories', shop_id=shop.shop_id) }}"
-                        class="text-inherit">{{ shop.name }}</a></td>
-                    <td><a href="{{ shop.domain }}" class="text-inherit" target="_blank">В магазин</a></td>
-                    <td class="align-middle">
-	                    <div class="dropdown dropstart">
-	                      <a class="text-muted text-primary-hover" href="#" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                          <i data-feather="more-vertical" class="icon-xxs" ></i>
-                        </a>
-                        <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                          <a href="#" class="dropdown-item show-shop-settings">Настройки</a>
+          <!-- table  -->
+          <div class="table-responsive">
+            <table class="table text-nowrap">
+              <thead class="">
+                <tr>
+                  <th class="main-tab-checkbox">
+                    <input class="form-check-input check-all" type="checkbox">
+                  </th>
+                  <th scope="col">Название</th>
+                  <th scope="col"></th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for shop in shops|sort(attribute='shop_id') %}
+                    <tr data-shop-id="{{ shop.shop_id }}">
+                      <td>
+                        <input class="form-check-input to-check" type="checkbox" value="{{ shop.shop_id }}">
+                      </td>
+                      <td><a href="{{ url_for('.shop_categories', shop_id=shop.shop_id) }}"
+                          class="text-inherit">{{ shop.name }}</a></td>
+                      <td><a href="{{ shop.domain }}" class="text-inherit" target="_blank">В магазин</a></td>
+                      <td class="align-middle text-end">
+	                      <div class="dropdown dropstart">
+	                        <a class="text-muted text-primary-hover" href="#" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i data-feather="more-vertical" class="icon-xxs" ></i>
+                          </a>
+                          <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                            <a href="#" class="dropdown-item show-shop-settings">Настройки</a>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-              {% endfor %}
+                      </td>
+                    </tr>
+                {% endfor %}
 
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Actions buttons -->
-<div class="sticky-bottom actions">
-  <div class="col-12">
-    <div class="bg-white h-100 d-flex gap-2 align-items-center">
-      <div class="m-1  ms-5">
-        <span class="">Отмеченно: </span>
-        <span class="checks-count"></span>
-        <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
-      </div>
-      <div class="vr my-3"></div>
-      <div class="my-1">
-        <button class="btn btn-sm rounded-3 action-confirmation" type="button" data-action="" data-title="Удалить магазины?">
-          <i data-feather="trash" class="icon-xs"></i>
-          Удалить
-        </button>
+  <!-- Actions buttons -->
+  <div class="sticky-bottom actions">
+    <div class="col-12">
+      <div class="bg-white h-100 d-flex gap-2 align-items-center">
+        <div class="m-1  ms-5">
+          <span class="">Отмеченно: </span>
+          <span class="checks-count"></span>
+          <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
+        </div>
+        <div class="vr my-3"></div>
+        <div class="my-1">
+          <button class="btn btn-sm rounded-3 action-confirmation" type="button" data-action="" data-title="Удалить магазины?">
+            <i data-feather="trash" class="icon-xs"></i>
+            Удалить
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
+</form>
 
 {% include 'other_shops/modals.html' %}
-{% include 'other_shops/scripts.html' %}
 
 <script>
-  var action_url = "{{ url_for('.shops_action') }}"
-
   // Open Modal Shop Settings
   $('.show-shop-settings').on("click", function () {
-    var $modal = $('#FullScreenModal');
-    var shop_id = $(this).closest("tr").attr('data-shop-id');
-    var url = "{{ url_for('.shop_settings') }}";
+    var url = "{{ url_for('.shop_settings') }}",
+      shop_id = $(this).closest("tr").attr('data-shop-id');
     url += '?shop_id=' + shop_id;
-    $modal.find('.modal-body').load(url);
-    $modal.modal('toggle')
+    LoadToModal($('#FullScreenModal'), url);
   })
 
 </script>

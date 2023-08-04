@@ -4,7 +4,7 @@ from flask import render_template, redirect, url_for, request, session
 from flask_login import login_required, current_user
 
 from clim.app import app, db, redis, celery, login_manager
-from clim.models import Attribute, AttributeDescription, Category, Manufacturer, Module, OtherProduct, Product, ProductAttribute
+from clim.models import Attribute, AttributeDescription, Category, Manufacturer, Module, OtherProduct, Product, ProductAttribute, ProductToCategory
 
 
 def json_dumps_or_other(data, default=None):
@@ -15,6 +15,21 @@ def json_loads_or_other(data, default=None):
     return json.loads(data) if data else default
 
 
+def dict_from_serialize_array(list):
+    info = {}
+    for item in list:
+        name = item['name']
+        value = item['value']
+        if info.get(name):
+            if type(info.get(name)) != list:
+                info[name] = [info[name]]
+
+            info[name].append(value)
+        else:
+            info[name] = value
+    return info
+
+
 def dict_get_or_other(dict, key, default=None):
     return dict.get(key) if dict and dict.get(key) else default
 
@@ -22,6 +37,10 @@ def dict_get_or_other(dict, key, default=None):
 def get_module(name):
     return db.session.execute(
         db.select(Module).filter_by(name=name)).scalar()
+
+def get_category(id):
+    return db.session.execute(
+        db.select(Category).filter_by(category_id=id)).scalar()
 
 
 def get_categories():
@@ -32,6 +51,12 @@ def get_categories():
 def get_product(id: int):
     return db.session.execute(
         db.select(Product).filter_by(product_id=id)).scalar()
+
+
+def get_main_category(product_id):
+    return db.session.execute(
+        db.select(ProductToCategory)
+        .filter_by(product_id=product_id, main_category=1)).scalar()
 
 
 def get_discount_products():

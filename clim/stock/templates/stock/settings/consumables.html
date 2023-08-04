@@ -1,5 +1,5 @@
 <!-- Container fluid -->
-<form id="StockSettings" method="post" action="{{ url_for('.settings_update') }}">
+<form id="StockSettings" method="post" action="{{ url_for('.settings_consumables_update') }}">
   <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
     <div class="row">
@@ -65,16 +65,15 @@
                     <div class="mb-3 row">
                       <div class="col-sm-6 mb-3 mb-lg-0">
                         <label for="name" class="form-label">Название категории</label>
-                        <select data-width="100%" data-class="bg-light" name="consumables_category_id">
-                          {% for category in categories %}
-                          <option {{ 'selected' if category.get('id')|string in settings.get('consumables_category_id')
-                            }} value="{{ category.get('id') }}">
-                            {{ category.get('text') }}
+                        <select class="ajax-select" name="consumables_category_id"
+                          data-url="{{ url_for('get_list_all_categories') }}">
+                          {% if category %}
+                          <option selected value="{{ category.category_id }}">
+                            {{ category.description.name }}
+                            {% endif %}
                           </option>
-                          {% endfor %}
                         </select>
                       </div>
-
                     </div>
 
                   </div>
@@ -116,7 +115,7 @@
 
                       {% for value in option.values|sort(attribute='sort_order') %}
                       <tr>
-                        <td class="text-average">
+                        <td>
                           <a class="text-inherit open-in-modal" href="#"
                             data-url="{{ url_for('.settings_consumables_option', value_id=value.option_value_id) }}">
                             {{ value.description.name }}
@@ -138,22 +137,10 @@
 </form>
 
 <script>
-  $('select').each(function () {
-    $(this).select2({
-      theme: "bootstrap-5",
-      width: '100%',
-      minimumResultsForSearch: 10,
-      selectionCssClass: 'bg-light',
-      dropdownParent: $(this).closest('.modal')
-    })
-  })
 
   // Open Modal Option
   $('#OptionsTable a').on("click", function () {
-    var url = $(this).attr('data-url'),
-      $modal = $('#FullScreenModal2');
-
-    $modal.find('.modal-body').load(url);
-    $modal.modal('toggle')
+    var url = $(this).attr('data-url');
+    LoadToModal($('#FullScreenModal2'), url);
   })
 </script>

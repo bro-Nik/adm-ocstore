@@ -17,12 +17,10 @@
         <div class="d-flex align-items-center">
           <div class="mb-2 mb-lg-0">
             <h3 class="mb-0">
-                Остатки
+              <a class="me-3" href="{{ url_for('.products') }}">Остатки</a>
+                Остатки 2
             </h3>
           </div>
-          <!-- <div class="ms-auto d-flex gap-2"> -->
-          <!--   <a class="btn btn-primary" href="">Корректировать</a> -->
-          <!-- </div> -->
         </div>
       </div>
     </div>
@@ -41,7 +39,7 @@
 
         <!-- table  -->
         <div class="table-responsive">
-          <form class="" id="options-form" method="post" action="{{ url_for('confirm_product_to_product') }}">
+          <form class="" id="" method="" action="">
             <table class="table text-nowrap">
               <thead class="">
                 <tr>
@@ -131,8 +129,10 @@
 
   // Open Modal New Product
   $('a.open-modal-product').on("click", function () {
-    var product_id = $(this).attr('data-product-id');
-    $('#ProductInfoModal').find('.modal-body').load("{{ url_for('.product_info', product_id=None) }}" + product_id);
+    var url = "{{ url_for('.product_info', product_id=None) }}",
+      product_id = $(this).attr('data-product-id');
+    url += product_id;
+    LoadToModal($('#ProductInfoModal'), url);
   })
 </script>
 {% endblock %}

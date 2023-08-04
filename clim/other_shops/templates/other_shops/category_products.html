@@ -26,9 +26,8 @@
           <div class="col-md-2">
             <div class="mb-1">
               <label class="form-label h7">Категория</label>
-              <select class="selectpicker" data-width="100%" data-live-search="true" data-none-selected-text="Все"
-                data-none-results-text="Не найдено {0}" data-name="category_id">
-                <option {{ 'selected' if not category_id }} value="">Все</option>
+              <select data-width="100%" data-placeholder="Все" data-name="category_id" data-class="bg-light">
+                <option value="">Все</option>
 
                 {% for category in categories %}
                 {% set id = category.other_category_id %}
@@ -56,7 +55,7 @@
           <div class="col-md-2">
             <div class="mb-1">
               <label class="form-label h7">Изменения</label>
-              <select class="selectpicker" data-width="100%" data-none-selected-text="Все" data-name="changes">
+              <select data-width="100%" data-placeholder="Все" data-name="changes" data-class="bg-light">
                 <option value="">Все</option>
 
                 {% if new_product_ids %}
@@ -83,7 +82,7 @@
 
         <!-- table  -->
         <div class="table-responsive">
-          <form class="" id="options-form" method="post" action="{{ url_for('confirm_product_to_product') }}">
+          <form class="" id="options-form" method="post" action="">
             <table class="table text-nowrap">
               <thead class="">
                 <tr>
@@ -113,9 +112,18 @@
 
   </div>
   <script>
-    $('#ShopProducts').find('.selectpicker').each(function () {
-      $(this).selectpicker();
-    });
+    $('select').each(function () {
+      $(this).select2({
+        theme: "bootstrap-5",
+        width: $(this).attr('data-width'),
+        minimumResultsForSearch: 10,
+        dropdownAutoWidth: true,
+        selectionCssClass: $(this).attr('data-class')
+      })
+    })
+    // $('#ShopProducts').find('.selectpicker').each(function () {
+    //   $(this).selectpicker();
+    // });
 
     $('#ShopProducts').find('.pagination a').on("click", function () {
       var $modal = $('#FullScreenModal');

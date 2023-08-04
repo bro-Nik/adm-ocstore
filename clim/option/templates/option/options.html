@@ -5,114 +5,110 @@
 {% endblock %}
 
 {% block content %}
+<form id="Options" method="post" action="{{ url_for('.options_action') }}">
 
-<!-- Container fluid -->
-<div class="container-fluid px-6 d-grid gap-3 mt-3">
+  <!-- Container fluid -->
+  <div class="container-fluid px-6 d-grid gap-3 mt-3">
 
-  <div class="row">
-    <div class="col-lg-12 col-md-12 col-12">
-      <!-- Page header -->
-      <div>
-        <div class="d-flex align-items-center">
-          <div class="mb-2 mb-lg-0">
-            <h3 class="mb-0">
-                Опции
-            </h3>
-          </div>
-          <div class="ms-auto d-flex gap-2">
-            <span class="btn btn-primary show-option-settings">Добавить</span>
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-12">
+        <!-- Page header -->
+        <div>
+          <div class="d-flex align-items-center">
+            <div class="mb-2 mb-lg-0">
+              <h3 class="mb-0">
+                  Опции
+              </h3>
+            </div>
+            <div class="ms-auto d-flex gap-2">
+              <span class="btn btn-primary show-option-settings">Добавить</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- row  -->
-  <div class="row">
-    <div class="col-12 d-grid gap-3">
-      <div class="card h-100">
-        <div class="table-responsive">
-          <table class="table text-nowrap">
-            <thead class="">
-              <tr>
-                <th class="main-tab-checkbox">
-                  <input class="form-check-input check-all" type="checkbox">
-                </th>
-                <th scope="col">Название</th>
-                <th scope="col"></th>
-              </tr>
-            </thead>
-            <tbody>
-
-              {% for option in options %}
-                <tr data-option-id="{{ option.option_id }}">
-                  <td>
-                    <input class="form-check-input to-check" type="checkbox" value="{{ option.option_id }}">
-                  </td>
-
-                  <td>
-                    <a href="{{ url_for('.option_values', option_id=option.option_id) }}"
-                      class="text-inherit">{{ option.description.name }}</a>
-                  </td>
-
-                  <td class="align-middle text-end">
-	                  <div class="dropdown dropstart">
-	                    <a class="text-muted text-primary-hover" href="#" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i data-feather="more-vertical" class="icon-xxs" ></i>
-                      </a>
-                      <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                        <a href="#" class="dropdown-item show-option-settings">Настройки</a>
-                      </div>
-                    </div>
-                  </td>
+    <!-- row  -->
+    <div class="row">
+      <div class="col-12 d-grid gap-3">
+        <div class="card h-100">
+          <div class="table-responsive">
+            <table class="table text-nowrap">
+              <thead class="">
+                <tr>
+                  <th class="main-tab-checkbox">
+                    <input class="form-check-input check-all" type="checkbox">
+                  </th>
+                  <th scope="col">Название</th>
+                  <th scope="col"></th>
                 </tr>
-              {% endfor %}
+              </thead>
+              <tbody>
 
-            </tbody>
-          </table>
+                {% for option in options %}
+                  <tr data-option-id="{{ option.option_id }}">
+                    <td>
+                      <input class="form-check-input to-check" type="checkbox" value="{{ option.option_id }}">
+                    </td>
+
+                    <td>
+                      <a href="{{ url_for('.option_values', option_id=option.option_id) }}"
+                        class="text-inherit">{{ option.description.name }}</a>
+                    </td>
+
+                    <td class="align-middle text-end">
+	                    <div class="dropdown dropstart">
+	                      <a class="text-muted text-primary-hover" href="#" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          <i data-feather="more-vertical" class="icon-xxs" ></i>
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="dropdownAction">
+                          <a href="#" class="dropdown-item show-option-settings">Настройки</a>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Actions buttons -->
-<div class="sticky-bottom actions">
-  <div class="col-12">
-    <div class="bg-white h-100 d-flex gap-2 align-items-center">
-      <div class="m-1  ms-5">
-        <span class="">Отмеченно: </span>
-        <span class="checks-count"></span>
-        <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
-      </div>
-      <div class="vr my-3"></div>
-      <div class="my-1">
-        <button class="btn btn-sm rounded-3 action-confirmation" type="button" data-action="delete" data-title="Удалить опции?">
-          <i data-feather="trash" class="icon-xs"></i>
-          Удалить
-        </button>
+  <!-- Actions buttons -->
+  <div class="sticky-bottom actions">
+    <div class="col-12">
+      <div class="bg-white h-100 d-flex gap-2 align-items-center">
+        <div class="m-1  ms-5">
+          <span class="">Отмеченно: </span>
+          <span class="checks-count"></span>
+          <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
+        </div>
+        <div class="vr my-3"></div>
+        <div class="my-1">
+          <button class="btn btn-sm rounded-3 action-confirmation" type="button" data-action="delete" data-title="Удалить опции?">
+            <i data-feather="trash" class="icon-xs"></i>
+            Удалить
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
+</form>
 
 {% include 'option/modals.html' %}
-{% include 'option/scripts.html' %}
 
 <script>
-  var action_url = "{{ url_for('.options_action') }}"
-
   // Open Modal Settings
   $('.show-option-settings').on("click", function () {
-    var $modal = $('#FullScreenModal');
-    var option_id = $(this).closest("tr").attr('data-option-id');
-    var url = "{{ url_for('.option_settings') }}";
+    var url = "{{ url_for('.option_settings') }}",
+      option_id = $(this).closest("tr").attr('data-option-id');
     if (option_id) {
       url += '?option_id=' + option_id;
     }
-    $modal.find('.modal-body').load(url);
-    $modal.modal('toggle')
+    LoadToModal($('#FullScreenModal'), url);
   })
-
 </script>
 {% endblock %}

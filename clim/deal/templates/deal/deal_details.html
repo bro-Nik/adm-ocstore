@@ -37,7 +37,7 @@
           {% endif %}
 
           <div class="{{ 'visually-hidden' if deal and deal.contact }}">
-            <select id="contactSelect" class="" data-placeholder="-- Выбрать --" name="contact_id">
+            <select id="contactSelect" data-placeholder="-- Выбрать --" name="contact_id">
             </select>
           </div>
         </div>
@@ -105,7 +105,7 @@
         <span class="deal-info-edit-link">{{ details.get('what_need') }}</span>
         {% endif %}
         <div class="{{ 'visually-hidden' if details.get('what_need') }} to-show">
-          <select class="select-other" data-placeholder="-- Выбрать --" name="what_need" data-class="border">
+          <select class="general-select" data-placeholder="-- Выбрать --" name="what_need" data-class="border">
             <option></option>
             <option {{ 'selected' if details.get('what_need')=='Кондицонер + установка' }}>
               Кондицонер + установка

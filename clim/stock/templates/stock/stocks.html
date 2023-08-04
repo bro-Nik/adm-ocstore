@@ -96,91 +96,15 @@
 {% include 'stock/modals.html' %}
 
 <script>
-  // Check All
-  $('body').on("change", '.check-all', function () {
-    var $table = $(this).closest('table');
-    $table.find('.to-check').prop('checked', $(this).is(':checked'));
-    $table.find('.to-check:checkbox').trigger('change');
-  })
-
-  // Check Count
-  $('body').on("change", '.to-check:checkbox', function () {
-    var $table = $(this).closest('table'),
-      checked_count = $table.find('.to-check:checked').length,
-      all_count = $table.find('.to-check').length;
-
-    var $box_actions = $('.sticky-bottom.actions');
-    if (checked_count > 0) {
-      $box_actions.addClass('active');
-    } else {
-      $box_actions.removeClass('active');
-    }
-
-    $box_actions.find('.checks-count').text(checked_count + ' / ' + all_count);
-    $table.find('.check-all').prop('checked', checked_count > 0);
-  })
-
   // Open Modal Stock Settings
   $('.show-stock-settings').on("click", function () {
-    var $modal = $('#FullScreenModal');
-
-    var url = "{{ url_for('.stock_settings') }}";
-    var stock_id = $(this).closest("tr").attr('data-stock-id');
+    var url = "{{ url_for('.stock_settings') }}",
+      stock_id = $(this).closest("tr").attr('data-stock-id');
     if (stock_id) {
       url += '?stock_id=' + stock_id;
     }
-    $modal.find('.modal-body').load(url);
-    $modal.modal('toggle')
+
+    LoadToModal($('#FullScreenModal'), url);
   })
-
-  // Actions
-  $('body').on("click", '.action-confirmation', function () {
-    var $modal = $('#ModalConfirmation');
-    var $btn = $modal.find('.action');
-    $modal.find('.modal-title').text($(this).attr('data-title'));
-    $btn.attr('data-action', $(this).attr('data-action'));
-
-    var $form = $(this).closest('form');
-    $btn.attr('data-form', '#' + $form.attr('id'));
-
-    $modal.modal('show');
-  })
-
-  $('body').on("click", '.action', function () {
-    var $btn = $(this),
-      checked = [];
-    if ($btn.attr('data-form')) {
-      var $form = $($btn.attr('data-form'));
-    } else {
-      var $form = $btn.closest('form');
-    }
-
-    $form.find('.to-check:checked').each(function () {
-      checked.push($(this).val());
-    });
-    var data = {
-      action: $btn.attr('data-action'),
-      ids: checked
-    }
-    SendingData(data, $btn, $form)
-  })
-
-  function SendingData(data, $btn, $form) {
-    $.ajax({
-      type: "POST",
-      url: $form.attr('action'),
-      data: JSON.stringify(data),
-      contentType: 'application/json; charset=utf-8',
-      //dataType: 'json',
-      success: PageUpdate($btn)
-    })//.done(PageUpdate($btn));
-  };
-
-  function PageUpdate($btn) {
-    $('.modal.show').each(function () {
-      $(this).modal('hide');
-    })
-    setTimeout("location.reload()", 1000);
-  }
 </script>
 {% endblock %}

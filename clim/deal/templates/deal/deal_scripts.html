@@ -130,15 +130,6 @@
     return $stock;
   };
 
-  $('#DealInfo .select-other').each(function () {
-    $(this).select2({
-      theme: "bootstrap-5",
-      width: '300px',
-      minimumResultsForSearch: Infinity,
-      selectionCssClass: $(this).data('class')
-      // dropdownParent: $(this).closest('div[id]')
-    })
-  })
 
   // Select2 Contacts
   $('#contactSelect').select2({
@@ -182,10 +173,6 @@
     return $($contact);
   };
 
-  // Focus Select2 Search
-  $(document).on('select2:open', () => {
-    document.querySelector('.select2-search__field').focus();
-  });
 
   function UpdateSum($tr) {
     var quantity = $tr.find('.quantity').val(),
@@ -482,7 +469,6 @@
 
   // Cancel Modified
   $('#DealInfo').on("click", '[type=reset]', function () {
-    // location.reload();
     LoadDeal("{{deal.deal_id}}");
   });
 
@@ -590,8 +576,5 @@
 
     $('#DealInfo .btn-to-submit').trigger('click');
   })
-
-  // Icons
-  feather.replace();
 
 </script>

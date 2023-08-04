@@ -77,16 +77,12 @@
                       <label class="col-sm-3 col-form-label
                           form-label">Главная категория</label>
                       <div class="col-md-9 col-12">
-                        <select data-placeholder="-- Выбрать категорию --" data-width="100%" data-class="bg-light"
-                          name="main_category_id" required>
-
-                          {% for category in categories %}
-                          <option {{ 'selected' if product and category.get('id')==main_category.category_id }}
-                            value="{{ category.get('id') }}">
-                            {{ category.get('text') }}
+                        <select class="ajax-select" name="main_category_id"
+                          data-url="{{ url_for('get_list_all_categories') }}"
+                          data-placeholder="-- Выбрать категорию --">
+                          <option selected value="{{ main_category.category_id }}">{{
+                            main_category.category.description.name }}
                           </option>
-                          {% endfor %}
-
                         </select>
                       </div>
                     </div>
@@ -95,15 +91,17 @@
                     <div class="mb-3 row">
                       <label class="col-sm-3 col-form-label form-label">Категории</label>
                       <div class="col-md-9 col-12">
-                        <select data-width="100%" data-class="bg-light" multiple name="categories_ids">
 
-                          {% for category in categories %}
-                          <option {{ 'selected' if category.get('id') in categories_ids }}
-                            value="{{ category.get('id') }}">
-                            {{ category.get('text') }}
+                        <select class="ajax-select show-count-selected" multiple name="categories_ids"
+                          data-url="{{ url_for('get_list_all_categories') }}"
+                          data-placeholder="-- Выбрать категории --">
+                          {% for category in product.categories %}
+                          <option selected value="{{ id }}">
+                            {{ category.category_id }}
                           </option>
                           {% endfor %}
                         </select>
+
                       </div>
                     </div>
 
@@ -112,7 +110,7 @@
                       <label class="col-sm-3 col-form-label
                           form-label">Единица измерения</label>
                       <div class="col-md-9 col-12">
-                        <select data-width="100%" data-class="bg-light" name="unit_id" required>
+                        <select class="general-select" name="unit_id" required>
 
                           {% for unit_class in unit_classes %}
                           <option value="{{ unit_class.weight_class_id }}" {{ 'selected' if
@@ -168,15 +166,6 @@
 </form>
 
 <script>
-  $('#ProductInfo select').each(function () {
-    $(this).select2({
-      theme: "bootstrap-5",
-      width: $(this).data('width'),
-      // minimumResultsForSearch: Infinity,
-      selectionCssClass: $(this).data('class'),
-      dropdownParent: $(this).closest('.modal')
-    })
-  })
 
   $("#ProductInfo").submit(function (e) {
     e.preventDefault();
@@ -208,9 +197,6 @@
           $(option).attr('data-cost', data.cost);
           $(option).attr('data-unit', data.unit);
           $productSelect.empty().append(option).trigger('change');
-
-          // $tr.find('.cost').val(data.cost).trigger('change');
-          // $tr.find('.input-group-text.quantity').text(data.unit);
 
           $productSelect.trigger({
             type: 'select2:select',

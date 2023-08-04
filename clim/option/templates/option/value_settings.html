@@ -14,7 +14,7 @@
               </h3>
             </div>
             <div class="ms-auto d-flex gap-2">
-              <button type="button" class="btn btn-primary submit-local">Сохранить</button>
+              <button type="button" class="btn btn-primary submit">Сохранить</button>
             </div>
           </div>
         </div>
@@ -83,14 +83,16 @@
                       <div class="col-md-4">
                         <div class="mb-1">
                           <label for="categories_ids" class="form-label">Категория</label>
-                          <select multiple id="categories_ids" name="categories_ids">
-                            <option></option>
-                            {% for category in categories %}
-                            <option {{ 'selected' if settings and category.get('id')|string in
-                              settings.get('categories_ids') }} value="{{ category.get('id') }}">
-                              {{ category.get('text') }}
+                          <select class="ajax-select show-count-selected" multiple id="categories_ids"
+                            name="categories_ids" data-url="{{ url_for('get_list_all_categories') }}"
+                            data-placeholder="Все">
+                            {% if settings.get('categories_ids') %}
+                            {% for id in settings.get('categories_ids') %}
+                            <option selected value="{{ id }}">
+                              {{ id }}
                             </option>
                             {% endfor %}
+                            {% endif %}
                           </select>
                         </div>
                       </div>
@@ -108,10 +110,12 @@
                       <div class="col-sm-4">
                         <label for="attribute_values" class="form-label">Значения атрибута</label>
                         <select multiple id="attribute_values" name="attribute_values">
+                          {% if settings.get('attribute_values') %}
                           {% for attribute_value in settings.get('attribute_values')|sort %}
                           <option value="{{ attribute_value|string }}" selected>
                             {{ attribute_value }}</option>
                           {% endfor %}
+                          {% endif %}
                         </select>
                       </div>
 
@@ -121,8 +125,8 @@
                     <div class="mb-3 row">
 
                       <div class="col-sm-4">
-                        <label for="stock" class="form-label">Наличие товара</label>
-                        <select id="stock" class="other-select" name="stock">
+                        <label class="form-label">Наличие товара</label>
+                        <select class="general-select" name="stock">
                           <option value="">Все</option>
                           <option {{ 'selected' if settings and settings.get('stock')=='in stock on order' }}
                             value="in stock on order">В наличии и под заказ</option>
@@ -197,7 +201,7 @@
                   <div>
                     <div class="m-3 gap-2 justify-content-start actions">
                       <span class="">Отмеченно: </span>
-                      <span class="checks-count"></span>
+                      <span class="checks-count">0 / {{ var.count }}</span>
                     </div>
                     <div class="m-3 gap-2 d-flex justify-content-start actions">
                       <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
@@ -219,29 +223,13 @@
       </div>
     </div>
   </div>
-  <input type="hidden" name="consumables_data">
 </form>
 
 
 <script>
-  $('select.other-select').each(function () {
-    $(this).select2({
-      theme: "bootstrap-5",
-      width: '100%',
-      minimumResultsForSearch: 10,
-      selectionCssClass: 'bg-light',
-      dropdownParent: $(this).closest('.modal')
-    })
-  })
 
   // Categories Ids
-  $('#categories_ids').select2({
-    theme: "bootstrap-5",
-    width: '100%',
-    dropdownParent: $('#categories_ids').closest('.modal'),
-    dropdownAutoWidth: true,
-    selectionCssClass: 'bg-light',
-  }).on('select change', function (evt, config) {
+  $('#categories_ids').on('select change', function (evt, config) {
     UpdateAttributeIdSelect();
   });
   UpdateAttributeIdSelect();
@@ -287,9 +275,6 @@
       categories_ids = $('#categories_ids').val(),
       url = "{{ url_for('.ajax_attribute_values') }}";
 
-    // url += '?attribute_id=' + attribute_id;
-    // url += '&categories_ids=' + categories_ids.join();
-
     $Select.prop("disabled", !attribute_id);
 
     $Select.select2({
@@ -332,8 +317,7 @@
 
       var $new_line = $line.clone();
       $new_line.appendTo($('#tabConsumables').find('tbody'));
-
-      //UpdateProductSelect($line);
+      UpdateProductSelect($line);
     }
 
     var count = $('#tabConsumables').find('tr.product').length;
@@ -347,9 +331,7 @@
       $new_line.find('select').val('')
     }
 
-    // $new_line.find('select').selectpicker()
-
-    //UpdateProductSelect($new_line)
+    UpdateProductSelect($new_line)
     $('#tabConsumables').find('.table-responsive').animate({scrollLeft: 0}, 0);
     $new_line.find('select.product-select').select2('open');
   }
@@ -363,26 +345,30 @@
   }
 
   // Data To Server
-  $('#OptionValueSettings').submit(function (e) {
-    e.preventDefault();
+  $('#OptionValueSettings').on('click', '.submit', function () {
+    var $btn = $(this),
+      $form = $btn.closest('form'),
+      products = [];
 
-    var consumables = '[';
-    $('#tabConsumables').find('tr.product').each(function () {
-      if ($(this).find('select.product-select').val()) {
-        var product_id = $(this).find('select.product-select').val();
-        var quantity = $(this).find('.quantity').val();
-        quantity = parseFloat(quantity) ? quantity : 0;
-        var item = '{"product_id": ' + product_id +
-          ', "quantity": ' + quantity + '},'
+    $form.find('tr.product').each(function () {
+      var $tr = $(this),
+        $productSelect = $tr.find('select.product-select'),
+        product_id = +$productSelect.val();
 
-        consumables += item;
+      if (product_id) {
+        var item = {
+          product_id: product_id,
+          name: $productSelect.find(':selected').html(),
+          quantity: +$tr.find('.quantity').val() || 0
+        }
+        products.push(item);
       }
     });
-    consumables += ']';
-    if (consumables !== '[]') {
-      $('[name=consumables_data]').val(JSON.stringify(consumables));
+    var data = {
+      info: $form.serializeArray(),
+      products: products
     }
-
+    SendingData(data, $btn, $form)
   })
 
 
@@ -410,11 +396,8 @@
 
   // Open Modal
   $('.open-modal-product').on("click", function () {
-    var $modal = $('#ProductInfoModal');
-    NewModal($modal);
-    $modal.find('.modal-body').load("{{ url_for('stock.product_info') }}");
+    LoadToModal('#ProductInfoModal', "{{ url_for('stock.product_info') }}");
   })
-
 
   $('#tabConsumables').find('tr.product').each(function () {
     UpdateProductSelect($(this));

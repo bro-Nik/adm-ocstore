@@ -1,15 +1,12 @@
-{% extends "products/base.html" %}
+{% extends "product/base.html" %}
 {% set page_name = 'Товары' %}
 
 {% block table %}
-<form class="" id="Products" method="post" action="{{ url_for('products_action', page=request.args.get('page')) }}">
+<form class="" id="Products" method="post" action="{{ url_for('.products_action', page=request.args.get('page')) }}">
   <table class="table text-nowrap">
-    <thead class="table-light">
+    <thead>
       <tr>
-        <th scope="col">
-          <input id="check_all" class="form-check-input me-1"
-            type="checkbox" onclick="Check()">
-          Название</th>
+        <th scope="col">Название</th>
         {% for attribute in attributes_in_products %}
           <th scope="col">{{ attribute }}</th>
         {% endfor %}
@@ -17,7 +14,7 @@
     </thead>
 
     <tbody>
-      {% set var = namespace(product_count=0, group_count=0, group_name='') %}
+      {% set var = namespace(group_count=0, group_name='') %}
 
       {% for product in products %}
         {% for attribute in product.attributes if attribute.attribute_id == session.get('group_attribute')|int %}
@@ -26,20 +23,15 @@
             {% set var.group_name = attribute.text %}
             <tr>
               <td colspan=1>
-                <input id="group-{{ var.group_count }}" class="form-check-input to-check me-1"
-                    type="checkbox" onclick="Check('{{ var.group_count }}')">
                 <b class="cursor-pointer" onclick="Hidden('{{ var.group_count }}')">{{ attribute.text }}</b>
               </td>
             </tr>
           {% endif %}
         {% endfor %}
 
-        {% set var.product_count = var.product_count + 1 %}
         <tr class="group-{{ var.group_count|string }}">
           <td class="text-average">
-            <input class="form-check-input to-check group-{{ var.group_count }}" type="checkbox"
-            name="{{ 'product-id-' + var.product_count|string }}" value="{{ product.product_id }}">
-            {{ product.mpn }}
+            {{ product.description.name }}
             <a class="" target="_blank" href="https://climkey.ru?product_id={{ product.product_id }}">
               <i class="icon-xxs" data-feather="external-link"></i>
             </a>
@@ -47,6 +39,8 @@
             {% for attribute in attributes_in_products %}
             {% for product_attribute in product.attributes if product_attribute.main_attribute.description.name == attribute %}
               <td>{{ product_attribute.text }}</td>
+            {% else %}
+              <td>-</td>
             {% endfor %}
             {% endfor %}
           <td class="">{{ product.quantity }}</td>

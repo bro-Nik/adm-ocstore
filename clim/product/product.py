@@ -6,17 +6,11 @@ from flask import render_template, redirect, url_for, request, session, flash,\
     Blueprint
 from flask_login import login_required, current_user
 from clim.app import redis, app, celery
-from clim.general_functions import get_categories, get_discount_products, get_other_product, get_product
+from clim.general_functions import get_categories, get_discount_products, get_main_category, get_other_product, get_product
 from clim.models import Attribute, AttributeDescription, Category, Module, Option, OtherProduct, OtherShops, Product, ProductAttribute, ProductImage, ProductOptionValue, ProductSpecial, ProductToCategory, ProductVariant, RedirectManager, Review, SeoUrl, SpecialOffer, StockStatus, db
 
 
 product = Blueprint('product', __name__, template_folder='templates', static_folder='static')
-
-
-def get_main_category(product_id):
-    return db.session.execute(
-        db.select(ProductToCategory)
-        .filter_by(product_id=product_id, main_category=1)).one()
 
 
 def get_url(category_id=None, product_id=None):
@@ -186,7 +180,6 @@ def products(path=''):
         for attribute in product.attributes:
             if attribute.main_attribute.description.name not in attributes_in_products:
                 attributes_in_products.append(attribute.main_attribute.description.name)
-
 
     page = ('product/' + path + '.html') if path else 'product/products.html'
 
