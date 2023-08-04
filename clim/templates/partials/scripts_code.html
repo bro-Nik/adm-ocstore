@@ -185,7 +185,7 @@
   }
   UpdateMultipleSelectCount();
 
-  $('.show-count-selected').on('change', function (e) {
+  $(document).on('change', '.show-count-selected', function (e) {
     MultipleSelectCount($(this))
   })
 
@@ -194,7 +194,12 @@
 
     if (count > 0) {
       $select.parent().find('.select2-selection__rendered').remove();
-      $select.parent().find('.select2-selection.select2-selection--multiple').append($(`<span class="multiple-count" >+ ${count}</span>`))
+      var $count_span = $select.parent().find('.multiple-count');
+      if ($count_span.length) {
+        $count_span.html('+ ' + count);
+      } else {
+        $select.parent().find('.select2-selection.select2-selection--multiple').append($(`<span class="multiple-count" >+ ${count}</span>`))
+      }
     }
   }
 
