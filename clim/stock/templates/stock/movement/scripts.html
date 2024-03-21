@@ -123,10 +123,7 @@
 
 
   function formatStockOption(stock) {
-    var $stock = $(
-      '<span class="text">' + stock.text + '<small class="text-muted">' + stock.quantity + '</small></span>'
-    );
-    return $stock;
+    return $(`<span class="text">${stock.text}<small class="text-muted">${stock.quantity}</small></span>`);
   };
 
 
@@ -242,7 +239,7 @@
       if (product_id) {
         var item = {
           product_id: product_id,
-          name: $productSelect.find(':selected').html(),
+          product_name: $productSelect.find(':selected').html(),
           cost: +$tr.find('.cost').val() || 0,
           quantity: +$tr.find('.quantity').val() || 0,
           unit: $productSelect.find(':selected').attr('data-unit'),
@@ -261,18 +258,12 @@
       stocks: stocks,
       products: products
     }
-    SendingData(data, $btn, $form)
+    //SendingData(url, data, $btn)
+    var $modal = $btn.closest('.modal');
+    $modal.attr('data-pre-need-update', true);
+    $modal.modal("hide");
+    SendingData($form.attr("action"), data, $btn, $modal);
   })
-
-  $('.open-modal-product').on("click", function () {
-    LoadToModal($('#ProductInfoModal'), "{{ url_for('stock.product_info') }}");
-  })
-
-  $('.open-modal-select-products').on("click", function () {
-    LoadToModal($('#SelectProductsModal'), "{{ url_for('.set_products_page') }}");
-  })
-
-
 
   // For movement type moving
   {% elif movement_type == 'moving' %}
@@ -362,7 +353,7 @@
       if (product_id) {
         var item = {
           product_id: product_id,
-          name: $productSelect.find(':selected').html(),
+          product_name: $productSelect.find(':selected').html(),
           cost: +$tr.find('.cost').val() || 0,
           quantity: +$tr.find('.quantity').val() || 0,
           unit: $productSelect.find(':selected').attr('data-unit'),
@@ -386,12 +377,12 @@
       stocks: stocks,
       products: products
     }
-    SendingData(data, $btn, $form)
+    var $modal = $btn.closest('.modal');
+    $modal.attr('data-pre-need-update', true);
+    $modal.modal("hide");
+    SendingData($form.attr("action"), data, $btn, $modal);
 
   })
 
   {% endif %}
-
-
-
 </script>

@@ -4,19 +4,17 @@ import pickle
 # from alembic.op import f
 from flask import render_template, redirect, url_for, request, session, flash,\
     Blueprint
-from flask_login import login_required, current_user
+from flask_login import login_required
 from datetime import datetime, timedelta
 import locale
 from clim.jinja_filters import smart_int
-from clim.app import redis
 
 from clim.models import OptionValueDescription, ProductDescription, db, Contact, Deal, DealService, DealStage, Option,\
     OptionValue, Stock, StockProduct, User, Worker, WorkerEmployment, Product,\
     Module, Category
-from clim.stock.stock import get_consumables_categories_ids
-
-
-deal = Blueprint('deal', __name__, template_folder='templates', static_folder='static')
+from clim.stock.utils import get_consumables_categories_ids
+# from clim.stock.routes import get_consumables_categories_ids
+from . import bp
 
 
 def get_products():
@@ -30,25 +28,6 @@ def get_stocks():
 def get_stages():
     return db.session.execute(
         db.select(DealStage).order_by(DealStage.sort_order)).scalars()
-
-
-# def get_consumables():
-#     """ Получить расходные материалы """
-#     settings = {}
-#     settings_in_base = db.session.execute(
-#         db.select(Module).filter_by(name='crm_stock')).scalar()
-#
-#     if settings_in_base.value:
-#         settings = json.loads(settings_in_base.value)
-#
-#     ids = settings.get('consumables_categories_ids')
-#
-#     request_base = Product.query
-#     request_base = (request_base.join(Product.categories)
-#                    .where(Category.category_id.in_(ids)))
-#     request_base = request_base.order_by(Product.mpn)
-#
-#     return request_base.all()
 
 
 def get_deal(deal_id):
@@ -69,14 +48,14 @@ def json_loads_or_other(data, default=None):
     return json.loads(data) if data else default
 
 
-@deal.route('/update_filter', methods=['POST'])
+@bp.route('/update_filter', methods=['POST'])
 def update_filter():
     session['stage_type'] = request.form.get('stage_type')
     return ''
 
 
-@deal.route('/<string:view>', methods=['GET'])
-@deal.route('/', methods=['GET'])
+@bp.route('/<string:view>', methods=['GET'])
+@bp.route('/', methods=['GET'])
 @login_required
 def deals(view=None):
     if not view:
@@ -104,7 +83,7 @@ def deals(view=None):
                            stage_type=stage_type)
 
 
-@deal.route('/ajax_products', methods=['GET'])
+@bp.route('/ajax_products', methods=['GET'])
 @login_required
 def ajax_products():
     per_page = 20
@@ -183,7 +162,7 @@ def ajax_products():
     return json.dumps(result)
 
 
-@deal.route('/ajax_consumables', methods=['GET'])
+@bp.route('/ajax_consumables', methods=['GET'])
 @login_required
 def ajax_consumables():
     per_page = 20
@@ -191,7 +170,6 @@ def ajax_consumables():
     result = {'results': []}
 
     consumables_categories_ids = get_consumables_categories_ids()
-
 
     request_base = Product.query
     request_base = (request_base.join(Product.categories)
@@ -221,7 +199,7 @@ def ajax_consumables():
     return json.dumps(result)
 
 
-@deal.route('/ajax_stocks_first', methods=['GET'])
+@bp.route('/ajax_stocks_first', methods=['GET'])
 @login_required
 def ajax_stocks_first():
     product_id = request.args.get('product_id')
@@ -248,7 +226,7 @@ def ajax_stocks_first():
     return json.dumps(result)
 
 
-@deal.route('/ajax_stocks', methods=['GET'])
+@bp.route('/ajax_stocks', methods=['GET'])
 @login_required
 def ajax_stocks():
     search = request.args.get('search')
@@ -284,7 +262,7 @@ def ajax_stocks():
     return json.dumps(result)
 
 
-@deal.route('/ajax_contacts', methods=['GET'])
+@bp.route('/ajax_contacts', methods=['GET'])
 @login_required
 def ajax_contacts():
     per_page = 20
@@ -318,8 +296,8 @@ def ajax_contacts():
     return json.dumps(result)
 
 
-@deal.route('/update_stage', methods=['GET'])
-@deal.route('/update_stage/<int:stage_id>/<int:deal_id>/<int:previous_deal_sort>', methods=['GET'])
+@bp.route('/update_stage', methods=['GET'])
+@bp.route('/update_stage/<int:stage_id>/<int:deal_id>/<int:previous_deal_sort>', methods=['GET'])
 @login_required
 def update_stage(stage_id=None, deal_id=None, previous_deal_sort=0):
     deal = get_deal(deal_id)
@@ -363,8 +341,8 @@ def get_stage(stage_id):
         db.select(DealStage).filter(DealStage.stage_id == stage_id)).scalar()
 
 
-@deal.route('/new_stage', methods=['GET'])
-@deal.route('/new_stage/<int:stage_id>', methods=['GET'])
+@bp.route('/new_stage', methods=['GET'])
+@bp.route('/new_stage/<int:stage_id>', methods=['GET'])
 @login_required
 def new_stage(stage_id=None):
     before_new_stage = db.session.execute(
@@ -394,7 +372,7 @@ def new_stage(stage_id=None):
     return str(new_stage.stage_id)
 
 
-@deal.route('/stage_info/update', methods=['POST'])
+@bp.route('/stage_info/update', methods=['POST'])
 @login_required
 def stage_update():
     stage_id = request.form.get('stage_id')
@@ -408,7 +386,7 @@ def stage_update():
     return redirect(url_for('deals2'))
 
 
-@deal.route('/action', methods=['POST'])
+@bp.route('/action', methods=['POST'])
 @login_required
 def deals_action():
     data = json.loads(request.data) if request.data else {}
@@ -430,13 +408,13 @@ def deals_action():
     return redirect(url_for('.deals'))
 
 
-@deal.route('/deal_info_placeholder', methods=['GET'])
+@bp.route('/deal_info_placeholder', methods=['GET'])
 @login_required
 def deal_info_placeholder():
     return render_template('deal/deal_placeholder.html')
 
 
-@deal.route('/deal_info', methods=['GET'])
+@bp.route('/deal_info', methods=['GET'])
 @login_required
 def deal_info():
     deal = get_deal(request.args.get('deal_id'))
@@ -448,7 +426,7 @@ def deal_info():
                            )
 
 
-@deal.route('/deal_info', methods=['POST'])
+@bp.route('/deal_info', methods=['POST'])
 @login_required
 def deal_info_update():
     deal = get_deal(request.args.get('deal_id'))
@@ -636,7 +614,7 @@ def get_employments(event):
             .filter(WorkerEmployment.event == event)).scalars()
 
 
-@deal.route('/<int:deal_id>/employments', methods=['GET'])
+@bp.route('/<int:deal_id>/employments', methods=['GET'])
 @login_required
 def deal_employments(deal_id):
     def employment_time(employment):
@@ -693,7 +671,7 @@ def deal_employments(deal_id):
     return result
 
 
-@deal.route('/booking', methods=['GET'])
+@bp.route('/booking', methods=['GET'])
 @login_required
 def deal_booking():
     services = db.session.execute(db.select(DealService)).scalars()
@@ -709,7 +687,7 @@ def deal_booking():
                            deal_id=deal_id)
 
 
-@deal.route('/booking_post', methods=['POST'])
+@bp.route('/booking_post', methods=['POST'])
 @login_required
 def deal_booking_post():
     def str_date(str):
@@ -748,7 +726,7 @@ def deal_booking_post():
     return ''
 
 
-@deal.route('/booking_data', methods=['GET'])
+@bp.route('/booking_data', methods=['GET'])
 @login_required
 def booking_data():
     def str_date(str):

@@ -1,4 +1,10 @@
-<!-- Container fluid -->
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
+
+{% block content %}
+
 <form id="ProductInfo" method="post"
   action="{{ url_for('stock.product_info_update', product_id=product.product_id if product else None) }}">
   <div class="container-fluid px-6 d-grid gap-3 mt-3">
@@ -78,7 +84,7 @@
                           form-label">Главная категория</label>
                       <div class="col-md-9 col-12">
                         <select class="ajax-select" name="main_category_id"
-                          data-url="{{ url_for('get_list_all_categories') }}"
+                          data-url="{{ url_for('main.get_list_all_categories') }}"
                           data-placeholder="-- Выбрать категорию --">
                           {% if main_category %}
                           <option selected value="{{ main_category.category_id }}">{{
@@ -95,7 +101,7 @@
                       <div class="col-md-9 col-12">
 
                         <select class="ajax-select show-count-selected" multiple name="categories_ids"
-                          data-url="{{ url_for('get_list_all_categories') }}"
+                          data-url="{{ url_for('main.get_list_all_categories') }}"
                           data-placeholder="-- Выбрать категории --">
                           {% for category in product.categories %}
                           <option selected value="{{ category.category_id }}">
@@ -212,3 +218,4 @@
     $('#ProductInfoModal').modal('hide');
   }); 
 </script>
+{% endblock %}

@@ -1,9 +1,9 @@
 import pickle
 import json
-from clim.app import app, redis
-from clim.models import db, Category
 from datetime import datetime
 import locale
+
+from clim.main import bp
 
 
 def smart_int(number):
@@ -15,7 +15,8 @@ def smart_int(number):
     else:
         return round(number, 2)
 
-app.add_template_filter(smart_int)
+
+bp.add_app_template_filter(smart_int)
 
 
 def money(number):
@@ -23,7 +24,8 @@ def money(number):
     number = '{:,}'.format(number).replace(',', ' ')
     return number.replace('.', ',')
 
-app.add_template_filter(money)
+
+bp.add_app_template_filter(money)
 
 
 def to_json(str):
@@ -31,7 +33,8 @@ def to_json(str):
         return []
     return json.loads(str)
 
-app.add_template_filter(to_json)
+
+bp.add_app_template_filter(to_json)
 
 
 def smart_date(date_time):
@@ -73,7 +76,8 @@ def smart_date(date_time):
 
     return result
 
-app.add_template_filter(smart_date)
+
+bp.add_app_template_filter(smart_date)
 
 
 def how_long_ago(event_date):
@@ -89,7 +93,8 @@ def how_long_ago(event_date):
 
     return result
 
-app.add_template_filter(how_long_ago)
+
+bp.add_app_template_filter(how_long_ago)
 
 
 def smart_phone(phone_number: str) -> str:
@@ -98,6 +103,7 @@ def smart_phone(phone_number: str) -> str:
     numbers = list(filter(str.isdigit, phone_number))[1:]
     return "+7 {}{}{} {}{}{}-{}{}-{}{}".format(*numbers)
 
-app.add_template_filter(smart_phone)
+
+bp.add_app_template_filter(smart_phone)
 
 

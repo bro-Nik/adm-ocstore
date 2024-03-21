@@ -1,11 +1,8 @@
-from flask import render_template, redirect, url_for, request, flash, session
-from flask_login import login_user, login_required, logout_user, current_user
+from flask import render_template, redirect, url_for, request, flash
+from flask_login import login_user, login_required, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
-from datetime import datetime
-import requests
-import pickle
 
-from clim.app import app, db, login_manager, redis
+from clim.app import db, login_manager
 from clim.models import User
 
 
@@ -34,26 +31,26 @@ from clim.models import User
 #         return render_template('user/sign-up.html')
 
 
-@app.route('/sign_in', methods=['GET', 'POST'])
-def sign_in():
-    login = request.form.get('login')
-    password = request.form.get('password')
-
-    if request.method == 'POST':
-        if login and password:
-            user = db.session.execute(db.select(User)
-                                      .filter_by(login=login.lower())).scalar()
-
-            if user and check_password_hash(user.password, password):
-                login_user(user, remember=True)
-                next_page = request.args.get('next') if request.args.get('next') else '/'
-                return redirect(next_page)
-            else:
-                flash('Некорректные данные')
-        else:
-            flash('Введите данные')
-
-    return render_template('user/sign-in.html')
+# @app.route('/sign_in', methods=['GET', 'POST'])
+# def sign_in():
+#     login = request.form.get('login')
+#     password = request.form.get('password')
+#
+#     if request.method == 'POST':
+#         if login and password:
+#             user = db.session.execute(db.select(User)
+#                                       .filter_by(login=login.lower())).scalar()
+#
+#             if user and check_password_hash(user.password, password):
+#                 login_user(user, remember=True)
+#                 next_page = request.args.get('next') if request.args.get('next') else '/'
+#                 return redirect(next_page)
+#             else:
+#                 flash('Некорректные данные')
+#         else:
+#             flash('Введите данные')
+#
+#     return render_template('user/sign-in.html')
 
 
 @login_manager.user_loader
@@ -61,16 +58,16 @@ def load_user(user_id):
     return db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
 
 
-@app.route('/logout', methods=['GET', 'POST'])
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('sign_in'))
+# @app.route('/logout', methods=['GET', 'POST'])
+# @login_required
+# def logout():
+#     logout_user()
+#     return redirect(url_for('sign_in'))
 
 
-@app.after_request
-def redirect_to_signin(response):
-    if response.status_code == 401:
-        return redirect(url_for('sign_in') + '?next=' + request.url)
-
-    return response
+# @app.after_request
+# def redirect_to_signin(response):
+#     if response.status_code == 401:
+#         return redirect(url_for('sign_in') + '?next=' + request.url)
+#
+#     return response

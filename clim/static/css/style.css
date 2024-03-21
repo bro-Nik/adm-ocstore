@@ -15,7 +15,8 @@ div#wrapper {
     height: 100%;
 }
 div#content {
-    flex: 1 0 auto;
+/*     flex: 1 0 auto; */
+    height: calc(100vh - 61px);
 }
 div#footer {
     flex: 0 0 auto;
@@ -434,6 +435,7 @@ input[type="number"]:focus {
     box-shadow: 0 -2px 4px 0 rgba(0,0,0,.05);
     text-align: center;
     z-index: 10;
+    margin-left: -2rem;
   }
 .sticky-bottom.active {
     transform: translateY(0);
@@ -553,4 +555,20 @@ span.multiple-count {
     padding: 0.25rem 0.5rem;
     font-size: 0.8203125rem;
     border-radius: 0.2rem;
+}
+
+.open-modal, .open-modal-confirmation {
+    cursor: pointer;
+}
+
+.sticky-bottom.actions a {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8203125rem;
+    color: RGBA(108,117,125,0.9);
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+.sticky-bottom.actions a:hover {
+    color: black;
 }

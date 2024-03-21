@@ -1,10 +1,8 @@
-from flask_sqlalchemy import SQLAlchemy
-from itertools import product
-# from clim.app import db
+import json
+from flask import flash
 from flask_login import UserMixin
 
-
-db = SQLAlchemy()
+from .app import db
 
 
 class Product(db.Model):
@@ -71,6 +69,28 @@ class Product(db.Model):
                                   backref='product', uselist=False)
     unit_class = db.relationship('WeightClass',
                                    backref=db.backref('products', lazy=True))
+
+    @staticmethod
+    def find(id):
+        return db.session.execute(
+            db.select(Product).filter_by(product_id=id)).scalar()
+
+    def get_stock(self, stock_id, create=False):
+        for stock in self.stocks:
+            if stock.stock_id == stock_id:
+                return stock
+        if create:
+            stock = StockProduct(stock_id=stock_id)
+            self.stocks.append(stock)
+            db.session.flush()
+            # db.session.commit()
+            return stock
+
+    def get_quantity(self):
+        quantity = 0
+        for stock in self.stocks:
+            quantity += stock.quantity
+        return quantity
 
 
 class ProductImage(db.Model):
@@ -172,12 +192,20 @@ class DownloadDescription(db.Model):
 class Category(db.Model):
     __tablename__ = 'oc_category'
     category_id = db.Column(db.Integer, primary_key=True)
-    parent_id = db.Column(db.Integer)
+    parent_id = db.Column(db.Integer, db.ForeignKey('category.category_id'))
     sort_order = db.Column(db.Integer)
     products = db.relationship('Product', secondary='oc_product_to_category',
-        backref=db.backref('categories', lazy='dynamic'))
+                               backref=db.backref('categories', lazy='dynamic'))
     description = db.relationship('CategoryDescription',
                                   backref='description', uselist=False)
+
+    # Relationships
+    child_categories = db.relationship(
+        "Category",
+        primaryjoin="Category.category_id == foreign(Category.parent_id)",
+        viewonly=True,
+        # backref=db.backref('parent_category', lazy=True)
+    )
 
 
 # class CategoryPath(db.Model):
@@ -484,6 +512,17 @@ class Stock(db.Model):
     products = db.relationship('StockProduct',
                               backref=db.backref('stock', lazy=True))
 
+    def edit(self, form):
+        self.name = form.get('name')
+        self.sort = form.get('sort')
+        db.session.commit()
+
+    def delete(self):
+        if self.products:
+            flash(f'У склада "{self.name}" есть товары, он не удален')
+        else:
+            db.session.delete(self)
+
 
 class StockProduct(db.Model):
     __tablename__ = 'adm_stock_product'
@@ -493,7 +532,7 @@ class StockProduct(db.Model):
     stock_id = db.Column(db.Integer,
                          db.ForeignKey('adm_stock.stock_id'),
                          primary_key=True)
-    quantity = db.Column(db.Float)
+    quantity = db.Column(db.Float, default=0)
     main_product = db.relationship('Product',
                               backref=db.backref('stocks', lazy=True))
 
@@ -551,6 +590,84 @@ class StockMovement(db.Model):
     details = db.Column(db.Text)
     stocks = db.Column(db.Text)
 
+    def save(self, data):
+        info = {i['name']: i['value'] for i in data.get('info', {})}
+
+        name = info.get('name')
+        if name:
+            self.name = name
+        elif not self.name:
+            types = {'coming': 'Приход', 'moving': 'Перемещение'}
+            count = StockMovement.query.filter_by(movement_type=self.movement_type).count()
+            name = types.get(self.movement_type, '')
+            self.name = f'{name} #{count}'
+
+        self.products = json.dumps(data.get('products', {}), ensure_ascii=False)
+        self.stocks = json.dumps(data.get('stocks', {}), ensure_ascii=False)
+
+        db.session.commit()
+
+    def posting(self, param=''):
+        direction = -1 if param == 'cancel' else 1
+
+        products = json.loads(self.products)
+
+        for p in products:
+            product = Product.find(p['product_id'])
+            quantity = p['quantity'] * direction
+
+            if not product or quantity == 0:
+                continue
+
+            # Coming
+            if self.movement_type == 'coming':
+                product_stock = product.get_stock(p['stock_id'], create=True)
+
+                product_stock.quantity += quantity
+                if product_stock.quantity < 0:
+                    flash('Нет столько товаров на складе отправителе', 'danger')
+                    db.session.rollback()
+                    return False
+
+                p['stock_name'] = product_stock.stock.name
+                p['product_name'] = product.description.meta_h1
+                p['unit'] = product.unit_class.description.unit
+
+                cost = product.cost
+                t_quantity = product.get_quantity()
+                product.cost = ((cost * t_quantity + p['cost'] * quantity) /
+                                (t_quantity + quantity))
+
+            # Moving
+            elif self.movement_type == 'moving':
+                stock1 = product.get_stock(p['stock_id'], create=True)
+                stock2 = product.get_stock(p['stock2_id'], create=True)
+
+                stock1.quantity -= quantity
+                stock2.quantity += quantity
+
+                if stock1.quantity < 0 or stock2.quantity < 0:
+                    flash('Нет столько товаров на складе', 'danger')
+                    db.session.rollback()
+                    return False
+
+                p['stock_name'] = stock1.stock.name
+                p['stock2_name'] = stock2.stock.name
+                p['product_name'] = stock1.main_product.description.meta_h1
+                p['unit'] = stock1.main_product.unit_class.description.unit
+
+                if stock1.quantity == 0:
+                    db.session.delete(stock1)
+                if stock2.quantity == 0:
+                    db.session.delete(stock2)
+
+        self.products = json.dumps(products)
+        self.posted = False if param == 'cancel' else True
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+
 
 class StockCategory(db.Model):
     __tablename__ = 'adm_stock_category'
@@ -585,4 +702,5 @@ class DealService(db.Model):
     service_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(45))
     time = db.Column(db.Integer)
+
 

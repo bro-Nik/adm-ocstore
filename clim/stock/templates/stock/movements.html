@@ -1,78 +1,61 @@
-{% extends "base.html" %}
-{% block title %}  {% endblock %}
-{% block head %}
-    {{ super() }}
-{% endblock %}
+{% if movement_type == 'coming' %}
+  {% set title = 'Документы прихода' %}
+{% elif movement_type == 'moving' %}
+  {% set title = 'Документы перемещения' %}
+{% endif %}
+
+{% if not request.args.get('only_content') %}
+  {% extends "base.html" %}
+  {% block title %}{{ title }}{% endblock %}
+{% endif %}
 
 {% block content %}
 
-<form class="" id="Movements" method="post" action="{{ url_for('.movements_action', movement_type=movement_type) }}">
-  <!-- Container fluid -->
-  <div class="container-fluid px-6 d-grid gap-3 mt-3">
+{% include 'stock/header.html' %}
 
-    {% include 'stock/header.html' %}
-
-    <div class="row">
-      <div class="col-lg-12 col-md-12 col-12">
-        <!-- Page header -->
-        <div>
-          <div class="d-flex align-items-center">
-            <div class="mb-2 mb-lg-0">
-              <h3 class="mb-0">
-                {% if movement_type == 'coming' %}
-                  Документы прихода
-                {% elif movement_type == 'moving' %}
-                  Документы перемещения
-                {% endif %}
-              </h3>
-            </div>
-            <div class="ms-auto d-flex gap-2">
-              <a class="btn btn-primary show-movement" href="#">Добавить</a>
-            </div>
-          </div>
-        </div>
-      </div>
+<div class="row">
+  <div class="d-flex align-items-center">
+    <h3 class="mb-0">{{ title }}</h3>
+    <div class="ms-auto">
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="MovementInfoModal"
+        data-url="{{ url_for('.movement_info', movement_type=movement_type) }}">Добавить</button>
     </div>
+  </div>
+</div>
 
-    <!-- row  -->
-    <div class="row">
-      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-        {% if not movements %}
-          <div class="card h-100">
-          {% include 'partials/nothing.html' %}
-          </div>
-        {% else %}
-
-        <div class="card h-100">
-
-          <!-- table  -->
-          <div class="table-responsive">
+<div class="row">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <div class="card h-100">
+      {% if movements %}
+        <div class="table-responsive">
+          <form id="Movements" method="post" action="{{ url_for('.movements_action', movement_type=movement_type) }}">
             <table class="table text-nowrap">
-              <thead class="">
+              <thead>
                 <tr>
                   <th class="main-tab-checkbox">
                     <input class="form-check-input check-all" type="checkbox">
                   </th>
-                  <th scope="col">Название</th>
-                  <th scope="col">Статус</th>
-                  <th scope="col">Склады</th>
+                  <th>Название</th>
+                  <th>Статус</th>
+                  <th>Склады</th>
                 </tr>
               </thead>
               <tbody>
 
                 {% for movement in movements %}
-                  <tr data-movement-id="{{ movement.movement_id }}">
+                  <tr>
                     <td class="main-tab-checkbox">
-                      <input class="form-check-input to-check" type="checkbox"
-                                                               value="{{ movement.movement_id }}">
+                      <input class="form-check-input to-check" type="checkbox" value="{{ movement.movement_id }}">
                     </td>
-                    <td class="">
-                      <a href="#" class="text-inherit show-movement">
+
+                    <td>
+                      <div class="d-grid text-inherit open-modal" data-modal-id="MovementInfoModal" 
+                        data-url="{{ url_for('.movement_info', movement_type=movement_type, movement_id=movement.movement_id) }}">
                         {{ movement.name }}
-                      </a>
-                      <br>
-                      <span class="fs-6">от {{ movement.date.strftime('%d.%m.%Y') }}</span>
+                        <span class="fs-6">от {{ movement.date.strftime('%d.%m.%Y') }}</span>
+                      </div>
                     </td>
+
                     <td>
                       {% if movement.posted %}
                         <span class="badge bg-success text-uppercase">Проведен</span> 
@@ -82,6 +65,7 @@
                         <span class="badge bg-secondary text-uppercase">Черновик</span>
                       {% endif %}
                     </td>
+
                     <td>
                       {% set stocks = movement.stocks|to_json %}
                       {% for stock in stocks %}
@@ -90,8 +74,6 @@
                         , 
                         {% endif %}
                       {% endfor %}
-                      {{ ids }}
-
                     </td>
                   </tr>
                 {% endfor %}
@@ -99,48 +81,25 @@
               </tbody>
             </table>
 
-            <input type="hidden" name="movements-ids">
+            <!-- Actions buttons -->
+            <div class="sticky-bottom-buttons">
+              <a class="open-modal-confirmation" data-action="delete"
+                data-title="Удалить документы?"
+                data-text="Будут удалены выбранные документы">Удалить</a>
+            </div>
 
-          </div>
+          </form>
         </div>
-      </div>
+
+      {% else %}
+        {% include 'partials/nothing.html' %}
       {% endif %}
-    </div>
-    
-  </div>
 
-  <!-- Actions buttons -->
-  <div class="sticky-bottom actions">
-    <div class="col-12">
-      <div class="bg-white h-100 d-flex gap-2 align-items-center">
-        <div class="m-1  ms-5">
-          <span class="">Отмеченно: </span>
-          <span class="checks-count"></span>
-          <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
-        </div>
-        <div class="vr my-3"></div>
-        <div class="my-1">
-          <button class="btn btn-sm rounded-3 action-confirmation" type="button" data-action="delete" data-title="Удалить документы?">
-            <i data-feather="trash" class="icon-xs"></i>
-            Удалить
-          </button>
-        </div>
-      </div>
     </div>
   </div>
-</form>
+  {% set products = movements %}
+  {% include 'partials/pagination.html' %}
+</div>
 
-{% include 'stock/modals.html' %}
 
-<script>
-  // Open Modal Movement
-  $('.show-movement').on("click", function () {
-    var url = "{{ url_for('.movement_info', movement_type=movement_type) }}",
-      movement_id = $(this).closest("tr").attr('data-movement-id');
-    if (movement_id) {
-      url += '?movement_id=' + movement_id;
-    }
-    LoadToModal($('#FullScreenModal'), url);
-  })
-</script>
 {% endblock %}

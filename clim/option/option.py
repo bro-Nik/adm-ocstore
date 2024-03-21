@@ -1,33 +1,29 @@
 import json
-import re
 from flask import render_template, redirect, url_for, request, Blueprint, session
 from flask_login import login_required
+from clim.main.routes import get_list_all_categories
 
-from clim.models import db, Attribute, AttributeDescription, Manufacturer, Option,\
-    OptionDescription, OptionSetting, OptionValueSetting, OptionValue, \
-    OptionValueDescription, ProductAttribute, ProductOption,\
-    ProductOptionValue, Product, CategoryDescription, Category, WeightClass, ProductToCategory
+from clim.models import db, Attribute, AttributeDescription, Manufacturer, \
+    Option, OptionDescription, OptionSetting, OptionValueSetting, OptionValue, \
+    OptionValueDescription, ProductAttribute, ProductOption, \
+    ProductOptionValue, Product, CategoryDescription, Category
 from clim.general_functions import dict_from_serialize_array,\
-    dict_get_or_other, get_product, get_categories, json_dumps_or_other,\
-    json_loads_or_other, get_list_all_categories
-from clim.stock.stock import get_consumables
-
-
-option = Blueprint('option', __name__, template_folder='templates', static_folder='static')
+    get_product, json_dumps_or_other,\
+    json_loads_or_other
+from . import bp
 
 
 def session_get(param):
-    prefix = option.name + '_'
-    return session.get(prefix + param)
+    return session.get(f'{bp.name}_{param}')
 
 
 def session_post(param, value):
-    prefix = option.name + '_'
-    session[prefix + param] = value
+    session[f'{bp.name}_{param}'] = value
 
 
 def int_or_other(number, default=0):
     return int(number) if number else default
+
 
 def float_or_other(number, default=0):
     return float(number) if number else default
@@ -100,7 +96,7 @@ def get_products(pagination=True, filter={}):
 
 
 
-@option.route('/options', methods=['GET'])
+@bp.route('/options', methods=['GET'])
 @login_required
 def options():
     """ Страница опций """
@@ -108,7 +104,7 @@ def options():
     return render_template('option/options.html', options=options)
 
 
-@option.route('/delete', methods=['POST'])
+@bp.route('/delete', methods=['POST'])
 @login_required
 def options_action():
     """ Действия над опциями """
@@ -127,7 +123,7 @@ def options_action():
     return ''
 
 
-@option.route('/settings', methods=['GET'])
+@bp.route('/settings', methods=['GET'])
 @login_required
 def option_settings():
     """ Добавить или изменить опцию """
@@ -137,7 +133,7 @@ def option_settings():
                            option=get_option(option_id))
 
 
-@option.route('/settings_update', methods=['POST'])
+@bp.route('/settings_update', methods=['POST'])
 @login_required
 def option_update():
     """ Отправка настроек опции """
@@ -148,8 +144,8 @@ def option_update():
         option.description = OptionDescription(language_id=1)
         db.session.add(option)
 
-    option.description.name = dict_get_or_other(request.form, 'name', 'Без имени')
-    option.sort_order = dict_get_or_other(request.form, 'sort', 0)
+    option.description.name = request.form.get('name', 'Без имени')
+    option.sort_order = request.form.get('sort', 0)
     option.type = request.form.get('type')
 
     settings_dict = {
@@ -172,7 +168,7 @@ def option_update():
     return redirect(url_for('.options'))
 
 
-@option.route('/<int:option_id>/values', methods=['GET'])
+@bp.route('/<int:option_id>/values', methods=['GET'])
 @login_required
 def option_values(option_id):
     """ Варианты опции """
@@ -206,7 +202,7 @@ def option_values(option_id):
                            other_prices=other_prices)
 
 
-@option.route('/<int:option_id>/option_value_settings', methods=['GET'])
+@bp.route('/<int:option_id>/option_value_settings', methods=['GET'])
 @login_required
 def value_settings(option_id):
     """ Добавить или изменить вариант опции """
@@ -230,7 +226,7 @@ def value_settings(option_id):
                            )
 
 
-@option.route('/ajax_all_attributes', methods=['GET'])
+@bp.route('/ajax_all_attributes', methods=['GET'])
 @login_required
 def ajax_all_attributes():
     per_page = 20
@@ -247,7 +243,6 @@ def ajax_all_attributes():
                                        per_page=per_page,
                                        error_out=False)
 
-
     for attribute in attributes:
         result['results'].append(
             {
@@ -262,7 +257,7 @@ def ajax_all_attributes():
     return json.dumps(result)
 
 
-@option.route('/ajax_attribute_values', methods=['GET'])
+@bp.route('/ajax_attribute_values', methods=['GET'])
 @login_required
 def ajax_attribute_values():
     # Other values
@@ -317,21 +312,21 @@ def ajax_attribute_values():
     return json.dumps(result)
 
 
-@option.route('/<int:option_id>/value_settings_update', methods=['POST'])
+@bp.route('/<int:option_id>/value_settings_update', methods=['POST'])
 @login_required
 def value_settings_update(option_id):
     """ Отправка настроек значения опции """
     value_id = request.args.get('value_id')
 
-    data = json_loads_or_other(request.data, {}) 
-    info_list = dict_get_or_other(data, 'info', {})
+    data = json_loads_or_other(request.data, {})
+    info_list = data.get('info', {})
     info = dict_from_serialize_array(info_list)
 
     settings_dict = {
-        'categories_ids': dict_get_or_other(info, 'categories_ids', []),
-        'attribute_id': dict_get_or_other(info, 'attribute_id'),
-        'attribute_values': dict_get_or_other(info, 'attribute_values', []),
-        'stock': dict_get_or_other(info, 'stock')
+        'categories_ids': info.get('categories_ids', []),
+        'attribute_id': info.get('attribute_id'),
+        'attribute_values': info.get('attribute_values', []),
+        'stock': info.get('stock')
         }
 
     settings = None
@@ -365,7 +360,7 @@ def value_settings_update(option_id):
     return ''
 
 
-@option.route('/<int:option_id>', methods=['POST'])
+@bp.route('/<int:option_id>', methods=['POST'])
 @login_required
 def values_action(option_id):
     """ Действия над значениями опции """
@@ -519,7 +514,7 @@ def product_clean_options(product_id):
     db.session.commit()
 
 
-@option.route('/<int:option_id>/change', methods=['POST'])
+@bp.route('/<int:option_id>/change', methods=['POST'])
 @login_required
 def change_options_value(option_id):
     values_count = request.form.get('values-count')
@@ -592,7 +587,7 @@ def get_filter_options(value, request):
     return filter
 
 
-@option.route('/<int:option_id>/value_products', methods=['GET', 'POST'])
+@bp.route('/<int:option_id>/value_products', methods=['GET', 'POST'])
 @login_required
 def value_products(option_id):
     value_id = request.args.get('value_id')
@@ -627,7 +622,7 @@ def value_products(option_id):
                            other_products=other_products)
 
 
-@option.route('/<int:option_id>/value_<string:value_id>/products_action', methods=['POST'])
+@bp.route('/<int:option_id>/value_<string:value_id>/products_action', methods=['POST'])
 @login_required
 def products_action(option_id, value_id):
     """ Действия над товараим в опции """
@@ -655,7 +650,7 @@ def products_action(option_id, value_id):
                             value_id=value_id))
 
 
-@option.route('/options/delete_', methods=['GET'])
+@bp.route('/options/delete_', methods=['GET'])
 @login_required
 def option_del():
     options = ProductOption.query.filter(ProductOption.product_option_value == None)

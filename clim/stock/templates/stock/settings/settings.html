@@ -1,83 +1,37 @@
-{% extends "base.html" %}
-{% block title %}  {% endblock %}
-{% block head %}
-    {{ super() }}
-{% endblock %}
+{% if not request.args.get('only_content') %}
+  {% extends "base.html" %}
+  {% block title %}Настройки{% endblock %}
+{% endif %}
 
 {% block content %}
 
-<!-- Container fluid -->
-  <div class="container-fluid px-6 d-grid gap-3 mt-3">
+{% include 'stock/header.html' %}
+<div class="row">
+  <div class="d-flex align-items-center">
+    <h3 class="mb-0">Настройки</h3>
+    {{ request.args.get('only_content') }}
+  </div>
+</div>
 
-    {% include 'stock/header.html' %}
-    <div class="row">
-      <div class="col-lg-12 col-md-12 col-12">
-        <!-- Page header -->
-        <div>
-          <div class="d-flex align-items-center">
-            <div class="mb-2 mb-lg-0">
-              <h3 class="mb-0">
-                Настройки
-              </h3>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- row  -->
-    <div class="row">
-      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-
-        <div class="card h-100">
-
-          <!-- table  -->
-          <div class="table-responsive">
-            <table id="SettingsTable" class="table text-nowrap">
-              <tbody>
-                {% for item in menu %}
-
-                  <tr>
-                    <td>
-                      <a href="#" class="text-inherit open-in-modal"
-                        data-url="{{ item['url'] }}" data-modal="#FullScreenModal">{{ item['name'] }}</a>
-                    </td>
-                  </tr>
-                {% endfor %}
-
-              </tbody>
-            </table>
-
-          </div>
-        </div>
+<div class="row">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <div class="card h-100">
+      <div class="table-responsive">
+        <table id="SettingsTable" class="table text-nowrap">
+          <tbody>
+            {% for item in menu %}
+              <tr>
+                <td>
+                  <span class="text-inherit open-modal" data-modal-id="SettingsModal" 
+                    data-url="{{ item['url'] }}">{{ item['name'] }}</span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 </div>
-
-{% include 'stock/modals.html' %}
-
-<!-- Modal FullScreen2 -->
-<div class="modal fade" id="FullScreenModal2" tabindex="-1" role="dialog" aria-labelledby="FullScreenModal2Label"
-  aria-hidden="false">
-  <div class="modal-dialog modal-fullscreen" role="document">
-    <div class="modal-content bg-light">
-      <div class="modal-close-label">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-0"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-  // Open Modal
-  $('a.open-in-modal').on("click", function () {
-    var  url = $(this).attr('data-url'),
-      modal_id = $(this).attr('data-modal');
-
-    LoadToModal($(modal_id), url);
-  })
-</script>
 
 {% endblock %}

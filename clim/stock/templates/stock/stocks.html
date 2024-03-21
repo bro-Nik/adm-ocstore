@@ -1,110 +1,84 @@
-{% extends "base.html" %}
-{% block title %}  {% endblock %}
-{% block head %}
-    {{ super() }}
-{% endblock %}
+{% if not request.args.get('only_content') %}
+  {% extends "base.html" %}
+  {% block title %}Склады{% endblock %}
+{% endif %}
 
 {% block content %}
 
-<form id="Stocks" action="{{ url_for('.stocks_action') }}">
-  <div class="container-fluid px-6 d-grid gap-3 mt-3">
+{% include 'stock/header.html' %}
 
-    {% include 'stock/header.html' %}
-    <div class="row">
-      <div class="col-lg-12 col-md-12 col-12">
-        <!-- Page header -->
-        <div>
-          <div class="d-flex align-items-center">
-            <div class="mb-2 mb-lg-0">
-              <h3 class="mb-0">Склады</h3>
-            </div>
-            <div class="ms-auto d-flex gap-2">
-              <a class="btn btn-primary show-stock-settings" href="#">Добавить</a>
-            </div>
-          </div>
-        </div>
-      </div>
+<div class="row">
+  <div class="d-flex align-items-center">
+    <h3 class="mb-0">Склады</h3>
+    <div class="ms-auto">
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="StockSettingsModal"
+        data-url="{{ url_for('.stock_settings') }}">Добавить</button>
     </div>
+  </div>
+</div>
 
-    <!-- row  -->
-    <div class="row">
-      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-        <div class="card h-100">
+<div class="row">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <div class="card h-100">
+      <div class="table-responsive">
+        <form id="Stocks" action="{{ url_for('.stocks_action') }}">
+          <table class="table text-nowrap">
+            <thead>
+              <tr>
+                <th class="main-tab-checkbox">
+                  <input class="form-check-input check-all" type="checkbox">
+                </th>
+                <th>Название</th>
+                <th>Товаров на сумму</th>
+                <th>Сортировка</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set var = namespace(count=0, sum=0) %}
 
-          <!-- table  -->
-          <div class="table-responsive">
-            <table class="table text-nowrap">
-              <thead class="">
+              {% for stock in stocks %}
+                {% set var.sum = 0 %}
                 <tr>
-                  <th class="main-tab-checkbox">
-                    <input class="form-check-input check-all" type="checkbox">
-                  </th>
-                  <th scope="col">Название</th>
-                  <th scope="col">Товаров на сумму</th>
-                  <th scope="col">Сортировка</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% set var = namespace(count=0, sum=0) %}
+                    <td class="text-average main-tab-checkbox">
+                      <input class="form-check-input to-check" type="checkbox" value="{{ stock.stock_id }}">
+                    </td>
 
-                {% for stock in stocks %}
-                  {% set var.sum = 0 %}
-                  <tr data-stock-id="{{ stock.stock_id }}">
-                      <td class="text-average main-tab-checkbox">
-                        <input class="form-check-input to-check" type="checkbox" value="{{ stock.stock_id }}">
-                      </td>
-                      <td class=""><a href="#" class="text-inherit show-stock-settings">{{ stock.name }}</a></td>
-                      <td class="">
-                        {% for product in stock.products %}
-                          {% set var.sum = var.sum + product.quantity * product.main_product.cost %}
-                        {% endfor %}
-                        {{ var.sum|money }} ₽
-                      </td>
-                      <td class="">{{ stock.sort }}</td>
-                    </tr>
-                {% endfor %}
+                    <td>
+                      <div class="text-inherit open-modal"  data-modal-id="StockSettingsModal"
+                        data-url="{{ url_for('.stock_settings', stock_id=stock.stock_id) }}">
+                        {{ stock.name }}
+                      </div>
+                    </td>
 
-              </tbody>
-            </table>
+                    <td>
+                      {% for product in stock.products %}
+                        {% set var.sum = var.sum + product.quantity * product.main_product.cost %}
+                      {% endfor %}
+                      {{ var.sum|money }} ₽
+                    </td>
+
+                    <td>{{ stock.sort }}</td>
+
+                  </tr>
+              {% endfor %}
+
+            </tbody>
+          </table>
+
+          <!-- Actions buttons -->
+          <div class="sticky-bottom-buttons">
+            <a class="open-modal-confirmation" data-action="delete"
+              data-title="Удалить склады?"
+              data-text="Будут удалены выбранные склады">Удалить</a>
           </div>
-        </div>
+
+        </form>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Actions buttons -->
-  <div class="sticky-bottom actions">
-    <div class="col-12">
-      <div class="bg-white h-100 d-flex gap-2 align-items-center">
-        <div class="m-1  ms-5">
-          <span class="">Отмеченно: </span>
-          <span class="checks-count"></span>
-          <a href="" class="link-secondary ms-3 decheck-all"><i data-feather="x" class="nav-icon icon-xs"></i></a>
-        </div>
-        <div class="vr my-3"></div>
-        <div class="my-1">
-          <button class="btn btn-sm rounded-3 action-confirmation" type="button" data-action="delete" data-title="Удалить склады?">
-            <i data-feather="trash" class="icon-xs"></i>
-            Удалить
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</form>
+{% set products = stocks %}
+{% include 'partials/pagination.html' %}
 
-{% include 'stock/modals.html' %}
-
-<script>
-  // Open Modal Stock Settings
-  $('.show-stock-settings').on("click", function () {
-    var url = "{{ url_for('.stock_settings') }}",
-      stock_id = $(this).closest("tr").attr('data-stock-id');
-    if (stock_id) {
-      url += '?stock_id=' + stock_id;
-    }
-
-    LoadToModal($('#FullScreenModal'), url);
-  })
-</script>
 {% endblock %}

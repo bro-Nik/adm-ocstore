@@ -10,9 +10,7 @@ from datetime import datetime
 
 from clim.app import celery
 from clim.models import db, OtherCategory, OtherProduct, OtherShops
-
-
-other_shops = Blueprint('other_shops', __name__, template_folder='templates', static_folder='static')
+from . import bp
 
 
 def get_shop(id):
@@ -31,7 +29,7 @@ def int_or_other(number, default):
     return int(number) if number else default
 
 
-@other_shops.route('/shops', methods=['GET'])
+@bp.route('/shops', methods=['GET'])
 @login_required
 def shops():
     """ Страница магазинов """
@@ -39,7 +37,7 @@ def shops():
     return render_template('other_shops/shops.html', shops=shops)
 
 
-@other_shops.route('/shops_action', methods=['POST'])
+@bp.route('/shops_action', methods=['POST'])
 @login_required
 def shops_action():
     """ Действия над магазинами """
@@ -60,7 +58,7 @@ def shops_action():
     return ''
 
 
-@other_shops.route('/shop_settings', methods=['GET', 'POST'])
+@bp.route('/shop_settings', methods=['GET', 'POST'])
 @login_required
 def shop_settings():
     """ Добавить или изменить магазин """
@@ -83,7 +81,7 @@ def shop_settings():
         return ''
 
 
-@other_shops.route('/<int:shop_id>/categories', methods=['GET'])
+@bp.route('/<int:shop_id>/categories', methods=['GET'])
 @login_required
 def shop_categories(shop_id):
     """ Категории магазина """
@@ -104,7 +102,7 @@ def shop_categories(shop_id):
                            new_product=new_product)
 
 
-@other_shops.route('/other_shops/<int:shop_id>', methods=['POST'])
+@bp.route('/other_shops/<int:shop_id>', methods=['POST'])
 @login_required
 def shop_action(shop_id):
     """ Действия над категориями или товарами """
@@ -142,7 +140,7 @@ def shop_action(shop_id):
     return ''
 
 
-@other_shops.route('/<int:shop_id>/category_update', methods=['POST'])
+@bp.route('/<int:shop_id>/category_update', methods=['POST'])
 @login_required
 def category_update(shop_id):
     """ Отправка настроек категории """
@@ -190,7 +188,7 @@ def category_update(shop_id):
     return ''
 
 
-@other_shops.route('/<int:shop_id>/category_settings', methods=['GET'])
+@bp.route('/<int:shop_id>/category_settings', methods=['GET'])
 @login_required
 def category_settings(shop_id):
     """ Настройки категории магазина """
@@ -201,7 +199,7 @@ def category_settings(shop_id):
                            shop=get_shop(shop_id))
 
 
-@other_shops.route('/<int:shop_id>/category/products', methods=['GET'])
+@bp.route('/<int:shop_id>/category/products', methods=['GET'])
 @login_required
 def category_products(shop_id):
     category_id = request.args.get('category_id')
@@ -244,14 +242,14 @@ def category_products(shop_id):
                            )
 
 
-@other_shops.route('/get_products_test/<int:category_id>', methods=['GET'])
+@bp.route('/get_products_test/<int:category_id>', methods=['GET'])
 @login_required
 def get_products_test(category_id):
     result = get_other_products_task(category_id, True)
     return json.dumps(result)
 
 
-@other_shops.route('/<int:shop_id>/get_products/<int:category_id>', methods=['GET'])
+@bp.route('/<int:shop_id>/get_products/<int:category_id>', methods=['GET'])
 @login_required
 def get_products(shop_id, category_id):
     get_other_products_task.delay(category_id)

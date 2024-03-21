@@ -1,25 +1,21 @@
+{# Jinja #}
+
 <div class="row align-items-center">
   <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-    <!-- Bg -->
-    <div class="bg-white rounded smooth-shadow-sm ">
-      <!-- nav -->
+    <div class="bg-white rounded smooth-shadow-sm">
       <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
-
         {% set menu = [
-        {'url': url_for('.products'), 'name': 'Остатки'},
-        {'url': url_for('.movements', movement_type='coming'), 'name': 'Приход'},
-        {'url': url_for('.movements', movement_type='moving'), 'name': 'Перемещение'},
-        {'url': url_for('.stocks'), 'name': 'Склады'},
-        {'url': url_for('.settings'), 'name': 'Настройки'}
+          {'url': url_for('.products'), 'name': 'Остатки'},
+          {'url': url_for('.movements', movement_type='coming'), 'name': 'Приход'},
+          {'url': url_for('.movements', movement_type='moving'), 'name': 'Перемещение'},
+          {'url': url_for('.stocks'), 'name': 'Склады'},
+          {'url': url_for('.settings'), 'name': 'Настройки'} 
         ] %}
-
         {% for item in menu %}
-        <li class="nav-item">
-          <a class="nav-link {{ 'active' if item['url'] in request.path }}" href="{{ item['url'] }}">{{
-            item['name']}}</a>
-        </li>
+          <li class="nav-item">
+            <a class="nav-link {{ 'active' if item['url'] in request.path }}" href="{{ item['url'] }}">{{ item['name']}}</a>
+          </li>
         {% endfor %}
-
       </ul>
     </div>
   </div>

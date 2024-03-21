@@ -209,9 +209,9 @@
                   </div>
                   <div class="m-3 ms-auto gap-2">
                     <button class="btn rounded-3 btn-primary" type="button" onclick="newLine()">Добавить строку</button>
-                    <button class="btn rounded-3 btn-outline-secondary open-modal-product" type="button">
-                      Создать товар
-                    </button>
+                    <button class="btn rounded-3 btn-outline-secondary open-modal" type="button"
+                      data-modal-id="AddProductsModal" data-url="{{ url_for('stock.product_info') }}">Создать
+                      товар</button>
                     <button class="btn rounded-3 " type="button" onclick="changeOptions('cancel')">Отмена</button>
                   </div>
                 </div>

@@ -4,54 +4,45 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 import redis
 from celery import Celery
-from clim.models import db
 
 
-# db = SQLAlchemy()
+db = SQLAlchemy()
 migrate = Migrate()
+celery = Celery()
+redis = redis.StrictRedis('127.0.0.1', 6379)
+login_manager = LoginManager()
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_pyfile('settings.py')
 
-
     db.init_app(app)
+    migrate.init_app(app, db)
+    login_manager.init_app(app)
+    init_celery(app, celery)
 
-    with app.app_context():
-        if db.engine.url.drivername == 'sqllite':
-            migrate.init_app(app, db, render_as_batch=True)
-        else:
-            migrate.init_app(app, db)
-        db.create_all()
-    
+    from clim.blueprints import make_blueprints
+    make_blueprints(app)
+
+    # with app.app_context():
+    #     if db.engine.url.drivername == 'sqllite':
+    #         migrate.init_app(app, db, render_as_batch=True)
+    #     else:
+    #         migrate.init_app(app, db)
+    #     db.create_all()
+    # 
     return app
 
 
-app = create_app()
-
-
-
-def make_celery(app):
-    celery = Celery(app.name)
+def init_celery(app, celery):
     celery.conf.update(app.config)
+    TaskBase = celery.Task
 
-    class ContextTask(celery.Task):
+    class ContextTask(TaskBase):
+        abstract = True
+
         def __call__(self, *args, **kwargs):
             with app.app_context():
-                return self.run(*args, **kwargs)
-
+                return TaskBase.__call__(self, *args, **kwargs)
     celery.Task = ContextTask
-    return celery
-
-celery = make_celery(app)
-redis = redis.StrictRedis('127.0.0.1', 6379)
-login_manager = LoginManager(app)
-
-
-from clim.blueprints import make_blueprints
-make_blueprints(app)
-
-if __name__ == '__main__':
-    db.create_all()
-    app.run(port=5001)

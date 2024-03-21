@@ -1,305 +1,177 @@
 <script>
   feather.replace();
 
-  // Checkboxes
-
-  // Check All
-  $('body').on("change", '.check-all', function () {
-    var $table = $(this).closest('table');
-    $table.find('.to-check').prop('checked', $(this).is(':checked'));
-    $table.find('.to-check').trigger('change');
-  })
-
-  // Check Group
-  $('body').on("change", '.check-group', function () {
-    var $table = $(this).closest('table');
-    $table.find('.' + this.id).prop('checked', $(this).is(':checked'));
-    $table.find('.to-check').trigger('change');
-  })
-
-  // Check Count
-  $('body').on("change", '.to-check', function () {
-    var $table = $(this).closest('table'),
-      $modal = $table.closest('.modal'),
-      checked_count = $table.find('.to-check:checked').length,
-      all_count = $table.find('.to-check').length;
-
-    if ($modal.length) {
-      var $box_actions = $table.closest('div[id]');
-
-      var $btns = $box_actions.find('.actions .btn')
-      $btns.prop('disabled', !checked_count > 0);
-    } else {
-      var $box_actions = $('.sticky-bottom.actions');
-      if (checked_count > 0) {
-        $box_actions.addClass('active');
-      } else {
-        $box_actions.removeClass('active');
-      }
-    }
-    $box_actions.find('.checks-count').text(checked_count + ' / ' + all_count);
-    $($table).find('.check-all').prop('checked', checked_count > 0);
-  })
-
-
   // Actions
 
   // Open modal to confirm
-  $('body').on("click", '.action-confirmation', function () {
-    var $modal = $('#ModalConfirmation'),
+  $("body").on("click", ".action-confirmation", function () {
+    var $modal = $("#ModalConfirmation"),
       $btn = $(this),
-      title = $btn.attr('data-title'),
-      action = $btn.attr('data-action');
+      title = $btn.attr("data-title"),
+      action = $btn.attr("data-action");
 
-    if ($btn.attr('data-form')) {
-      $modal.find('.action').attr('data-form', $btn.attr('data-form'));
+    if ($btn.attr("data-form")) {
+      $modal.find(".action").attr("data-form", $btn.attr("data-form"));
     } else {
-      $modal.find('.action').attr('data-form', '#' + $btn.closest('form').attr('id'));
+      $modal
+        .find(".action")
+        .attr("data-form", "#" + $btn.closest("form").attr("id"));
     }
 
-    $modal.find('.modal-title').text(title);
-    $modal.find('.action').attr('data-action', action);
-    $modal.modal('toggle');
-  })
+    $modal.find(".modal-title").text(title);
+    $modal.find(".action").attr("data-action", action);
+    $modal.modal("toggle");
+  });
 
-  // 
-  $('body').on("click", '.action', function () {
+  //
+  $("body").on("click", ".action", function () {
     var $btn = $(this),
       checked = [];
 
     // If button not in form
-    if ($btn.attr('data-form')) {
-      var $form = $($btn.attr('data-form'));
+    if ($btn.attr("data-form")) {
+      var $form = $($btn.attr("data-form"));
     } else {
-      var $form = $btn.closest('form');
+      var $form = $btn.closest("form");
     }
 
     // If info not in main form
-    if ($btn.attr('data-form-info')) {
-      var info = $($btn.attr('data-form-info')).serializeArray();
+    if ($btn.attr("data-form-info")) {
+      var info = $($btn.attr("data-form-info")).serializeArray();
     } else {
       var info = $form.serializeArray();
     }
 
-    $form.find('.to-check:checked').each(function () {
+    $form.find(".to-check:checked").each(function () {
       checked.push($(this).val());
     });
 
     var data = {
-      action: $btn.attr('data-action'),
+      action: $btn.attr("data-action"),
       info: info,
-      ids: checked
-    }
-    SendingData(data, $btn, $form)
-  })
+      ids: checked,
+    };
+    SendingData(data, $btn, $form);
+  });
 
   // Simple form
   $(document).on("click", ".simple-form-submit", function () {
     var $btn = $(this),
       $form = $btn.closest("form"),
-      posting = $.post($form.attr('action'), $form.serialize());
+      posting = $.post($form.attr("action"), $form.serialize());
 
     posting.done(function (data) {
-      PageUpdate($btn)
+      PageUpdate($btn);
     });
   });
 
   function SendingData(data, $btn, $form) {
     $.ajax({
       type: "POST",
-      url: $form.attr('action'),
+      url: $form.attr("action"),
       data: JSON.stringify(data),
-      contentType: 'application/json; charset=utf-8',
+      contentType: "application/json; charset=utf-8",
       //dataType: 'json',
-      success: PageUpdate($btn)
-    })//.done(PageUpdate($btn));
-  };
+      success: PageUpdate($btn),
+    }); //.done(PageUpdate($btn));
+  }
 
   function PageUpdate($btn) {
-    var apply_url = $btn.attr('data-apply-url');
+    var apply_url = $btn.attr("data-apply-url");
     if (apply_url) {
-      $btn.closest('.modal-body').load(apply_url);
+      $btn.closest(".modal-body").load(apply_url);
     } else {
-      $('.modal.show').each(function () {
-        $(this).modal('hide');
-      })
+      $(".modal.show").each(function () {
+        $(this).modal("hide");
+      });
       setTimeout("location.reload()", 1000);
     }
   }
 
-  // Selects
-  var defaultSelectClass = 'bg-light'
-
-
-  // General Select
-  function UpdateGeneralSelects($element = $('body')) {
-
-    $element.find('.general-select').each(function () {
-      $(this).select2({
-        theme: "bootstrap-5",
-        width: $(this).data('width') || '100%',
-        dropdownAutoWidth: true,
-        minimumResultsForSearch: 10,
-        selectionCssClass: $(this).data('class') || defaultSelectClass,
-      })
-    })
-  }
-  UpdateGeneralSelects();
-
-  // Ajax Selects
-  function UpdateAjaxSelects($element = $('body')) {
-    $element.find('.ajax-select').each(function () {
-      $(this).select2({
-        theme: "bootstrap-5",
-        width: $(this).data('width') || '100%',
-        dropdownAutoWidth: true,
-        dropdownParent: $(this).closest('.modal'),
-        selectionCssClass: $(this).data('class') || defaultSelectClass,
-        "language": {
-          "noResults": function () {
-            return "Ничего не найдено";
-          }
-        },
-        ajax: {
-          delay: 250,
-          url: $(this).data('url'),
-          dataType: 'json',
-          data: function (params) {
-            var query = {
-              search: params.term,
-              page: params.page || 1
-            }
-            return query;
-          }
-        }
-      });
-    });
-  }
-  UpdateAjaxSelects();
-
-  // Multiple Select Names > Count
-  function UpdateMultipleSelectCount($element = $('body')) {
-    $element.find('select.show-count-selected').each(function () {
-      MultipleSelectCount($(this));
-    });
-  }
-  UpdateMultipleSelectCount();
-
-  $(document).on('change', '.show-count-selected', function (e) {
-    MultipleSelectCount($(this))
-  })
-
-  function MultipleSelectCount($select) {
-    var count = $select.val().length;
-
-    if (count > 0) {
-      $select.parent().find('.select2-selection__rendered').remove();
-      var $count_span = $select.parent().find('.multiple-count');
-      if ($count_span.length) {
-        $count_span.html('+ ' + count);
-      } else {
-        $select.parent().find('.select2-selection.select2-selection--multiple').append($(`<span class="multiple-count" >+ ${count}</span>`))
-      }
-    }
-  }
-
-  // Select Open Focus
-  $(document).on('select select2:open', function () {
-    $(this).attr('data-test', 'test')
-    var single = $(this).parent().find('.select2-selection--single')
-    if (single.length) {
-      alert('single')
-      var $search = $('.select2-search.select2-search--dropdown').find('.select2-search__field');
-    } else {
-      document.querySelector('.select2-search__field').focus();
-      // $(document).find('.select2-search__field').focus();
-    }
-    // $search.focus();
-  });
-
-
   // Modals
   function LoadToModal($modal, url) {
-    $modal.find('.modal-body').load(url, function () {
+    $modal.find(".modal-body").load(url, function () {
       UpdateScripts($modal);
-      $modal.modal('toggle')
-    })
+      $modal.modal("toggle");
+    });
   }
 
   // Open Full Screen Modal
-  $('.modal').on('shown.bs.modal', function () {
+  $(".modal").on("shown.bs.modal", function () {
     var $modal = $(this);
 
-    if (!$modal.find('.modal-fullscreen').length) {
+    if (!$modal.find(".modal-fullscreen").length) {
       return false;
     }
-    $modal.css('height', $(window).height())
-    var $active_modals = $('body').find('.modal.show');
+    $modal.css("height", $(window).height());
+    var $active_modals = $("body").find(".modal.show");
     if ($active_modals.length === 1) {
       return false;
     }
     var $modal = $(this);
-    var z_index = $modal.css('z-index');
+    var z_index = $modal.css("z-index");
 
     $active_modals.each(function () {
       if ($(this).index() !== $modal.index()) {
-        var this_z_index = parseInt($(this).css('z-index'));
+        var this_z_index = parseInt($(this).css("z-index"));
         if (this_z_index > z_index) {
           z_index = this_z_index;
         }
-        var $close_btn = $(this).find('.modal-close-label')
-        $close_btn.css('top', '+=60')
-        $close_btn.css('opacity', '50%')
+        var $close_btn = $(this).find(".modal-close-label");
+        $close_btn.css("top", "+=60");
+        $close_btn.css("opacity", "50%");
       }
-
     });
-    $modal.css('z-index', z_index + 1)
-  })
+    $modal.css("z-index", z_index + 1);
+  });
 
   // Close Full Screen Modal
-  $('.modal').on('hide.bs.modal', function () {
+  $(".modal").on("hide.bs.modal", function () {
     var $modal = $(this);
 
-    if (!$modal.find('.modal-fullscreen').length) {
+    if (!$modal.find(".modal-fullscreen").length) {
       return true;
     }
-    if (!$('.modal.show').length > 1) {
+    if (!$(".modal.show").length > 1) {
       return false;
     }
-    var z_index = parseInt($modal.css('z-index'));
+    var z_index = parseInt($modal.css("z-index"));
     var max_z_index = 0;
 
-    $('body').find('.modal.show').each(function () {
-      var this_z_index = parseInt($(this).css('z-index'));
-      if (this_z_index !== z_index && this_z_index > max_z_index) {
-        max_z_index = this_z_index;
-      }
-    });
+    $("body")
+      .find(".modal.show")
+      .each(function () {
+        var this_z_index = parseInt($(this).css("z-index"));
+        if (this_z_index !== z_index && this_z_index > max_z_index) {
+          max_z_index = this_z_index;
+        }
+      });
 
-    $('body').find('.modal.show').each(function () {
-      if ($(this).index() !== $modal.index()) {
-        var $close_btn = $(this).find('.modal-close-label')
-        $close_btn.css('top', '-=60')
-      }
+    $("body")
+      .find(".modal.show")
+      .each(function () {
+        if ($(this).index() !== $modal.index()) {
+          var $close_btn = $(this).find(".modal-close-label");
+          $close_btn.css("top", "-=60");
+        }
 
-      var this_z_index = parseInt($(this).css('z-index'));
-      if (this_z_index == max_z_index) {
-        $close_btn.css('opacity', '1')
-      }
-    });
-  })
-
+        var this_z_index = parseInt($(this).css("z-index"));
+        if (this_z_index == max_z_index) {
+          $close_btn.css("opacity", "1");
+        }
+      });
+  });
 
   // Update Page
 
   // Update Page After Change
-  $(document).on('change', '.update-after-change select', function (e) {
-    var $form = $(this).closest('form'),
-      $modal_body = $(this).closest('.modal-body');
+  $(document).on("change", ".update-after-change select", function (e) {
+    var $form = $(this).closest("form"),
+      $modal_body = $(this).closest(".modal-body");
 
     // if modal
     if ($modal_body.length) {
-      var posting = $.post($form.attr('action'), $form.serialize());
+      var posting = $.post($form.attr("action"), $form.serialize());
 
       posting.done(function (data) {
         var content = $(data);
@@ -311,27 +183,21 @@
     } else {
       $form.submit();
     }
-  })
+  });
 
   // Update Page After Click Pagination
-  $(document).on("click", '.pagination a', function (e) {
-    var $modal_body = $(this).closest('.modal-body'),
-      url = $(this).attr('href');
+  $(document).on("click", ".pagination a", function (e) {
+    var $modal_body = $(this).closest(".modal-body"),
+      url = $(this).attr("href");
 
     // if modal
     if ($modal_body.length) {
       e.preventDefault();
       $modal_body.empty().load(url, function () {
         UpdateScripts($modal_body);
-      })
+      });
     }
-  })
+  });
 
-  function UpdateScripts($element) {
-    UpdateGeneralSelects($element);
-    UpdateAjaxSelects($element);
-    UpdateMultipleSelectCount($element);
-    feather.replace();
-  }
   feather.replace();
 </script>

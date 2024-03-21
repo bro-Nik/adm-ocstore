@@ -1,27 +1,25 @@
 import json
 import os
 from thefuzz import fuzz as f
-from datetime import datetime, timedelta
-from flask import render_template, redirect, url_for, request, session, flash,\
+from datetime import datetime
+from flask import current_app, render_template, redirect, url_for, request, session, flash,\
     Blueprint
-from flask_login import login_required, current_user
-from clim.app import redis, app, celery
+from flask_login import login_required
+from clim.app import celery
 from clim.general_functions import get_categories, get_discount_products, get_main_category, get_other_product, get_product
-from clim.models import Attribute, AttributeDescription, Category, Module, Option, OtherProduct, OtherShops, Product, ProductAttribute, ProductImage, ProductOptionValue, ProductSpecial, ProductToCategory, ProductVariant, RedirectManager, Review, SeoUrl, SpecialOffer, StockStatus, db
-
-
-product = Blueprint('product', __name__, template_folder='templates', static_folder='static')
+from clim.models import Category, Module, Option, OtherProduct, OtherShops, Product, ProductAttribute, ProductImage, ProductOptionValue, ProductSpecial, ProductToCategory, ProductVariant, RedirectManager, Review, SeoUrl, SpecialOffer, StockStatus, db
+from . import bp
 
 
 def get_url(category_id=None, product_id=None):
     if category_id:
-        filter = 'category_id='+str(category_id)
+        param = f'category_id={category_id}'
     elif product_id:
-        filter = 'product_id='+str(product_id)
+        param = f'product_id={product_id}'
     else:
         return None
 
-    return db.session.execute(db.select(SeoUrl).filter_by(query=filter)).scalar()
+    return db.session.execute(db.select(SeoUrl).filter_by(query=param)).scalar()
 
 
 def get_filter(method=None, path=None):
@@ -158,8 +156,8 @@ def get_stock_statuses():
         db.select(StockStatus).filter_by(language_id=1)).scalars()
 
 
-@product.route('/products', methods=['GET', 'POST'])
-@product.route('/products/<string:path>', methods=['GET', 'POST'])
+@bp.route('/products', methods=['GET', 'POST'])
+@bp.route('/products/<string:path>', methods=['GET', 'POST'])
 @login_required
 def products(path=''):
     other_shops = db.session.execute(db.select(OtherShops)).scalars()
@@ -191,7 +189,7 @@ def products(path=''):
                            attributes_in_products=attributes_in_products)
 
 
-@product.route('/products/action', methods=['POST'])
+@bp.route('/products/action', methods=['POST'])
 @login_required
 def products_action():
     data = json.loads(request.data) if request.data else {}
@@ -229,8 +227,8 @@ def products_action():
 
 def product_delete(product_id: int, action: str, redirect_to):
     """ Удаление товара и все, что с ним связано """
-    image_path = app.config['IMAGE_PATH']
-    download_path = app.config['DOWNLOAD_PATH']
+    image_path = current_app.config['IMAGE_PATH']
+    download_path = current_app.config['DOWNLOAD_PATH']
 
     old_url = new_url = None
 
@@ -239,7 +237,7 @@ def product_delete(product_id: int, action: str, redirect_to):
     # Seo url
     product_url = get_url(product_id=product_id)
     if product_url:
-        old_url = app.config['CATALOG_DOMAIN'] + product_url.keyword
+        old_url = current_app.config['CATALOG_DOMAIN'] + product_url.keyword
         db.session.delete(product_url)
 
     # Добавляем редирект
@@ -249,7 +247,7 @@ def product_delete(product_id: int, action: str, redirect_to):
         main_category_url = get_url(category_id=main_category.category_id)
 
         if main_category_url:
-            new_url = app.config['CATALOG_DOMAIN'] + main_category_url.keyword
+            new_url = current_app.config['CATALOG_DOMAIN'] + main_category_url.keyword
 
     elif action == 'redirect_to':
         new_url = redirect_to
@@ -451,7 +449,7 @@ def update_product_variants(product_id):
     return product_ids_in_series
 
 
-@product.route('/comparison_products', methods=['POST'])
+@bp.route('/comparison_products', methods=['POST'])
 @login_required
 def start_comparison_products():
     """ Запуск подбира похожих товаров """
@@ -532,7 +530,7 @@ def comparison_products(filter):
     print('End')
 
 
-@product.route('/confirm_product_to_product', methods=['POST'])
+@bp.route('/confirm_product_to_product', methods=['POST'])
 @login_required
 def confirm_product_to_product():
     """ Привязка или отвязка товара конкурента """
@@ -565,7 +563,7 @@ def confirm_product_to_product():
     return redirect(url_for('.products', path='comparison', page=page))
 
 
-@product.route('/prices/action', methods=['POST'])
+@bp.route('/prices/action', methods=['POST'])
 @login_required
 def products_prices_action():
     page = request.args.get('page')
@@ -740,7 +738,7 @@ def get_products_prices_settings():
     return settings_in_base, settings
 
 
-@product.route('/prices/settings', methods=['GET'])
+@bp.route('/prices/settings', methods=['GET'])
 @login_required
 def products_prices_settings():
     settings_in_base, settings = get_products_prices_settings()

@@ -1,133 +1,133 @@
-<div class="container-fluid px-6 d-grid gap-3 mt-3">
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
 
+{% block content %}
 
-    <div class="row">
-      <div class="col-lg-12 col-md-12 col-12">
-        <!-- Page header -->
-        <div>
-          <div class="d-flex align-items-center">
-            <div class="mb-2 mb-lg-0">
-              <h3 class="mb-0">
-                Выбрать товары
-              </h3>
-            </div>
-            <div class="col-sm-4 ms-4">
-              <input id="SearchSetProducts" type="text" class="form-control" placeholder="Поиск">
-            </div>
-            <div class="ms-auto d-flex gap-2">
-              <button id="SearchSetProductsSubmit" type="button" class="btn btn-primary">Применить</button>
-            </div>
-          </div>
+<div class="row">
+  <div class="col-lg-12 col-md-12 col-12">
+    <div>
+      <div class="d-flex align-items-center">
+        <h3 class="mb-0">Выбрать товары</h3>
+        <div class="col-sm-4 ms-4">
+          <input id="SearchSetProducts" type="text" class="form-control" placeholder="Поиск" />
+        </div>
+        <div class="ms-auto d-flex gap-2">
+          <button id="SearchSetProductsSubmit" type="button" class="btn btn-primary">Применить</button>
         </div>
       </div>
-    </div>
-
-  <!-- row  -->
-  <div class="row">
-    <div class="col-12 d-grid gap-3">
-
-
-      <div class="card h-100">
-
-
-        <!-- table  -->
-        <div id="productsList" class="table-responsive">
-        </div>
-      </div>
-
-
     </div>
   </div>
 </div>
 
+<div class="row">
+  <div class="col-12 d-grid gap-3">
+    <div class="card h-100">
+      <div id="productsList" class="table-responsive"></div>
+    </div>
+  </div>
+</div>
 
 <script>
-  $('#productsList').load("{{ url_for('.set_products') }}");
+  $("#productsList").load("{{ url_for('.set_products') }}");
 
-  $('#productsList').on("click", 'a.open-category', function () {
-    var category_id = $(this).attr('data-category-id');
-    $('#productsList').load("{{ url_for('.set_products') }}" + '?category_id=' + category_id);
-  })
+  $("#productsList").on("click", "a.open-category", function () {
+    var category_id = $(this).attr("data-category-id");
+    $("#productsList").load(
+      "{{ url_for('.set_products') }}" + "?category_id=" + category_id,
+    );
+  });
 
-  $('#productsList').on("click", 'a.page-link', function () {
-    var page = $(this).attr('data-page'),
-      url = "{{ url_for('.set_products') }}" + '?category_id=' + category_id + '&page=' + page;
+  $("#productsList").on("click", "a.page-link", function () {
+    var page = $(this).attr("data-page"),
+      url = "{{ url_for('.set_products') }}" + "?category_id=" + category_id + "&page=" + page;
 
-    $('#productsList').load(url);
-  })
+    $("#productsList").load(url);
+  });
 
   var checked = [];
-  $('#productsList').on("change", ':checkbox', function () {
+  $("#productsList").on("change", ":checkbox", function () {
     var $checkbox = $(this),
       id = $checkbox.val();
-    if ($checkbox.prop('checked')) {
+    if ($checkbox.prop("checked")) {
       checked.push(id);
     } else {
-      checked.forEach(function(item, i){
-        if(item == id){
+      checked.forEach(function (item, i) {
+        if (item == id) {
           checked.splice(i, 1);
         }
       });
     }
-  })
+  });
 
-  $('#SearchSetProducts').on("input", function () {
+  $("#SearchSetProducts").on("input", function () {
     var url = "{{ url_for('.set_products') }}",
-      search = $(this).val().replaceAll(' ', '_');
-    url += '?search=' + search;
+      search = $(this).val().replaceAll(" ", "_");
+    url += "?search=" + search;
     if (category_id) {
-      url += '&category_id=' + category_id
+      url += "&category_id=" + category_id;
     }
 
-    $('#productsList').load(url);
+    $("#productsList").load(url);
     //alert($(this).val())
-  })
+  });
 
-  $('#SearchSetProductsSubmit').on("click", function () {
-    var $tab = $('#tabProducts');
+  $("#SearchSetProductsSubmit").on("click", function () {
+    var $tab = $("#tabProducts");
     if (!$tab) {
       return false;
     }
 
     var first_start = true;
 
-    checked.forEach(function(product_id){
-      var $productSelect = $tab.find('tr.product').eq(-1).find('select.product-select');
+    checked.forEach(function (product_id) {
+      var $productSelect = $tab
+        .find("tr.product")
+        .eq(-1)
+        .find("select.product-select");
       if (!$productSelect.val() && first_start) {
         first_start = false;
       } else {
         newLine();
       }
 
-      SelectProduct($tab, product_id)
+      SelectProduct($tab, product_id);
     });
 
-    $tab.find('tr.product').eq(-1).find('select.product-select').select2('close');
-    $('#SelectProductsModal').modal('hide');
-  })
+    $tab
+      .find("tr.product")
+      .eq(-1)
+      .find("select.product-select")
+      .select2("close");
+    $("#SelectProductsModal").modal("hide");
+  });
 
   function SelectProduct($tab, product_id) {
     // Select Product
-    var $tr = $tab.find('tr.product').eq(-1),
-      $productSelect = $tab.find('tr.product').eq(-1).find('select.product-select');
+    var $tr = $tab.find("tr.product").eq(-1),
+      $productSelect = $tab
+        .find("tr.product")
+        .eq(-1)
+        .find("select.product-select");
 
     $.ajax({
-      type: 'GET',
+      type: "GET",
       url: "{{ url_for('.ajax_products_one') }}" + "?product_id=" + product_id,
-      dataType: 'json'
+      dataType: "json",
     }).then(function (data) {
       var option = new Option(data.text, data.id, true, true);
-      $(option).attr('data-cost', data.cost);
-      $(option).attr('data-unit', data.unit);
-      $productSelect.empty().append(option).trigger('change');
-
+      $(option).attr("data-cost", data.cost);
+      $(option).attr("data-unit", data.unit);
+      $productSelect.empty().append(option).trigger("change");
 
       $productSelect.trigger({
-        type: 'select2:select',
+        type: "select2:select",
         params: {
-          data: data
-        }
+          data: data,
+        },
       });
     });
   }
 </script>
+{% endblock %}
