@@ -8,7 +8,7 @@ from flask_login import login_required
 from clim.deal.utils import get_stage
 from clim.general_functions import actions_in
 
-from ..stock.utils import get_consumables_categories_ids
+from ..stock.utils import get_consumables_categories_ids, new_product_in_stock
 from ..jinja_filters import smart_int
 from ..models import OptionValueDescription, ProductDescription, db, \
     Contact, Deal, DealService, DealStage, Option, OptionValue, Stock, \
@@ -383,7 +383,8 @@ def deal_info():
 def deal_info_update():
     deal = get_deal(request.args.get('deal_id'))
     if not deal:
-        deal = Deal(date_add=datetime.now())
+        deal = Deal(date_add=datetime.now(),
+                    stage=get_stage(stage_type='start'))
         db.session.add(deal)
 
     data = json_loads_or_other(request.data, {})
@@ -437,19 +438,18 @@ def deal_info_update():
         deal.expenses = json_dumps_or_other(data.get('expenses'))
 
     # Stage
-    old_stage_id = info.get('old_stage')
-    new_stage_id = info.get('stages')
+    # old_stage_id = info['old_stage']
+    old_stage_id = deal.stage_id
+    new_stage_id = info['stages']
 
-    # posting = False
-    # # ToDo Проверка смены статуса после постинга
-    # if old_stage_id and new_stage_id:
-    #     new_stage = get_stage(new_stage_id)
-    #     old_stage = get_stage(old_stage_id)
-    #     if old_stage and new_stage:
-    #         if 'end' in old_stage.type and 'end' not in new_stage.type:
-    #             posting = False
-    # else:
-        # posting = info.get('posting')
+    # ToDo Проверка смены статуса после постинга
+    unposting = False
+    new_stage = get_stage(new_stage_id)
+    old_stage = get_stage(old_stage_id)
+    if old_stage and new_stage:
+        if 'end' in old_stage.type and 'end' not in new_stage.type:
+            unposting = True
+            print('Cansel posting')
 
     posting = info.get('posting')
     if posting:
@@ -461,18 +461,25 @@ def deal_info_update():
         deal.sort_order = 1
         sort_stage_deals(new_stage_id, deal.deal_id, 0)
 
-    # Posting
-    if not deal.posted and info.get('posting'):
+    # Posting or Unposting
+    error = ''
+    if unposting:
+        error = deal_posting(deal, cansel=True)
+        deal.posted = False
+    elif not deal.posted and info.get('posting'):
         error = deal_posting(deal)
-        if error:
-            return redirect(url_for('deal_info', deal_id=deal.deal_id))
+        deal.posted = True
+    if error:
+        return redirect(url_for('deal_info', deal_id=deal.deal_id))
 
     db.session.commit()
 
     return redirect(url_for('.deal_info', deal_id=deal.deal_id))
 
 
-def deal_posting(deal):
+def deal_posting(deal, cansel=False):
+    d = -1 if cansel else 1
+
     def change_quantity(products):
         nonlocal not_stock_id
         cost_price = 0
@@ -487,17 +494,20 @@ def deal_posting(deal):
                     break
 
                 quantity = product.get('quantity')
-                
                 product_in_stock = get_product_in_stock(product['product_id'],
                                                         product['stock_id'])
-                product_in_stock.quantity -= quantity
+                if not product_in_stock:
+                    product_in_stock = new_product_in_stock(product['product_id'],
+                                                            product['stock_id'])
+                    db.session.flush()
+                product_in_stock.quantity -= quantity * d
 
                 product['stock_name'] = product_in_stock.stock.name
                 product['product_name'] = product_in_stock.main_product.description.meta_h1
                 product['unit'] = product_in_stock.main_product.unit_class.description.unit
 
                 # to analytics
-                cost_price += product_in_stock.main_product.cost * quantity
+                cost_price += product_in_stock.main_product.cost * quantity * d
 
                 # delete product if quantity 0
                 if product_in_stock.quantity == 0:
@@ -523,15 +533,13 @@ def deal_posting(deal):
 
     # Employments
     details = json.loads(deal.details) if deal.details else {}
-    
-    event = 'deal_' + str(deal.deal_id)
-    employments = get_employments(event)
+
+    employments = get_employments(f'deal_{deal.deal_id}')
     details['employments'] = []
     for employment in employments:
         details['employments'].append(employment.worker.name)
         db.session.delete(employment)
     deal.details = json.dumps(details)
-
 
     # Analytics
     cost_price_expenses = 0
@@ -552,7 +560,6 @@ def deal_posting(deal):
     analytics = json.dumps(analytics)
     deal.analytics = analytics
 
-    deal.posted = True
     return ''
 
 
@@ -717,3 +724,21 @@ def get_product_in_stock(product_id, stock_id):
     return db.session.execute(
         db.select(StockProduct)
         .filter_by(product_id=product_id, stock_id=stock_id)).scalar()
+
+
+@bp.route('/stage_settings', methods=['GET', 'POST'])
+@login_required
+def stage_settings():
+    stage = get_stage(request.args.get('stage_id')) or DealStage(type='')
+    if request.method == 'POST':
+        if stage:
+            stage.name = request.form.get('name')
+            stage.type = request.form.get('type')
+            stage.color = request.form.get('color')
+            db.session.commit()
+        data = json.loads(request.data) if request.data else {}
+        action = data.get('action')
+        info = data.get('info')
+        print(info)
+
+    return render_template('deal/deals_modal_stage.html', stage=stage)

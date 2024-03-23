@@ -167,7 +167,7 @@ def settings_consumables_option():
             .filter_by(attribute_id=settings.get('attribute_id'))).scalar()
 
     consumables = None
-    if value.settings:
+    if value.settings and value.settings.consumables:
         consumables = json.loads(value.settings.consumables)
         for consumable in consumables:
             product = get_product(consumable['product_id'])
@@ -227,7 +227,7 @@ def json_consumables_in_option(option_value_id=None):
         db.select(OptionValueSetting)
         .filter_by(option_value_id=option_value_id)
     ).scalar()
-    if option_value:
+    if option_value and option_value.consumables:
         consumables = json.loads(option_value.consumables)
         for consumable in consumables:
             product = get_product(consumable['product_id'])

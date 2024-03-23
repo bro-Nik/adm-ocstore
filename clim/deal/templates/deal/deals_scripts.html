@@ -78,16 +78,6 @@
   // Update Stage Info
   $("body").on("click", "svg.update-stage", function () {
     var $column = $(this).closest(".stage-column");
-    var $modal = $("#StageUpdate");
-    $modal.find("[name=stage_id]").val($column.attr("data-stage"));
-    $modal.find("[name=name]").val($column.find(".stage-name").text());
-    $modal.find(".modal-title").text($column.find(".stage-name").text());
-    $modal.find("[name=type]").val($column.find(".stage-type").val());
-    $modal.find("[name=color]").val($column.find(".stage-color").val());
-
-    $modal
-      .find(".delete")
-      .prop("disabled", $($column).find(".stage-deal-count").text() !== "(0)");
 
     // to delete modal
     var $delete_modal = $("#deleteModal");

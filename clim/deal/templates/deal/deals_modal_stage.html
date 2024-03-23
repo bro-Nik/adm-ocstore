@@ -1,0 +1,40 @@
+{# Jinja2 #}
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = False %}
+  {% set modal_title = stage.name if stage.stage_id else 'Новая стадия' %}
+{% endif %}
+
+{% block content %}
+<form id="StageForm" method="post" action="{{ url_for('.stage_settings', stage_id=stage.stage_id) }}">
+  <input type="hidden" name="stage_id" value="" />
+
+  <label class="col-sm-3 col-form-label form-label">Название</label>
+  <input type="text" class="form-control mb-" name="name" value="{{ stage.name }}" />
+
+  <div class="d-flex mb-3">
+    <div class="col-9">
+      <label class="col-sm-3 col-form-label form-label">Тип</label>
+      <select class="form-control" name="type" required>
+        <option value="start" {{ 'selected' if stage.type == 'start' }}>Начальная</option>
+        <option value="" {{ 'selected' if not stage.type }}>Промежуточная</option>
+        <option value="end_good" {{ 'selected' if stage.type == 'end_good' }}>Удачная сделка</option>
+        <option value="end_bad" {{ 'selected' if stage.type == 'end_bad' }}>Неудачная сделка</option>
+      </select>
+    </div>
+
+    <div class="col-2 ms-auto">
+      <label class="form-label col-form-label">Цвет</label>
+      <input type="color" class="form-control form-control-color" name="color" value="{{ stage.color if stage.color }}" />
+    </div>
+  </div>
+
+  <div class="d-flex">
+    <button class="btn btn-primary rounded-3 action" type="submit" data-action="save" data-form="#StageForm">Сохранить</button>
+    <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">Отменить</button>
+    {% if stage.stage_id %}
+      <button class="btn text-danger ms-auto delete" type="submit" name="action" value="delete">Удалить</button>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}
