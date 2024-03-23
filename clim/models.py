@@ -555,6 +555,13 @@ class Deal(db.Model):
     profit = db.Column(db.Float(15.4))
     sort_order = db.Column(db.Integer)
 
+    @property
+    def completed(self):
+        return 'end_' in self.stage.type
+
+    def delete(self):
+        db.session.delete(self)
+
 
 class DealStage(db.Model):
     __tablename__ = 'adm_deal_stage'

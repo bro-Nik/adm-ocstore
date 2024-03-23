@@ -1,6 +1,6 @@
 {% extends "deal/deals.html" %}
+
 {% block deals_content %}
-<!-- row  -->
 <div class="row">
   <div class="col-xl-12 col-lg-12 col-md-12 col-12">
 
@@ -24,7 +24,7 @@
 
             {% for stage in stages %}
 
-              <tr style="{{ 'background: ' + stage.color + ';' if stage.color }}"
+              <tr style="{{ 'background: {};'.format(stage.color) if stage.color }}"
                 class="stage-column" data-stage="{{ stage.stage_id }}">
 
                 <input type="hidden" class="stage-type" value="{{ stage.type }}">
@@ -54,9 +54,8 @@
                                                               value="{{ deal.deal_id }}">
                   </td>
                   <td data-deal-id="{{ deal.deal_id }}">
-                    <a href="#" class="text-inherit show-deal">
-                      {{ deal.name }}
-                    </a>
+                    <a class="open-modal text-inherit" data-modal-id="DealInfoModal"
+                      data-url="{{ url_for('.deal_info', deal_id=deal.deal_id) }}">{{ deal.name }}</a>
                     <br>
                     <span class="fs-6"></span>
                   </td>
@@ -78,12 +77,10 @@
 </div>
 
 <script>
-  
   // Check Stage
   $('#Deals').on("change", '.check-stage', function () {
     $('.' + this.id).prop('checked', $(this).is(':checked'));
     $('#Deals').find('.to-check:checkbox').trigger('change');
   })
-
 </script>
 {% endblock %}

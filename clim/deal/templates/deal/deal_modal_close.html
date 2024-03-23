@@ -1,0 +1,21 @@
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = False %}
+  {% set modal_title = 'Какой результат?' %}
+{% endif %}
+
+{% block content %}
+<div class="d-flex gap-2 justify-content-center">
+  {% for stage in stages %}
+    <div>
+      <input type="radio" class="btn-check end-stage" name="stages" id="stage_{{ stage.stage_id }}"
+        {{ 'checked' if stage.stage_id == deal.stage_id }} value="{{ stage.stage_id }}">
+      <label class="btn mb-2 text-white" style="{{ 'background: {};'.format(stage.color) }}"
+        for="stage_{{ stage.stage_id }}" data-bs-dismiss="modal">
+        {{ stage.name }}
+      </label>
+    </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

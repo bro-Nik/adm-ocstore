@@ -165,10 +165,19 @@ def settings_consumables_option():
         attribute = db.session.execute(
             db.select(Attribute)
             .filter_by(attribute_id=settings.get('attribute_id'))).scalar()
+
+    consumables = None
+    if value.settings:
+        consumables = json.loads(value.settings.consumables)
+        for consumable in consumables:
+            product = get_product(consumable['product_id'])
+            consumable['cost'] = product.cost or 0
+            consumable['name'] = product.description.name
     return render_template('stock/settings/consumables_option.html',
                            option_id=request.args.get('option_id'),
                            value=value,
                            settings=settings,
+                           option_value_consumables=consumables,
                            attribute=attribute)
 
 
@@ -216,9 +225,17 @@ def json_products_in_stocks(product_id=None):
 def json_consumables_in_option(option_value_id=None):
     option_value = db.session.execute(
         db.select(OptionValueSetting)
-        .filter(OptionValueSetting.option_value_id == option_value_id)
+        .filter_by(option_value_id=option_value_id)
     ).scalar()
-    return option_value.consumables if option_value else []
+    if option_value:
+        consumables = json.loads(option_value.consumables)
+        for consumable in consumables:
+            product = get_product(consumable['product_id'])
+            consumable['cost'] = product.cost or 0
+            consumable['name'] = product.description.name
+        return consumables
+
+    return []
 
 
 @bp.route('/json/consumables', methods=['GET'])
@@ -226,9 +243,8 @@ def json_consumables_in_option(option_value_id=None):
 def json_consumables():
     consumables = get_consumables()
     result = []
-    for consumable in consumables:
-        result.append({'name': consumable.description.name,
-                       'id': consumable.product_id})
+    for c in consumables:
+        result.append({'name': c.description.name, 'id': c.product_id})
 
     return json.dumps(result)
 

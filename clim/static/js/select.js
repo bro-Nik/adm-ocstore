@@ -67,16 +67,16 @@ function MultipleSelectCount($select) {
   }
 }
 
-function UpdateScripts($element) {
+function UpdateSelects($element) {
   UpdateGeneralSelects($element);
   UpdateAjaxSelects($element);
   UpdateMultipleSelectCount($element);
-  feather.replace();
 }
 
-UpdateAjaxSelects();
-UpdateGeneralSelects();
-UpdateMultipleSelectCount();
+UpdateSelects($("body"))
+// UpdateAjaxSelects();
+// UpdateGeneralSelects();
+// UpdateMultipleSelectCount();
 
 
 $(document).on("change", ".show-count-selected", function (e) {

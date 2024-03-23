@@ -435,7 +435,7 @@ input[type="number"]:focus {
     box-shadow: 0 -2px 4px 0 rgba(0,0,0,.05);
     text-align: center;
     z-index: 10;
-    margin-left: -2rem;
+    margin-left: -1.5rem;
   }
 .sticky-bottom.active {
     transform: translateY(0);

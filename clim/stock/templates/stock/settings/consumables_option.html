@@ -36,7 +36,6 @@
 
           <tbody>
             {% set var = namespace(count=0) %}
-            {% set option_value_consumables = value.settings.consumables|to_json if value.settings %}
             {% if not option_value_consumables %}
               {% set option_value_consumables = [{}] %}
             {% endif %}
@@ -225,7 +224,7 @@
       if (product_id) {
         var item = {
           product_id: product_id,
-          name: $productSelect.find(":selected").html(),
+          //name: $productSelect.find(":selected").html(),
           quantity: +$tr.find(".quantity").val() || 0,
         };
         products.push(item);

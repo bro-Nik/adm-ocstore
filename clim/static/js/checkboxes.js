@@ -52,9 +52,9 @@ $("body").on("change", ".to-check", function () {
     $box_actions = $form.find(".form-actions");
 
   if (checked_count > 0) {
-    $box_actions.find('button').addClass("active");
+    $box_actions.addClass("active");
   } else {
-    $box_actions.find('button').removeClass("active");
+    $box_actions.removeClass("active");
   }
   $box_actions.find('button').prop("disabled", !checked_count > 0);
   $box_actions.find(".checks-count").text(`${checked_count} / ${all_count}`);

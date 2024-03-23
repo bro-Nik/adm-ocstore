@@ -2,28 +2,6 @@
   feather.replace();
 
   // Actions
-
-  // Open modal to confirm
-  $("body").on("click", ".action-confirmation", function () {
-    var $modal = $("#ModalConfirmation"),
-      $btn = $(this),
-      title = $btn.attr("data-title"),
-      action = $btn.attr("data-action");
-
-    if ($btn.attr("data-form")) {
-      $modal.find(".action").attr("data-form", $btn.attr("data-form"));
-    } else {
-      $modal
-        .find(".action")
-        .attr("data-form", "#" + $btn.closest("form").attr("id"));
-    }
-
-    $modal.find(".modal-title").text(title);
-    $modal.find(".action").attr("data-action", action);
-    $modal.modal("toggle");
-  });
-
-  //
   $("body").on("click", ".action", function () {
     var $btn = $(this),
       checked = [];
@@ -89,12 +67,12 @@
   }
 
   // Modals
-  function LoadToModal($modal, url) {
-    $modal.find(".modal-body").load(url, function () {
-      UpdateScripts($modal);
-      $modal.modal("toggle");
-    });
-  }
+  //  function LoadToModal($modal, url) {
+  //    $modal.find(".modal-body").load(url, function () {
+  //      UpdateScripts($modal);
+  //      $modal.modal("toggle");
+  //    });
+  //  }
 
   // Open Full Screen Modal
   $(".modal").on("shown.bs.modal", function () {

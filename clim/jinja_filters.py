@@ -4,6 +4,7 @@ from datetime import datetime
 import locale
 
 from clim.main import bp
+from clim.models import OptionValue, Product
 
 
 def smart_int(number):
@@ -105,5 +106,3 @@ def smart_phone(phone_number: str) -> str:
 
 
 bp.add_app_template_filter(smart_phone)
-
-

@@ -174,8 +174,6 @@ $(function () {
     // Fade
     if (!$modal.find(".modal-fullscreen").length) {
       $("body .modal-backdrop").eq(-1).remove();
-    } else {
-      $modal.find('.modal-body').empty();
     }
   });
 
@@ -270,7 +268,6 @@ function LoadToModal(modal_id, url, pre_need_update, pre_modal_id) {
 
   $loadIn.load(url, function () {
     UpdateScripts($modal);
-    //UpdateSmartSelects($modal);
     $modal.modal({
       backdrop: false,
       keyboard: true,
@@ -314,38 +311,9 @@ function UpdateFocus($element = $("body")) {
 
 // Update Page
 function UpdateScripts($element) {
-  //UpdateSmartSelects($element);
   StickyBottomActionsUpdate($element);
-  //UpdateTables($element);
-  //CreateConvertTo($element);
-}
-
-
-// Update Table
-function UpdateTables($element = $("body")) {
-  $element.find(".bootstrap-table").bootstrapTable({
-    formatSearch() {
-      return trans.search;
-    },
-    formatNoMatches() {
-      return trans.nothing_found;
-    },
-    formatLoadingMessage: function() {
-        return trans.loading;
-    },
-  })
-  // Sort
-  .on('click', '.th-inner.sortable', function () {
-    var tab_name = $(this).closest('table').data('name'),
-      field = $(this).parent().data('field'),
-      sort_order = $(this).hasClass('desc') ? 'asc' : 'desc',
-      url = $(this).closest('table').data('sort-url');
-
-    if (tab_name && field && sort_order && url) {
-      url += `?tab_name=${tab_name}&field=${field}&sort_order=${sort_order}`;
-      $.get(url)
-    }
-  })
+  UpdateSelects($element);
+  feather.replace();
 }
 
 // Sticky Bottom Actions
@@ -362,12 +330,12 @@ function StickyBottomActionsUpdate($element = $("body")) {
 
 function CreateStickyBottomActions($element) {
   var $content = $(`
-    <div class="sticky-bottom actions">
+    <div class="sticky-bottom form-actions">
       <div class="col-12">
         <div class="bg-white h-100 d-flex gap-2 align-items-center align-items-center">
           <span class="ms-5">Отмечено:</span>
           <span class="checks-count"></span>
-          <a class="ms-3 decheck-all">
+          <a class="ms-3 decheck-all text-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>
           </a>
           <div class="vr my-3"></div>
@@ -402,8 +370,6 @@ function SendingData(url, data, $btn, $modal) {
 }
 
 StickyBottomActionsUpdate();
-//UpdateTables();
-//CreateConvertTo();
 $('body .fade').addClass('show');
 UpdateFocus();
-
+feather.replace();

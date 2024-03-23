@@ -1,3 +1,4 @@
+{# Jinja2 #}
 {% set details = deal.details|to_json if deal and deal.details else {} %}
 
 
@@ -13,7 +14,7 @@
       <div class="d-grid">
         <label class="deal-info-block-title">Название</label>
         <input type="text" class="form-control border" placeholder="Сделка #" name="deal_name"
-          value="{{ deal.name if deal }}">
+          value="{{ deal.name if deal.name }}">
       </div>
       {% endif %}
 
@@ -31,14 +32,13 @@
 
         <div class="to-hidden">
           {% if deal.contact %}
-          <h5>{{ deal.contact.name}}</h5>
-          <span class="deal-info-contact">{{ deal.contact.phone|smart_phone }}</span>
-          <span class="deal-info-contact">{{ deal.contact.email}}</span>
+            <h5>{{ deal.contact.name}}</h5>
+            <span class="deal-info-contact">{{ deal.contact.phone|smart_phone }}</span>
+            <span class="deal-info-contact">{{ deal.contact.email}}</span>
           {% endif %}
 
           <div class="{{ 'visually-hidden' if deal and deal.contact }}">
-            <select id="contactSelect" data-placeholder="-- Выбрать --" name="contact_id">
-            </select>
+            <select id="contactSelect" data-placeholder="-- Выбрать --" name="contact_id"></select>
           </div>
         </div>
 
@@ -159,7 +159,7 @@
 
       <div class="d-grid">
         <label class="deal-info-block-title">Дата и время выезда</label>
-        <div id="deal_employments" class="deal-info-edit-link-employments">
+        <div id="DealEmployments" class="deal-info-edit-link-employments">
           <span class="deal-info-edit-link-booking">Для выбора сохраните сделку</span>
         </div>
       </div>

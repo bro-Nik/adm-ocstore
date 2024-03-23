@@ -1,13 +1,18 @@
-<!-- Container fluid -->
-<form id="DealInfo" action="{{ url_for('.deal_info_update', deal_id=deal.deal_id if deal else None) }}">
-  <div class="container-fluid px-6 d-grid gap-3 mt-3 pb-80">
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
 
+{% block content %}
+
+<!-- Container fluid -->
+<form id="DealInfo" data-url="{{ url_for('.deal_info_update', deal_id=deal.deal_id if deal.deal_id else None) }}">
+  <div class="container-fluid px-6 d-grid gap-3 mt-3 pb-80">
     {% include 'deal/deal_header.html' %}
 
     <!-- row  -->
     <div class="row">
       <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-
         <div class="tab-content" id="pills-tabContent">
           <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab"
             tabindex="0">
@@ -50,10 +55,12 @@
           </div>
 
           <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab"
-            tabindex="0">...
+            tabindex="0">
+            ...
           </div>
           <div class="tab-pane fade" id="pills-disabled" role="tabpanel" aria-labelledby="pills-disabled-tab"
-            tabindex="0">...
+            tabindex="0">
+            ...
           </div>
         </div>
       </div>
@@ -62,15 +69,42 @@
 
   <div class="sticky-bottom-box">
     <div class="sticky-bottom actions bg-white py-2">
-      <button type="button" class="btn btn-salato btn-to-submit ">Сохранить</button>
+      <button type="button" class="btn btn-salato btn-to-submit" data-this-need-update="true">Сохранить</button>
       <button class="btn btn-transparent rounded-3" type="reset">Отмена</button>
     </div>
   </div>
 
-  <input type="hidden" class="posting" name="posting">
-  <input type="hidden" class="old-stage" name="old_stage">
+  <input type="hidden" class="posting" name="posting" />
+  <input type="hidden" class="old-stage" name="old_stage" />
 </form>
 
-
-{% include 'deal/deal_modals.html' %}
 {% include 'deal/deal_scripts.html' %}
+
+{% if deal.deal_id %}
+<script>
+  // Update Deal Employments
+  UpdateDealEmployments();
+
+  function UpdateDealEmployments() {
+    $('body').find('#DealEmployments').load("{{ url_for('.deal_employments',deal_id=deal.deal_id) }}");
+  };
+
+  $('#BookingModal').on("click", '#event_save', function () {
+    UpdateDealEmployments();
+  });
+
+  $('body').on('click', '#DealEmployments', function () {
+    var need_load = !$("#BookingModal").length;
+
+    if (need_load) {
+      LoadToModal('BookingModal', "{{ url_for('.deal_booking',deal_id=deal.deal_id) }}", false, false);
+    } else {
+      $('#BookingModal').modal('show');
+    }
+  });
+</script>
+
+{% endif %}
+
+{% endblock %}
+

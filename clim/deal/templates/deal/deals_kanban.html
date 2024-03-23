@@ -29,9 +29,8 @@
             {% set var.item_count = var.item_count + 1 %}
 
             <div class="board-item" draggable data-deal-id="{{ deal.deal_id }}" data-item="{{ deal.deal_id }}" data-item-sort="{{ deal.sort_order }}" style="{{ '--crm-kanban-item-color: ' + stage.color + ';' if stage.color }}">
-              <a class="crm-kanban-deal-title show-deal" href="#">
-                {{ deal.name }}
-              </a>
+              <a class="crm-kanban-deal-title open-modal" data-modal-id="DealInfoModal"
+                data-url="{{ url_for('.deal_info', deal_id=deal.deal_id) }}" >{{ deal.name }}</a>
               <div class="crm-kanban-item-line"></div>
               <div class="crm-kanban-deal-price">{{ deal.sum|money }} ₽</div>
               <div class="crm-kanban-deal-date-add">

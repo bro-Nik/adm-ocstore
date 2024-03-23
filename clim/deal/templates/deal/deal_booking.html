@@ -1,8 +1,14 @@
-<link rel="stylesheet" href="{{ url_for('.static', filename='time-picker/style.css') }}">
+{% if not request.args.get('only_content') %}
+    {% extends "modal_base.html" %}
+    {% set modal_fullscreen = True %}
+{% endif %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('.static', filename='time-picker/style.css') }}" />
 
 <!-- Container fluid -->
 <div id="BookingPage" class="container-fluid px-6 d-grid gap-3 mt-3">
-
     <div class="row">
         <div class="col-lg-12 col-md-12 col-12">
             <!-- Page header -->
@@ -13,7 +19,7 @@
                     </div>
 
                     <div id="StartDate" class="col-2">
-                        <input type="text" class="form-control border">
+                        <input type="text" class="form-control border" />
                     </div>
 
                     <div id="service_select">
@@ -30,15 +36,17 @@
 
                     <div class="ms-auto">
                         <button id="event_save" class="btn btn-primary">Сохранить</button>
-                        <button id="event_resetNewData" class="btn btn-transparent">Удалить новые</button>
-                        <button id="event_resetDataInDeal" class="btn btn-transparent">Удалить относящиеся к
-                            сделке</button>
+                        <button id="event_resetNewData" class="btn btn-transparent">
+                            Удалить новые
+                        </button>
+                        <button id="event_resetDataInDeal" class="btn btn-transparent">
+                            Удалить относящиеся к сделке
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
 
     <div class="row">
         <div id="schedule"></div>
@@ -47,18 +55,14 @@
                 <h3>Log</h3>
             </div>
             <div class="col-md-4 text-right">
-                <a class="btn btn-default" style="margin-top: 16px;" id="clear-logs">clear</a>
+                <a class="btn btn-default" style="margin-top: 16px" id="clear-logs">clear</a>
             </div>
         </div>
-        <div style="padding: 12px 0 0; ">
+        <div style="padding: 12px 0 0">
             <div id="logs" class="table-responsive"></div>
         </div>
-
     </div>
 </div>
-
-
-
 
 <script src="https://code.jquery.com/ui/1.10.4/jquery-ui.min.js" type="text/javascript" language="javascript"></script>
 <script src="{{ url_for('.static', filename='time-picker/jq.schedule.js') }}"></script>
@@ -216,3 +220,4 @@
         })
   //}
 </script>
+{% endblock %}

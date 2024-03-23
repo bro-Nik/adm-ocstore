@@ -1,33 +1,35 @@
 import json
-import pickle
-# import os
-# from alembic.op import f
-from flask import render_template, redirect, url_for, request, session, flash,\
-    Blueprint
-from flask_login import login_required
 from datetime import datetime, timedelta
 import locale
-from clim.jinja_filters import smart_int
 
-from clim.models import OptionValueDescription, ProductDescription, db, Contact, Deal, DealService, DealStage, Option,\
-    OptionValue, Stock, StockProduct, User, Worker, WorkerEmployment, Product,\
-    Module, Category
-from clim.stock.utils import get_consumables_categories_ids
-# from clim.stock.routes import get_consumables_categories_ids
+from flask import render_template, redirect, url_for, request, session
+from flask_login import login_required
+
+from clim.deal.utils import get_stage
+from clim.general_functions import actions_in
+
+from ..stock.utils import get_consumables_categories_ids
+from ..jinja_filters import smart_int
+from ..models import OptionValueDescription, ProductDescription, db, \
+    Contact, Deal, DealService, DealStage, Option, OptionValue, Stock, \
+    StockProduct, Worker, WorkerEmployment, Product, Category
 from . import bp
 
 
-def get_products():
-    return db.session.execute(db.select(Product)).scalars()
-
-
-def get_stocks():
-    return db.session.execute(db.select(Stock)).scalars()
-
-
-def get_stages():
-    return db.session.execute(
-        db.select(DealStage).order_by(DealStage.sort_order)).scalars()
+def get_stages(status=''):
+    # if 'in_work' in status and 'end' in status or status == '[]':
+    #     select = db.select(DealStage)
+    if 'in_work' in status:
+        select = db.select(DealStage).filter(DealStage.type != 'end_good',
+                                             DealStage.type != 'end_bad')
+    elif 'end' in status:
+        select = db.select(DealStage).filter((DealStage.type == 'end_good') |
+                                             (DealStage.type == 'end_bad'))
+    elif 'start' in status:
+        select = db.select(DealStage).filter_by(type='start')
+    else:
+        select = db.select(DealStage)
+    return db.session.execute(select.order_by(DealStage.sort_order)).scalars()
 
 
 def get_deal(deal_id):
@@ -35,9 +37,16 @@ def get_deal(deal_id):
         db.select(Deal).filter(Deal.deal_id == deal_id)).scalar()
 
 
-def get_option_value(id):
+def new_deal():
+    deal = Deal(date_add=datetime.now(),
+                stage=get_stage(stage_type='start'))
+    db.session.add(deal)
+    return deal
+
+
+def get_option_value(value_id):
     return db.session.execute(
-        db.select(OptionValue).filter_by(option_value_id=id)).scalar()
+        db.select(OptionValue).filter_by(option_value_id=value_id)).scalar()
 
 
 def json_dumps_or_other(data, default=None):
@@ -59,105 +68,77 @@ def update_filter():
 @login_required
 def deals(view=None):
     if not view:
-        view = session.get('crm_view')
-        return redirect (url_for('.deals', view=view if view else 'kanban'))
+        view = session.get('crm_view', 'kanban')
+        return redirect(url_for('.deals', view=view))
 
     session['crm_view'] = view
-    stage_type = session.get('stage_type')
-    stage_type = stage_type if stage_type else 'in_work'
 
-    if 'in_work' in stage_type and 'end' in stage_type or stage_type == '[]':
-        request = db.select(DealStage)
-    elif 'in_work' in stage_type:
-        request = db.select(DealStage).filter(DealStage.type != 'end_good',
-                                             DealStage.type != 'end_bad')
-    elif 'end' in stage_type:
-        request = db.select(DealStage).filter((DealStage.type == 'end_good')
-                                            | (DealStage.type == 'end_bad'))
-
-    stages = db.session.execute(request.order_by(DealStage.sort_order)).scalars()
-
-    page = 'deal/deals_' + view + '.html'
-    return render_template(page,
-                           stages=tuple(stages),
-                           stage_type=stage_type)
+    stage_type = session.get('stage_type', 'in_work')
+    return render_template(f'deal/deals_{view}.html', stage_type=stage_type,
+                           stages=tuple(get_stages(stage_type)))
 
 
 @bp.route('/ajax_products', methods=['GET'])
 @login_required
 def ajax_products():
-    per_page = 20
     search = request.args.get('search')
     result_count = 0
     result = {'results': []}
 
     # Products
-    request_products = Product.query
+    select_p = Product.query
 
     # not Consumables
-    consumables_categories_ids = get_consumables_categories_ids()
-
-    request_products = (request_products.join(Product.categories)
-               .where(Category.category_id.notin_(consumables_categories_ids)))
-
+    consumables_cat_ids = get_consumables_categories_ids()
+    select_p = (select_p.join(Product.categories)
+                .where(Category.category_id.notin_(consumables_cat_ids)))
 
     if search:
-        request_products = (request_products.join(Product.description)
-                   .where(ProductDescription.name.contains(search)))
+        select_p = (select_p.join(Product.description)
+                    .where(ProductDescription.name.contains(search)))
     else:
-        request_products = request_products.filter(Product.stocks != None)
+        select_p = select_p.filter(Product.stocks != None)
 
-
-    products = request_products.paginate(page=int(request.args.get('page')),
-                                 per_page=per_page,
-                                 error_out=False)
-
+    products = select_p.paginate(page=request.args.get('page', 1, type=int),
+                                 per_page=20, error_out=False)
 
     result_products = {'text': 'Товары', 'children': []}
     for product in products:
         result_products['children'].append(
-            {
-                'id': str(product.product_id),
-                'text': product.description.name,
-                'price': product.price,
-                'type': 'product',
-                'unit': product.unit_class.description.unit
-            }
+            {'id': str(product.product_id),
+             'text': product.description.name,
+             'price': product.price,
+             'type': 'product',
+             'unit': product.unit_class.description.unit}
         )
-    if len(result_products['children']):
+    if result_products['children']:
         result['results'].append(result_products)
         result_count += len(result_products['children'])
 
-
     # Options
     # options = db.session.execute(db.select(Option)).scalars()
-    request_options = Option.query
+    select_o = Option.query
     if search:
-        request_options = (request_options.join(Option.values)
-                           .join(OptionValue.description)
-                           .where(OptionValueDescription.name.contains(search)))
+        select_o = (select_o.join(Option.values).join(OptionValue.description)
+                    .where(OptionValueDescription.name.contains(search)))
 
-    options = request_options.paginate(page=int(request.args.get('page')),
-                                                 per_page=per_page,
-                                                 error_out=False)
+    options = select_o.paginate(page=request.args.get('page', 1, type=int),
+                                per_page=20, error_out=False)
     result_options = {'text': 'Услуги', 'children': []}
     for option in options:
         for value in option.values:
             price = smart_int(value.settings.price) if value.settings else 0
             result_options['children'].append(
-                {
-                    'id': str(value.option_value_id),
-                    'text': value.description.name,
-                    'price': price,
-                    'type': 'service'
-                }
+                {'id': str(value.option_value_id),
+                 'text': value.description.name,
+                 'price': price,
+                 'type': 'service'}
             )
-    if len(result_options['children']):
+    if result_options['children']:
         result['results'].append(result_options)
         result_count += len(result_options['children'])
 
-    more = result_count >= per_page
-    result['pagination'] = {'more': more}
+    result['pagination'] = {'more': bool(result_count >= 20)}
 
     return json.dumps(result)
 
@@ -165,36 +146,28 @@ def ajax_products():
 @bp.route('/ajax_consumables', methods=['GET'])
 @login_required
 def ajax_consumables():
-    per_page = 20
     search = request.args.get('search')
     result = {'results': []}
 
-    consumables_categories_ids = get_consumables_categories_ids()
-
-    request_base = Product.query
-    request_base = (request_base.join(Product.categories)
-               .where(Category.category_id.in_(consumables_categories_ids)))
+    select = (Product.query.join(Product.categories)
+              .where(Category.category_id.in_(get_consumables_categories_ids())))
 
     if search:
-        request_base = (request_base.join(Product.description)
-                   .where(ProductDescription.name.contains(search)))
+        select = (select.join(Product.description)
+                  .where(ProductDescription.name.contains(search)))
 
-    consumables = request_base.paginate(page=int(request.args.get('page')),
-                                 per_page=per_page,
-                                 error_out=False)
+    consumables = select.paginate(page=request.args.get('page', 1, type=int),
+                                  per_page=20, error_out=False)
 
     for product in consumables:
         result['results'].append(
-            {
-                'id': str(product.product_id),
-                'text': product.description.name,
-                'price': product.price,
-                'type': 'product',
-                'unit': product.unit_class.description.unit
-            }
+            {'id': str(product.product_id),
+             'text': product.description.name,
+             'price': product.price,
+             'type': 'product',
+             'unit': product.unit_class.description.unit}
         )
-    more = len(result['results']) >= per_page
-    result['pagination'] = {'more': more}
+    result['pagination'] = {'more': bool(len(result['results']) >= 20)}
 
     return json.dumps(result)
 
@@ -205,25 +178,20 @@ def ajax_stocks_first():
     product_id = request.args.get('product_id')
     stock_id = request.args.get('stock_id')
 
-    request_base = (db.select(StockProduct)
-        .filter(StockProduct.product_id == product_id))
-
+    select = (db.select(StockProduct).filter_by(product_id=product_id))
     if stock_id:
-        request_base = request_base.filter(StockProduct.stock_id == stock_id)
+        select = select.filter(StockProduct.stock_id == stock_id)
     else:
-        request_base = request_base.filter(StockProduct.quantity > 0)
+        select = select.filter(StockProduct.quantity > 0)
 
-    stock = db.session.execute(request_base).scalar()
-
-    result = {}
+    stock = db.session.execute(select).scalar()
     if not stock:
         return ''
 
-    result['id'] = str(stock.stock_id) if stock else ''
-    result['text'] = stock.stock.name if stock else ''
-    result['quantity'] = (str(smart_int(stock.quantity)) + ' '
-                            + stock.main_product.unit_class.description.unit) if stock else ''
-    return json.dumps(result)
+    unit = stock.main_product.unit_class.description.unit
+    return json.dumps({'id': str(stock.stock_id),
+                       'text': stock.stock.name,
+                       'quantity': f'{smart_int(stock.quantity)} {unit}'})
 
 
 @bp.route('/ajax_stocks', methods=['GET'])
@@ -232,33 +200,27 @@ def ajax_stocks():
     search = request.args.get('search')
     product_id = request.args.get('product_id')
     per_page = 20
-    result = {'results': []}
 
-    request_stocks = (StockProduct.query
-                      .where(StockProduct.product_id == product_id))
+    select = StockProduct.query.where(StockProduct.product_id == product_id)
     if search:
-        request_stocks = (request_stocks.join(StockProduct.stock)
-            .where(Stock.name.contains(search)))
+        select = (select.join(StockProduct.stock)
+                  .where(Stock.name.contains(search)))
     else:
-        request_stocks = (request_stocks
-                       .where(StockProduct.quantity > 0))
+        select = select.where(StockProduct.quantity > 0)
 
-    stocks = request_stocks.paginate(page=int(request.args.get('page')),
-                                     per_page=per_page,
-                                     error_out=False)
+    stocks = select.paginate(page=request.args.get('page', 1, type=int),
+                             per_page=per_page, error_out=False)
 
+    result = {'results': []}
     for stock in stocks:
+        unit = stock.main_product.unit_class.description.unit
         result['results'].append(
-            {
-                'id': str(stock.stock_id),
-                'text': stock.stock.name,
-                'quantity': (str(smart_int(stock.quantity)) + ' '
-                            + stock.main_product.unit_class.description.unit) if stock else ''
-            }
+            {'id': str(stock.stock_id),
+             'text': stock.stock.name,
+             'quantity': f'{smart_int(stock.quantity)} {unit}'}
         )
 
-    more = len(result['results']) >= per_page
-    result['pagination'] = {'more': more}
+    result['pagination'] = {'more': bool(len(result['results']) >= per_page)}
     return json.dumps(result)
 
 
@@ -267,47 +229,40 @@ def ajax_stocks():
 def ajax_contacts():
     per_page = 20
     search = request.args.get('search')
-    result = {'results': []}
 
-    request_base = Contact.query
+    select = Contact.query
 
     if search:
-        request_base = (request_base
-                       .where(Contact.name.contains(search)
-                              | Contact.phone.contains(search)
-                              | Contact.email.contains(search)))
+        select = (select.where(Contact.name.contains(search) |
+                               Contact.phone.contains(search) |
+                               Contact.email.contains(search)))
 
-    contacts = request_base.paginate(page=int(request.args.get('page')),
-                                 per_page=per_page,
-                                 error_out=False)
+    contacts = select.paginate(page=request.args.get('page', 1, type=int),
+                               per_page=per_page, error_out=False)
 
+    result = {'results': []}
     for contact in contacts:
         result['results'].append(
-            {
-                'id': str(contact.contact_id),
-                'text': contact.name,
-                'phone': contact.phone,
-                'email': contact.email
-            }
+            {'id': str(contact.contact_id),
+             'text': contact.name,
+             'phone': contact.phone,
+             'email': contact.email}
         )
-    more = len(result['results']) >= per_page
-    result['pagination'] = {'more': more}
+    result['pagination'] = {'more': bool(len(result['results']) >= per_page)}
 
     return json.dumps(result)
 
 
 @bp.route('/update_stage', methods=['GET'])
-@bp.route('/update_stage/<int:stage_id>/<int:deal_id>/<int:previous_deal_sort>', methods=['GET'])
 @login_required
-def update_stage(stage_id=None, deal_id=None, previous_deal_sort=0):
-    deal = get_deal(deal_id)
-    deal.stage_id = stage_id
-    deal.sort_order = previous_deal_sort + 1
+def update_stage():
+    deal = get_deal(request.args.get('deal_id'))
+    deal.stage_id = request.args.get('stage_id')
+    deal.sort_order = request.args.get('stage_id', 0, type=int) + 1
     db.session.commit()
 
-    sort_stage_deals(stage_id, deal_id, previous_deal_sort)
-
-    return redirect(url_for('.deals', view=session.get('crm_view')))
+    sort_stage_deals(deal.stage_id, deal.deal_id, deal.previous_deal_sort)
+    return redirect(url_for('.deals'))
 
 
 def sort_stage_deals(stage_id, deal_id, previous_deal_sort):
@@ -336,22 +291,13 @@ def sort_stage_deals(stage_id, deal_id, previous_deal_sort):
     db.session.commit()
 
 
-def get_stage(stage_id):
-    return db.session.execute(
-        db.select(DealStage).filter(DealStage.stage_id == stage_id)).scalar()
-
-
 @bp.route('/new_stage', methods=['GET'])
-@bp.route('/new_stage/<int:stage_id>', methods=['GET'])
 @login_required
-def new_stage(stage_id=None):
-    before_new_stage = db.session.execute(
-        db.select(DealStage).filter(DealStage.stage_id == stage_id)).scalar()
-
+def new_stage():
+    before_new_stage = get_stage(request.args.get('stage_id'))
     stages = get_stages()
 
-    new_stage = DealStage(name='Новая стадия',
-                          type='',
+    new_stage = DealStage(name='Новая стадия', type='',
                           color=before_new_stage.color)
     db.session.add(new_stage)
 
@@ -375,37 +321,36 @@ def new_stage(stage_id=None):
 @bp.route('/stage_info/update', methods=['POST'])
 @login_required
 def stage_update():
-    stage_id = request.form.get('stage_id')
+    stage = get_stage(request.form.get('stage_id'))
+    if stage:
+        stage.name = request.form.get('name')
+        stage.type = request.form.get('type')
+        stage.color = request.form.get('color')
+        db.session.commit()
 
-    stage = get_stage(stage_id)
-    stage.name = request.form.get('name')
-    stage.type = request.form.get('type')
-    stage.color = request.form.get('color')
-
-    db.session.commit()
-    return redirect(url_for('deals2'))
+    return redirect(url_for('deals'))
 
 
 @bp.route('/action', methods=['POST'])
 @login_required
 def deals_action():
-    data = json.loads(request.data) if request.data else {}
+    actions_in(request.data, get_deal)
 
-    action = data.get('action')
-    ids = data.get('ids')
-
-    if action == 'delete_column':
-        stage = get_stage(ids)
-        if stage:
-            db.session.delete(stage)
-
-    elif action == 'delete_deals':
-        for id in ids:
-            deal = get_deal(id)
-            db.session.delete(deal)
+    # if action == 'delete_stage':
+    #     stage = get_stage(ids)
+    #     if stage:
+    #         db.session.delete(stage)
 
     db.session.commit()
-    return redirect(url_for('.deals'))
+    return ''
+
+
+@bp.route('/close_deal', methods=['GET'])
+@login_required
+def deal_modal_close():
+    return render_template('deal/deal_modal_close.html',
+                           stages=get_stages('end'),
+                           deal=get_deal(request.args.get('deal_id')))
 
 
 @bp.route('/deal_info_placeholder', methods=['GET'])
@@ -417,13 +362,20 @@ def deal_info_placeholder():
 @bp.route('/deal_info', methods=['GET'])
 @login_required
 def deal_info():
-    deal = get_deal(request.args.get('deal_id'))
-    contacts = db.session.execute(db.select(Contact)).scalars()
+    deal_id = request.args.get('deal_id')
+    if deal_id == 'last':
+        deal = db.session.execute(db.select(Deal).order_by(Deal.deal_id.desc())).scalar()
+    else:
+        deal = get_deal(deal_id)
 
-    return render_template('deal/deal.html',
-                           deal=deal,
-                           stages=tuple(get_stages())
-                           )
+    if not deal:
+        deal = Deal(date_add=datetime.now(),
+                    stage=get_stage(stage_type='start'))
+        # db.session.add(deal)
+    # contacts = db.session.execute(db.select(Contact)).scalars()
+
+    return render_template('deal/deal.html', deal=deal,
+                           stages=tuple(get_stages()))
 
 
 @bp.route('/deal_info', methods=['POST'])
@@ -434,30 +386,20 @@ def deal_info_update():
         deal = Deal(date_add=datetime.now())
         db.session.add(deal)
 
-    data = json_loads_or_other(request.data, {}) 
+    data = json_loads_or_other(request.data, {})
 
     action = data.get('action')
 
-    info_list = data.get('info') if data.get('info') else {}
     info = {}
-    if info_list:
-        for item in info_list:
-            info[item['name']] = item['value']
+    for item in data.get('info', {}):
+        info[item['name']] = item['value']
 
     # Name
-    deal_name = info.get('deal_name')
-    if not deal_name:
-        deal_name = 'Сделка #' + str(Deal.query.count())
-    deal.name = deal_name
-
+    deal.name = info.get('deal_name') or f'Сделка #{Deal.query.count()}'
     # Date
-    date_end = info.get('date_end')
-    if date_end:
-        deal.date_end = date_end
-
+    deal.date_end = info.get('date_end') or None
     # Sum
-    deal_sum = info.get('deal_sum')
-    deal.sum = deal_sum if deal_sum else 0
+    deal.sum = info.get('deal_sum') or 0
 
     # Contact
     contact_id = info.get('contact_id')
@@ -480,29 +422,34 @@ def deal_info_update():
 
     # Details
     details = {}
-    if info.get('adress'):
-        details['adress'] = info.get('adress')
-    if info.get('what_need'):
-        details['what_need'] = info.get('what_need')
-    if info.get('date_service'):
-        details['date_service'] = info.get('date_service')
-    if info.get('deal_comment'):
-        details['deal_comment'] = info.get('deal_comment')
-    
+    details['adress'] = info.get('adress', '')
+    details['what_need'] = info.get('what_need', '')
+    details['date_service'] = info.get('date_service', '')
+    details['deal_comment'] = info.get('deal_comment', '')
     deal.details = json.dumps(details)
 
-    # Products
-    deal.products = json_dumps_or_other(data.get('products'))
-
-    # Consumables
-    deal.consumables = json_dumps_or_other(data.get('consumables'))
-
-    # Expenses
-    deal.expenses = json_dumps_or_other(data.get('expenses'))
+    if not deal.posted:
+        # Products
+        deal.products = json_dumps_or_other(data.get('products'))
+        # Consumables
+        deal.consumables = json_dumps_or_other(data.get('consumables'))
+        # Expenses
+        deal.expenses = json_dumps_or_other(data.get('expenses'))
 
     # Stage
     old_stage_id = info.get('old_stage')
     new_stage_id = info.get('stages')
+
+    # posting = False
+    # # ToDo Проверка смены статуса после постинга
+    # if old_stage_id and new_stage_id:
+    #     new_stage = get_stage(new_stage_id)
+    #     old_stage = get_stage(old_stage_id)
+    #     if old_stage and new_stage:
+    #         if 'end' in old_stage.type and 'end' not in new_stage.type:
+    #             posting = False
+    # else:
+        # posting = info.get('posting')
 
     posting = info.get('posting')
     if posting:
@@ -608,6 +555,7 @@ def deal_posting(deal):
     deal.posted = True
     return ''
 
+
 def get_employments(event):
     return db.session.execute(
             db.select(WorkerEmployment)
@@ -620,7 +568,7 @@ def deal_employments(deal_id):
     def employment_time(employment):
         locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
         date_start = employment.date_start
-        date_end = employment.date_end    
+        date_end = employment.date_end
         time_start = employment.time_start
         time_end = employment.time_end
 
@@ -634,39 +582,34 @@ def deal_employments(deal_id):
             time = ', ' + time_start + ' - ' + time_end
 
             return date + year + time
-        else:
-            year_start = date_start.year
-            date_start = str(date_start.strftime('%d ')) + date_start.strftime('%B')
-            year_start = ' ' + str(year_start) if year_start != datetime.now().year else ''
 
-            year_end = date_end.year
-            date_end = str(date_end.strftime('%d ')) + date_end.strftime('%B')
-            year_end = ' ' + str(year_end) if year_end != datetime.now().year else ''
+        year_start = date_start.year
+        date_start = str(date_start.strftime('%d ')) + date_start.strftime('%B')
+        year_start = ' ' + str(year_start) if year_start != datetime.now().year else ''
 
-            time_start = str(time_start.strftime('%H:%M'))
-            time_end = str(time_end.strftime('%H:%M'))
+        year_end = date_end.year
+        date_end = str(date_end.strftime('%d ')) + date_end.strftime('%B')
+        year_end = ' ' + str(year_end) if year_end != datetime.now().year else ''
 
-            return date_start + year_start + time_start + ' - ' + date_end + year_end + time_end
+        time_start = str(time_start.strftime('%H:%M'))
+        time_end = str(time_end.strftime('%H:%M'))
 
+        return date_start + year_start + time_start + ' - ' + date_end + year_end + time_end
 
     event = 'deal_' + str(deal_id)
     employments = tuple(get_employments(event))
 
     if employments == ():
         return '<span class="deal-info-edit-link-booking">Забронировать время</span>'
-    else:
-        result = ''
-        worker_id = 0
-        for employment in employments:
-            if employment.worker_id != worker_id:
-                result += '<span class="deal-info-edit-link-worker">'
-                result += employment.worker.name
-                result += '</span>'
-                worker_id = employment.worker_id
 
-            result += '<span class="deal-info-edit-link-date">'
-            result += employment_time(employment)
-            result += '</span>'
+    result = ''
+    worker_id = 0
+    for e in employments:
+        if e.worker_id != worker_id:
+            result = f'<span class="deal-info-edit-link-worker">{e.worker.name}</span>'
+            worker_id = e.worker_id
+
+        result += f'<span class="deal-info-edit-link-date">{employment_time(e)}</span>'
 
     return result
 
