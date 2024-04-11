@@ -3,6 +3,7 @@ import pickle
 from flask import redirect, render_template, request, url_for
 from flask_login import login_required
 
+from clim.utils import get_categories
 from clim.models import Attribute, AttributeDescription, Category, Manufacturer, Module, OtherShops, Product
 
 from ..app import db, redis

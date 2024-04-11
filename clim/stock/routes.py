@@ -1,17 +1,19 @@
+from datetime import datetime
 import json
-from flask import render_template, redirect, url_for, request
+from flask import abort, render_template, redirect, url_for, request
 from flask_login import login_required
 
-from ..general_functions import actions_in, get_main_category
+from ..app import db
+from ..utils import actions_in, get_main_category
 from ..jinja_filters import smart_int
 from ..models import Attribute, CategoryDescription, Option, Category, \
-    OptionValue, OptionValueSetting, Product, ProductDescription, \
-    ProductToCategory, Stock, StockMovement, StockProduct, WeightClass
-from ..app import db
+    OptionValue, OptionValueSetting, ProductDescription, \
+    ProductToCategory, WeightClass
 from . import bp
-from .utils import StockSettings, create_new_movement, create_new_stock, \
+from .models import Stock, StockMovement, StockProduct, Product
+from .utils import StockSettings, \
     get_category, get_consumables, get_movement, get_product, \
-    get_products, get_stock, get_stocks, json_dumps_or_other
+    get_products, get_stock, get_stocks, json_dumps
 
 
 @bp.route('/products', methods=['GET'])
@@ -58,44 +60,36 @@ def movements(movement_type):
                            per_page=10, error_out=False))
 
     return render_template('stock/movements.html',
-                           movements=movements,
-                           movement_type=movement_type)
+                           movements=movements, movement_type=movement_type)
 
 
 @bp.route('/movements/action', methods=['POST'])
 @login_required
 def movements_action():
     actions_in(request.data, get_movement)
+    db.session.commit()
     return ''
 
 
-@bp.route('/movements/<string:movement_type>/movement_info', methods=['GET'])
+@bp.route('/movements/<string:movement_type>/info', methods=['GET', 'POST'])
 @login_required
 def movement_info(movement_type):
     movement = get_movement(request.args.get('movement_id'))
 
+    if request.method == 'POST':
+        if not movement:
+            movement = StockMovement(movement_type=movement_type,
+                                     date=datetime.now().date())
+            db.session.add(movement)
+        movement.data = json.loads(request.data) if request.data else {}
+        action = movement.data['action']
+        if hasattr(movement, action):
+            getattr(movement, action)()
+            db.session.commit()
+        return ''
+
     return render_template('stock/movement/main.html',
-                           movement=movement,
-                           movement_type=movement_type,
-                           stocks=tuple(get_stocks()))
-
-
-@bp.route('/movement_update/<string:movement_type>', methods=['POST'])
-@login_required
-def movement_update(movement_type):
-    movement = (get_movement(request.args.get('movement_id'))
-                or create_new_movement(movement_type))
-
-    data = json.loads(request.data) if request.data else {}
-    action = data['action']
-
-    if 'save' in action:
-        movement.save(data)
-    if 'posting' in action:
-        movement.posting()
-    if 'cancel' in action:
-        movement.posting('cancel')
-    return ''
+                           movement=movement, movement_type=movement_type)
 
 
 @bp.route('/stocks', methods=['GET'])
@@ -111,6 +105,7 @@ def stocks():
 @login_required
 def stocks_action():
     actions_in(request.data, get_stock)
+    db.session.commit()
     return ''
 
 
@@ -120,8 +115,12 @@ def stock_settings():
     stock = get_stock(request.args.get('stock_id'))
 
     if request.method == 'POST':
-        stock = stock or create_new_stock()
+        if not stock:
+            stock = Stock()
+            db.session.add(stock)
+
         stock.edit(request.form)
+        db.session.commit()
         return redirect(url_for('.stocks'))
 
     return render_template('stock/stock_settings.html', stock=stock)
@@ -151,15 +150,23 @@ def settings_consumables():
                            categories=categories)
 
 
-@bp.route('/settings/consumables_option', methods=['GET'])
+@bp.route('/settings/consumables_in_option', methods=['GET', 'POST'])
 @login_required
-def settings_consumables_option():
-    settings = attribute = None
-
+def consumables_in_option():
+    value_id = request.args.get('value_id')
     value = db.session.execute(
-        db.select(OptionValue)
-        .filter_by(option_value_id=request.args.get('value_id'))).scalar()
+        db.select(OptionValue).filter_by(option_value_id=value_id)).scalar()
 
+    if request.method == 'POST':
+        if not value.settings:
+            value.settings = OptionValueSetting()
+
+        data = json.loads(request.data) if request.data else {}
+        value.settings.consumables = json_dumps(data.get('products'))
+        db.session.commit()
+        return ''
+
+    settings = attribute = None
     if value.settings and value.settings.settings:
         settings = json.loads(value.settings.settings)
         attribute = db.session.execute(
@@ -179,24 +186,6 @@ def settings_consumables_option():
                            settings=settings,
                            option_value_consumables=consumables,
                            attribute=attribute)
-
-
-@bp.route('/settings/settings_consumables_option_update', methods=['POST'])
-@login_required
-def settings_consumables_option_update():
-    """ Отправка настроек значения опции """
-    value_id = request.args.get('value_id')
-    value = db.session.execute(
-        db.select(OptionValue).filter_by(option_value_id=value_id)).scalar()
-
-    if not value.settings:
-        value.settings = OptionValueSetting()
-
-    data = json.loads(request.data) if request.data else {}
-    value.settings.consumables = json_dumps_or_other(data.get('products'))
-    db.session.commit()
-
-    return ''
 
 
 @bp.route('/json/products_in_stocks', methods=['GET'])
@@ -241,9 +230,8 @@ def json_consumables_in_option(option_value_id=None):
 @bp.route('/json/consumables', methods=['GET'])
 @login_required
 def json_consumables():
-    consumables = get_consumables()
     result = []
-    for c in consumables:
+    for c in get_consumables():
         result.append({'name': c.description.name, 'id': c.product_id})
 
     return json.dumps(result)
@@ -253,12 +241,11 @@ def json_consumables():
 @login_required
 def json_all_products():
     result = []
-    products = get_products()
-    for product in products:
+    for product in get_products():
         result.append({'id': product.product_id,
                        'name': product.description.name,
                        'cost': product.cost,
-                       'unit': product.unit_class.description.unit})
+                       'unit': product.unit})
 
     return json.dumps(result)
 
@@ -324,13 +311,11 @@ def product_info_update(product_id=None):
 
     categories_ids = request.form.getlist('categories_ids')
     if categories_ids:
-        print(categories_ids)
         for category in product.categories:
             if category.category_id not in categories_ids and category.category_id != main_category_id:
                 product.categories.remove(category)
             else:
                 categories_ids.remove(str(category.category_id))
-
 
         for category_id in categories_ids:
             category = db.session.execute(
@@ -340,8 +325,6 @@ def product_info_update(product_id=None):
     
     db.session.commit()
 
-    # return redirect(url_for('.product_info',
-    #                         product_id=product.product_id))
     return str(product.product_id)
 
 
@@ -351,26 +334,21 @@ def ajax_products():
     per_page = 20
     search = request.args.get('search')
     page = request.args.get('page', 1, type=int)
-    result_count = 0
     result = {'results': []}
 
     request_products = Product.query
     if search:
         request_products = (request_products.join(Product.description)
-                   .where(ProductDescription.name.contains(search)))
+                            .where(ProductDescription.name.contains(search)))
 
     products = request_products.paginate(page=page, per_page=per_page,
                                          error_out=False)
 
     for product in products:
-        result['results'].append(
-            {
-                'id': str(product.product_id),
-                'text': product.description.name,
-                'cost': product.cost,
-                'unit': product.unit_class.description.unit
-            }
-        )
+        result['results'].append({'id': str(product.product_id),
+                                  'text': product.description.name,
+                                  'cost': product.cost,
+                                  'unit': product.unit})
 
     more = len(result['results']) >= per_page
     result['pagination'] = {'more': more}
@@ -383,21 +361,16 @@ def ajax_products():
 def ajax_products_one():
     product = get_product(request.args.get('product_id'))
 
-    result = {'id': str(product.product_id),
-              'text': product.description.name,
-              'cost': product.cost,
-              'unit': product.unit_class.description.unit} if product else ''
-
-    return json.dumps(result)
+    return json.dumps({'id': str(product.product_id),
+                       'text': product.description.name,
+                       'cost': product.cost,
+                       'unit': product.unit}) if product else ''
 
 
 @bp.route('/ajax_stocks_first', methods=['GET'])
 @login_required
 def ajax_stocks_first():
-    product_id = request.args.get('product_id')
-    if not product_id:
-        return ''
-
+    product_id = request.args.get('product_id') or abort(404)
     stock_id = request.args.get('stock_id')
 
     request_stock = Stock.query
@@ -416,7 +389,6 @@ def ajax_stocks_first():
             break
 
     result = {}
-
     result['id'] = str(stock.stock_id) if stock else ''
     result['text'] = stock.name if stock else ''
     result['quantity'] = quantity if stock else ''
@@ -437,8 +409,7 @@ def ajax_stocks():
         request_stocks = (request_stocks.where(Stock.name.contains(search)))
 
     stocks = request_stocks.paginate(page=int(request.args.get('page')),
-                                     per_page=per_page,
-                                     error_out=False)
+                                     per_page=per_page, error_out=False)
 
     for stock in stocks:
         quantity = 0
@@ -446,15 +417,11 @@ def ajax_stocks():
             if product.product_id == int(product_id):
                 quantity = str(smart_int(product.quantity))
                 if quantity != '0':
-                    quantity += ' ' + product.main_product.unit_class.description.unit
+                    quantity += f' {product.main_product.unit}'
                 break
-        result['results'].append(
-            {
-                'id': str(stock.stock_id),
-                'text': stock.name,
-                'quantity': quantity
-            }
-        )
+        result['results'].append({'id': str(stock.stock_id),
+                                  'text': stock.name,
+                                  'quantity': quantity})
 
     more = len(result['results']) >= per_page
     result['pagination'] = {'more': more}

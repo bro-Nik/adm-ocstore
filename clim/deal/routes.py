@@ -5,56 +5,16 @@ import locale
 from flask import render_template, redirect, url_for, request, session
 from flask_login import login_required
 
-from clim.deal.utils import get_stage
-from clim.general_functions import actions_in
-
-from ..stock.utils import get_consumables_categories_ids, new_product_in_stock
+from ..utils import actions_in, json_dumps, json_loads
+from ..stock.utils import get_consumables_categories_ids
+from ..stock.models import Stock, StockProduct, Product
 from ..jinja_filters import smart_int
 from ..models import OptionValueDescription, ProductDescription, db, \
-    Contact, Deal, DealService, DealStage, Option, OptionValue, Stock, \
-    StockProduct, Worker, WorkerEmployment, Product, Category
+    Option, OptionValue, Category
+from .models import Contact, Deal, DealService, DealStage, Worker, \
+    WorkerEmployment
+from .utils import get_contact, get_deal, get_stage, get_stages, sort_stage_deals
 from . import bp
-
-
-def get_stages(status=''):
-    # if 'in_work' in status and 'end' in status or status == '[]':
-    #     select = db.select(DealStage)
-    if 'in_work' in status:
-        select = db.select(DealStage).filter(DealStage.type != 'end_good',
-                                             DealStage.type != 'end_bad')
-    elif 'end' in status:
-        select = db.select(DealStage).filter((DealStage.type == 'end_good') |
-                                             (DealStage.type == 'end_bad'))
-    elif 'start' in status:
-        select = db.select(DealStage).filter_by(type='start')
-    else:
-        select = db.select(DealStage)
-    return db.session.execute(select.order_by(DealStage.sort_order)).scalars()
-
-
-def get_deal(deal_id):
-    return db.session.execute(
-        db.select(Deal).filter(Deal.deal_id == deal_id)).scalar()
-
-
-def new_deal():
-    deal = Deal(date_add=datetime.now(),
-                stage=get_stage(stage_type='start'))
-    db.session.add(deal)
-    return deal
-
-
-def get_option_value(value_id):
-    return db.session.execute(
-        db.select(OptionValue).filter_by(option_value_id=value_id)).scalar()
-
-
-def json_dumps_or_other(data, default=None):
-    return json.dumps(data, ensure_ascii=False) if data else default
-
-
-def json_loads_or_other(data, default=None):
-    return json.loads(data) if data else default
 
 
 @bp.route('/update_filter', methods=['POST'])
@@ -72,7 +32,6 @@ def deals(view=None):
         return redirect(url_for('.deals', view=view))
 
     session['crm_view'] = view
-
     stage_type = session.get('stage_type', 'in_work')
     return render_template(f'deal/deals_{view}.html', stage_type=stage_type,
                            stages=tuple(get_stages(stage_type)))
@@ -109,7 +68,7 @@ def ajax_products():
              'text': product.description.name,
              'price': product.price,
              'type': 'product',
-             'unit': product.unit_class.description.unit}
+             'unit': product.unit}
         )
     if result_products['children']:
         result['results'].append(result_products)
@@ -160,13 +119,11 @@ def ajax_consumables():
                                   per_page=20, error_out=False)
 
     for product in consumables:
-        result['results'].append(
-            {'id': str(product.product_id),
-             'text': product.description.name,
-             'price': product.price,
-             'type': 'product',
-             'unit': product.unit_class.description.unit}
-        )
+        result['results'].append({'id': str(product.product_id),
+                                  'text': product.description.name,
+                                  'price': product.price,
+                                  'type': 'product',
+                                  'unit': product.unit})
     result['pagination'] = {'more': bool(len(result['results']) >= 20)}
 
     return json.dumps(result)
@@ -188,7 +145,7 @@ def ajax_stocks_first():
     if not stock:
         return ''
 
-    unit = stock.main_product.unit_class.description.unit
+    unit = stock.main_product.unit
     return json.dumps({'id': str(stock.stock_id),
                        'text': stock.stock.name,
                        'quantity': f'{smart_int(stock.quantity)} {unit}'})
@@ -213,7 +170,7 @@ def ajax_stocks():
 
     result = {'results': []}
     for stock in stocks:
-        unit = stock.main_product.unit_class.description.unit
+        unit = stock.main_product.unit
         result['results'].append(
             {'id': str(stock.stock_id),
              'text': stock.stock.name,
@@ -242,12 +199,10 @@ def ajax_contacts():
 
     result = {'results': []}
     for contact in contacts:
-        result['results'].append(
-            {'id': str(contact.contact_id),
-             'text': contact.name,
-             'phone': contact.phone,
-             'email': contact.email}
-        )
+        result['results'].append({'id': str(contact.contact_id),
+                                  'text': contact.name,
+                                  'phone': contact.phone,
+                                  'email': contact.email})
     result['pagination'] = {'more': bool(len(result['results']) >= per_page)}
 
     return json.dumps(result)
@@ -263,32 +218,6 @@ def update_stage():
 
     sort_stage_deals(deal.stage_id, deal.deal_id, deal.previous_deal_sort)
     return redirect(url_for('.deals'))
-
-
-def sort_stage_deals(stage_id, deal_id, previous_deal_sort):
-    def number(number):
-        try:
-            return int(number)
-        except:
-            return 0
-
-    previous_deal_sort = number(previous_deal_sort)
-
-    stage = get_stage(stage_id)
-
-    for deal_in_stage in stage.deals:
-        deal_in_stage.sort_order = number(deal_in_stage.sort_order)
-
-        if (deal_in_stage.sort_order > previous_deal_sort
-            and deal_in_stage.deal_id != deal_id):
-            deal_in_stage.sort_order += 1
-    db.session.commit()
-
-    count = 1
-    for deal_in_stage in stage.deals:
-        deal_in_stage.sort_order = count
-        count += 1
-    db.session.commit()
 
 
 @bp.route('/new_stage', methods=['GET'])
@@ -335,12 +264,6 @@ def stage_update():
 @login_required
 def deals_action():
     actions_in(request.data, get_deal)
-
-    # if action == 'delete_stage':
-    #     stage = get_stage(ids)
-    #     if stage:
-    #         db.session.delete(stage)
-
     db.session.commit()
     return ''
 
@@ -348,225 +271,96 @@ def deals_action():
 @bp.route('/close_deal', methods=['GET'])
 @login_required
 def deal_modal_close():
-    return render_template('deal/deal_modal_close.html',
+    return render_template('deal/deal/modal_close.html',
                            stages=get_stages('end'),
                            deal=get_deal(request.args.get('deal_id')))
 
 
-@bp.route('/deal_info_placeholder', methods=['GET'])
-@login_required
-def deal_info_placeholder():
-    return render_template('deal/deal_placeholder.html')
-
-
-@bp.route('/deal_info', methods=['GET'])
+@bp.route('/deal_info', methods=['GET', 'POST'])
 @login_required
 def deal_info():
     deal_id = request.args.get('deal_id')
     if deal_id == 'last':
-        deal = db.session.execute(db.select(Deal).order_by(Deal.deal_id.desc())).scalar()
+        deal = db.session.execute(
+            db.select(Deal).order_by(Deal.deal_id.desc())).scalar()
     else:
         deal = get_deal(deal_id)
 
     if not deal:
         deal = Deal(date_add=datetime.now(),
                     stage=get_stage(stage_type='start'))
-        # db.session.add(deal)
-    # contacts = db.session.execute(db.select(Contact)).scalars()
 
-    return render_template('deal/deal.html', deal=deal,
-                           stages=tuple(get_stages()))
-
-
-@bp.route('/deal_info', methods=['POST'])
-@login_required
-def deal_info_update():
-    deal = get_deal(request.args.get('deal_id'))
-    if not deal:
-        deal = Deal(date_add=datetime.now(),
-                    stage=get_stage(stage_type='start'))
+    if request.method == 'POST':
         db.session.add(deal)
 
-    data = json_loads_or_other(request.data, {})
+        data = json_loads(request.data, {})
+        info = {i['name']: i['value'] for i in data.get('info', {})}
 
-    action = data.get('action')
+        # Name
+        deal.name = info.get('deal_name') or f'Сделка #{Deal.query.count()}'
+        # Date
+        deal.date_end = info.get('date_end') or None
+        # Sum
+        deal.sum = info.get('deal_sum') or 0
 
-    info = {}
-    for item in data.get('info', {}):
-        info[item['name']] = item['value']
+        # Contact
+        contact_id = info.get('contact_id')
+        if contact_id:
+            deal.contact_id = contact_id
+        else:
+            contact_name = info.get('contact_name', '')
+            contact_phone = info.get('contact_phone', '')
+            contact_email = info.get('contact_email', '')
 
-    # Name
-    deal.name = info.get('deal_name') or f'Сделка #{Deal.query.count()}'
-    # Date
-    deal.date_end = info.get('date_end') or None
-    # Sum
-    deal.sum = info.get('deal_sum') or 0
+            if contact_name or contact_phone or contact_email:
+                contact = Contact(name=contact_name,
+                                  phone=contact_phone,
+                                  email=contact_email)
+                db.session.add(contact)
+                # db.session.commit()
+                db.session.flush()
+                deal.contact_id = contact.contact_id
 
-    # Contact
-    contact_id = info.get('contact_id')
-    if contact_id:
-        deal.contact_id = contact_id
-    else:
-        contact_name = info.get('contact_name')
-        contact_phone = info.get('contact_phone')
-        contact_email = info.get('contact_email')
+        # Details
+        deal.details = json.dumps({'adress': info.get('adress', ''),
+                                   'what_need': info.get('what_need', ''),
+                                   'date_service': info.get('date_service', ''),
+                                   'deal_comment': info.get('deal_comment', '')})
 
-        if contact_name or contact_phone or contact_email:
-            contact = Contact(
-                name=contact_name if contact_name else '',
-                phone=contact_phone if contact_phone else '',
-                email=contact_email if contact_email else ''
-            )
-            db.session.add(contact)
-            db.session.commit()
-            deal.contact_id = contact.contact_id
+        if not deal.posted:
+            deal.products = json_dumps(data.get('products'), '')
+            deal.consumables = json_dumps(data.get('consumables'), '')
+            deal.expenses = json_dumps(data.get('expenses'), '')
 
-    # Details
-    details = {}
-    details['adress'] = info.get('adress', '')
-    details['what_need'] = info.get('what_need', '')
-    details['date_service'] = info.get('date_service', '')
-    details['deal_comment'] = info.get('deal_comment', '')
-    deal.details = json.dumps(details)
+        # ToDo Проверка смены статуса после постинга
+        new_stage = get_stage(info['stages'])
+        unposting = deal.completed and new_stage and 'end' not in new_stage.type
+        posting = info.get('posting')
 
-    if not deal.posted:
-        # Products
-        deal.products = json_dumps_or_other(data.get('products'))
-        # Consumables
-        deal.consumables = json_dumps_or_other(data.get('consumables'))
-        # Expenses
-        deal.expenses = json_dumps_or_other(data.get('expenses'))
+        # Stage
+        if new_stage:
+            if deal.stage.stage_id != new_stage.stage_id:
+                deal.sort_order = 1
+                sort_stage_deals(new_stage.stage_id, deal.deal_id, 0)
+            if not (posting and unposting):
+                deal.stage = new_stage
 
-    # Stage
-    # old_stage_id = info['old_stage']
-    old_stage_id = deal.stage_id
-    new_stage_id = info['stages']
+        # Сохранение перед постингом
+        db.session.commit()
 
-    # ToDo Проверка смены статуса после постинга
-    unposting = False
-    new_stage = get_stage(new_stage_id)
-    old_stage = get_stage(old_stage_id)
-    if old_stage and new_stage:
-        if 'end' in old_stage.type and 'end' not in new_stage.type:
-            unposting = True
-            print('Cansel posting')
+        # Posting or Unposting
+        if unposting:
+            if deal.unposting():
+                deal.stage = new_stage
+                db.session.commit()
+        elif not deal.posted and posting:
+            if deal.posting():
+                deal.stage = new_stage
+                db.session.commit()
+        db.session.commit()
 
-    posting = info.get('posting')
-    if posting:
-        deal.stage_id = old_stage_id
-    db.session.commit()
-    deal.stage_id = new_stage_id
-
-    if old_stage_id != new_stage_id:
-        deal.sort_order = 1
-        sort_stage_deals(new_stage_id, deal.deal_id, 0)
-
-    # Posting or Unposting
-    error = ''
-    if unposting:
-        error = deal_posting(deal, cansel=True)
-        deal.posted = False
-    elif not deal.posted and info.get('posting'):
-        error = deal_posting(deal)
-        deal.posted = True
-    if error:
-        return redirect(url_for('deal_info', deal_id=deal.deal_id))
-
-    db.session.commit()
-
-    return redirect(url_for('.deal_info', deal_id=deal.deal_id))
-
-
-def deal_posting(deal, cansel=False):
-    d = -1 if cansel else 1
-
-    def change_quantity(products):
-        nonlocal not_stock_id
-        cost_price = 0
-        for product in products:
-            if product.get('type') == 'service':
-                service = get_option_value(product['product_id'])
-                product['product_name'] = service.description.name
-
-            else:
-                if not product.get('stock_id'):
-                    not_stock_id = True
-                    break
-
-                quantity = product.get('quantity')
-                product_in_stock = get_product_in_stock(product['product_id'],
-                                                        product['stock_id'])
-                if not product_in_stock:
-                    product_in_stock = new_product_in_stock(product['product_id'],
-                                                            product['stock_id'])
-                    db.session.flush()
-                product_in_stock.quantity -= quantity * d
-
-                product['stock_name'] = product_in_stock.stock.name
-                product['product_name'] = product_in_stock.main_product.description.meta_h1
-                product['unit'] = product_in_stock.main_product.unit_class.description.unit
-
-                # to analytics
-                cost_price += product_in_stock.main_product.cost * quantity * d
-
-                # delete product if quantity 0
-                if product_in_stock.quantity == 0:
-                    db.session.delete(product_in_stock)
-
-        return json.dumps(products), cost_price
-
-    not_stock_id = False
-    cost_price_products = 0
-    if deal.products:
-        deal.products, cost_price_products = change_quantity(json.loads(deal.products))
-
-    cost_price_consumables = 0
-    if deal.consumables:
-        deal.consumables, cost_price_consumables = change_quantity(json.loads(deal.consumables))
-
-    if not_stock_id:
-        return 'Заполните склады списания'
-
-    # Date
-    if not deal.date_end:
-        deal.date_end = datetime.now().date()
-
-    # Employments
-    details = json.loads(deal.details) if deal.details else {}
-
-    employments = get_employments(f'deal_{deal.deal_id}')
-    details['employments'] = []
-    for employment in employments:
-        details['employments'].append(employment.worker.name)
-        db.session.delete(employment)
-    deal.details = json.dumps(details)
-
-    # Analytics
-    cost_price_expenses = 0
-    if deal.expenses:
-        for expense in json.loads(deal.expenses):
-            cost_price_expenses += expense.get('sum')
-
-    all_cost_price = (cost_price_products + cost_price_consumables
-                      + cost_price_expenses)
-    deal.profit = deal.sum - all_cost_price
-
-    analytics = {
-        'Товары': cost_price_products,
-        'Расходные материалы': cost_price_consumables,
-        'Прочие расходы': cost_price_expenses
-    }
-
-    analytics = json.dumps(analytics)
-    deal.analytics = analytics
-
-    return ''
-
-
-def get_employments(event):
-    return db.session.execute(
-            db.select(WorkerEmployment)
-            .filter(WorkerEmployment.event == event)).scalars()
+    return render_template('deal/deal/main.html', deal=deal,
+                           stages=tuple(get_stages()))
 
 
 @bp.route('/<int:deal_id>/employments', methods=['GET'])
@@ -580,31 +374,30 @@ def deal_employments(deal_id):
         time_end = employment.time_end
 
         if date_start == date_end:
-            date = str(date_start.strftime('%d ')) + date_start.strftime('%B')
+            date = f'{date_start.strftime("%d ")}{date_start.strftime("%B")}'
             year = date_start.year
-            year = ' ' + str(year) if year != datetime.now().year else ''
+            year = f' {year}' if year != datetime.now().year else ''
 
-            time_start = str(time_start.strftime('%H:%M'))
-            time_end = str(time_end.strftime('%H:%M'))
-            time = ', ' + time_start + ' - ' + time_end
-
+            time_start = time_start.strftime('%H:%M')
+            time_end = time_end.strftime('%H:%M')
+            time = f', {time_start} - {time_end}'
             return date + year + time
 
         year_start = date_start.year
-        date_start = str(date_start.strftime('%d ')) + date_start.strftime('%B')
-        year_start = ' ' + str(year_start) if year_start != datetime.now().year else ''
+        date_start = f'{date_start.strftime("%d ")}{date_start.strftime("%B")}'
+        year_start = f' {year_start}' if year_start != datetime.now().year else ''
 
         year_end = date_end.year
-        date_end = str(date_end.strftime('%d ')) + date_end.strftime('%B')
-        year_end = ' ' + str(year_end) if year_end != datetime.now().year else ''
+        date_end = f'{date_end.strftime("%d ")}{date_end.strftime("%B")}'
+        year_end = f' {year_end}' if year_end != datetime.now().year else ''
 
-        time_start = str(time_start.strftime('%H:%M'))
-        time_end = str(time_end.strftime('%H:%M'))
+        time_start = time_start.strftime('%H:%M')
+        time_end = time_end.strftime('%H:%M')
 
-        return date_start + year_start + time_start + ' - ' + date_end + year_end + time_end
+        return f'{date_start}{year_start}{time_start} - {date_end}{year_end}{time_end}'
 
     event = 'deal_' + str(deal_id)
-    employments = tuple(get_employments(event))
+    employments = WorkerEmployment.get(event)
 
     if employments == ():
         return '<span class="deal-info-edit-link-booking">Забронировать время</span>'
@@ -624,14 +417,14 @@ def deal_employments(deal_id):
 @bp.route('/booking', methods=['GET'])
 @login_required
 def deal_booking():
-    services = db.session.execute(db.select(DealService)).scalars()
+    services = tuple(db.session.execute(db.select(DealService)).scalars())
     deal_id = request.args.get('deal_id')
 
     start_date = request.args.get('start_date')
     if not start_date:
         start_date = datetime.now().date().strftime('%Y-%m-%d')
 
-    return render_template('deal/deal_booking.html',
+    return render_template('deal/deal/booking.html',
                            start_date=start_date,
                            services=services,
                            deal_id=deal_id)
@@ -720,12 +513,6 @@ def booking_data():
     return rows
 
 
-def get_product_in_stock(product_id, stock_id):
-    return db.session.execute(
-        db.select(StockProduct)
-        .filter_by(product_id=product_id, stock_id=stock_id)).scalar()
-
-
 @bp.route('/stage_settings', methods=['GET', 'POST'])
 @login_required
 def stage_settings():
@@ -737,8 +524,39 @@ def stage_settings():
             stage.color = request.form.get('color')
             db.session.commit()
         data = json.loads(request.data) if request.data else {}
-        action = data.get('action')
         info = data.get('info')
-        print(info)
 
     return render_template('deal/deals_modal_stage.html', stage=stage)
+
+
+@bp.route('/clients', methods=['GET', 'POST'])
+@login_required
+def contacts():
+    if request.method == 'POST':
+        # Действия
+        actions_in(request.data, get_contact)
+        db.session.commit()
+        return ''
+
+    contacts = db.session.execute(db.select(Contact)).scalars()
+    return render_template('deal/contacts.html', contacts=contacts)
+
+
+@bp.route('/contact_info', methods=['GET', 'POST'])
+@login_required
+def contact_info():
+    role = request.args.get('role', '')
+    contact = get_contact(request.args.get('contact_id')) or Contact(role=role)
+
+    if request.method == 'POST':
+        if not contact.contact_id:
+            db.session.add(contact)
+
+        contact.name = request.form.get('name', '')
+        contact.phone = request.form.get('phone', '')
+        contact.email = request.form.get('email', '')
+        contact.role = request.form.get('role', '')
+        db.session.commit()
+        return ''
+
+    return render_template('deal/contact/main.html', contact=contact)

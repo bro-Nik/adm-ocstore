@@ -7,9 +7,7 @@ from clim.models import db, Attribute, AttributeDescription, Manufacturer, \
     Option, OptionDescription, OptionSetting, OptionValueSetting, OptionValue, \
     OptionValueDescription, ProductAttribute, ProductOption, \
     ProductOptionValue, Product, CategoryDescription, Category
-from clim.general_functions import dict_from_serialize_array,\
-    get_product, json_dumps_or_other,\
-    json_loads_or_other
+from clim.utils import get_product, json_dumps, json_loads
 from . import bp
 
 
@@ -318,9 +316,8 @@ def value_settings_update(option_id):
     """ Отправка настроек значения опции """
     value_id = request.args.get('value_id')
 
-    data = json_loads_or_other(request.data, {})
-    info_list = data.get('info', {})
-    info = dict_from_serialize_array(info_list)
+    data = json_loads(request.data, {})
+    info = {i['name']: i['value'] for i in data.get('info', {})}
 
     settings_dict = {
         'categories_ids': info.get('categories_ids', []),
@@ -353,7 +350,7 @@ def value_settings_update(option_id):
     db.session.commit()
 
     # Consumables
-    value.settings.consumables = json_dumps_or_other(data.get('products'))
+    value.settings.consumables = json_dumps(data.get('products'))
 
     db.session.commit()
 

@@ -1,20 +1,21 @@
-import pickle
 import json
 from datetime import datetime
 import locale
 
 from clim.main import bp
-from clim.models import OptionValue, Product
 
 
-def smart_int(number):
+def smart_int(num):
     ''' Float без точки, если оно целое '''
-    if not number:
+    try:
+        num_abs = abs(num)
+        if abs(num_abs - round(num_abs)) <= 0:
+            num = round(num)
+
+        return num
+
+    except TypeError:  # строка не является float / int
         return 0
-    elif int(number) == number:
-        return int(number)
-    else:
-        return round(number, 2)
 
 
 bp.add_app_template_filter(smart_int)

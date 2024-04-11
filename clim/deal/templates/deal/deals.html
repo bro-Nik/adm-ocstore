@@ -25,7 +25,7 @@
               <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
             </div>
 
-            {% set filter = session.get('stage_type') if session.get('stage_type') else '' %}
+            {% set filter = session.get('stage_type', '') %}
 
             <div class="col-md-3 mb-lg-0 d-flex gap-2 align-items-center ms-5">
               <div class="form-check">
@@ -55,7 +55,7 @@
                   url: '{{ url_for('.update_filter') }}',
                   data: $('[name=stage_type]').serialize(),
                   success: function () {
-                    window.location.href = "{{ url_for('.deals', view=session.get('crm_view')) }}";
+                    window.location.href = "{{ url_for('.deals') }}";
                   }
                 });
               })
@@ -82,8 +82,7 @@
 
               {% set menu = [
               {'url': url_for('.deals', view='kanban'), 'name': 'Канбан'},
-              {'url': url_for('.deals', view='list'), 'name': 'Список'},
-              {'url': '#', 'name': 'Календарь'}
+              {'url': url_for('.deals', view='list'), 'name': 'Список'}
               ] %}
 
               {% for item in menu %}
@@ -116,6 +115,7 @@
 
 </form>
 
+<script src="{{ url_for('.static', filename='js/deal.js') }}"></script>
 <script src="{{ url_for('.static', filename='js/stages.js') }}"></script>
 {% include 'deal/deals_modals.html' %}
 {% include 'deal/deals_scripts.html' %}

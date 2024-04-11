@@ -14,7 +14,7 @@
       <button class="dropdown-item" type="submit" form="Filter"
         formaction="{{ url_for('.start_comparison_products') }}">Сопоставить отфильтрованные</button>
       <button class="dropdown-item" type="submit" form="comparison"
-        formaction="{{ url_for('del_not_confirm_products', page=request.args.get('page')) }}">Удалить неподтвержденные</button>
+        formaction="{{ url_for('main.del_not_confirm_products', page=request.args.get('page')) }}">Удалить неподтвержденные</button>
     </ul>
   </div>
 

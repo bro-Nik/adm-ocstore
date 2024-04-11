@@ -6,7 +6,7 @@ from flask import current_app, render_template, redirect, url_for, request, sess
     Blueprint
 from flask_login import login_required
 from clim.app import celery
-from clim.general_functions import get_categories, get_discount_products, get_main_category, get_other_product, get_product
+from clim.utils import get_categories, get_discount_products, get_main_category, get_other_product, get_product
 from clim.models import Category, Module, Option, OtherProduct, OtherShops, Product, ProductAttribute, ProductImage, ProductOptionValue, ProductSpecial, ProductToCategory, ProductVariant, RedirectManager, Review, SeoUrl, SpecialOffer, StockStatus, db
 from . import bp
 
@@ -195,12 +195,7 @@ def products_action():
     data = json.loads(request.data) if request.data else {}
     ids = data.get('ids')
 
-    info_list = data.get('info') if data.get('info') else {}
-    info = {}
-    if info_list:
-        for item in info_list:
-            info[item['name']] = item['value']
-
+    info = {i['name']: i['value'] for i in data.get('info', {})}
     action = str(info.get('action'))
     other = info.get('other')
 
@@ -569,12 +564,7 @@ def products_prices_action():
     page = request.args.get('page')
     data = json.loads(request.data) if request.data else {}
     data_list = data.get('ids')
-    info_list = data.get('info') if data.get('info') else {}
-    info = {}
-    if info_list:
-        for item in info_list:
-            info[item['name']] = item['value']
-
+    info = {i['name']: i['value'] for i in data.get('info', {})}
     action = str(info.get('action'))
 
     settings_in_base, settings = get_products_prices_settings()

@@ -1,11 +1,10 @@
+{# Jinja2 #}
 <script>
   var current_url = "{{ url_for('.deal_info',deal_id=deal.deal_id) }}";
 
-  $("#DealInfo")
-    .find("tr.product")
-    .each(function () {
-      UpdateProductSelect($(this));
-    });
+  $("#DealInfo").find("tr.product").each(function () {
+    UpdateProductSelect($(this));
+  });
 
   function UpdateProductSelect($tr) {
     var productSelect = $tr.find("select.product-select");
@@ -89,20 +88,14 @@
         var data = $(this).select2("data")[0],
           $tr = $(this).closest("tr");
 
-        var quantity =
-          data.quantity || $stockSelect.find(":selected").attr("data-quantity");
+        var quantity = data.quantity || $stockSelect.find(":selected").attr("data-quantity");
         $tr.find(".available").text(quantity);
       });
 
-    if (!product_id) {
-      return false;
-    }
+    if (!product_id) return false;
 
-    var url =
-      "{{ url_for('.ajax_stocks_first') }}" + "?product_id=" + product_id;
-    if ($stockSelect.val()) {
-      url += "&stock_id=" + $stockSelect.val();
-    }
+    var url = "{{ url_for('.ajax_stocks_first') }}" + "?product_id=" + product_id;
+    if ($stockSelect.val()) url += `&stock_id=${$stockSelect.val()}`;
     $.ajax({
       type: "GET",
       url: url,
@@ -124,14 +117,7 @@
   }
 
   function formatStockOption(stock) {
-    var $stock = $(
-      '<span class="text">' +
-      stock.text +
-      '<small class="text-muted">' +
-      stock.quantity +
-      "</small></span>",
-    );
-    return $stock;
+    return $(`<span class="text">${stock.text}<small class="text-muted">${stock.quantity}</small></span>`)
   }
 
   // Select2 Contacts
@@ -165,23 +151,24 @@
       },
     })
     .on("select2:open", () => {
-      $(".select2-results:not(:has(button))").append(
-        "<div class='select-new-container'><div class='select-new-name'></div><div class='select-new-text'>создать новый контакт</div></div>",
-      );
+      var $box = $(".select2-results:not(:has(button))");
+      if (!$box.find('.select-new-container').length) {
+        $box.append(
+          `<div class='select-new-container open-modal' data-modal-id="ContactInfoModal" data-url="{{ url_for('.contact_info', role='Клиент') }}">
+            <div class='select-new-text'>создать новый контакт</div>
+          </div>`,
+        );
+
+      }
     });
 
   function formatContactOption(contact) {
-    var $contact = '<span class="text">' + contact.text;
+    var $contact = `<span class="text">${contact.text}`;
     if (contact.phone || contact.email) {
-      $contact +=
-        '<br><small class="text-muted">' +
-        contact.phone +
-        (contact.phone && contact.email ? ", " : "") +
-        contact.email +
-        "</small>";
+      $contact += `<br><small class="text-muted">
+        ${contact.phone}${(contact.phone && contact.email ? ", " : "")}${contact.email}</small>`;
     }
     $contact += "</span>";
-
     return $($contact);
   }
 
@@ -203,9 +190,7 @@
   }
 
   function ToMoney(number) {
-    if (parseInt(number) === number) {
-      number = parseInt(number);
-    }
+    if (parseInt(number) === number) number = parseInt(number);
     return Intl.NumberFormat("ru", {currency: "RUB"}).format(number);
   }
 
@@ -261,11 +246,8 @@
   $(".delete-product").on("click", function () {
     var $tab = $(this).closest("div[id]");
     $tab.find(".to-check:checked").each(function () {
-      if ($tab.find("tr.product").length > 1) {
-        $(this).closest("tr").remove();
-      } else {
-        newLine($tab, $(this).closest("tr"));
-      }
+      if ($tab.find("tr.product").length > 1) $(this).closest("tr").remove();
+      else newLine($tab, $(this).closest("tr"));
     });
     $tab.find(".to-check:checkbox").trigger("change");
     LineCount($tab);
@@ -275,9 +257,7 @@
   function LineCount($tab) {
     var count = 1;
     $tab.find("tr.product").each(function () {
-      $(this)
-        .find(".line-count")
-        .text(count + ".");
+      $(this).find(".line-count").text(count + ".");
       count += 1;
     });
   }
@@ -299,10 +279,7 @@
     $modal.attr("data-url", modal_url);
 
     // products
-    $form
-      .find("#tabProducts")
-      .find("tr.product")
-      .each(function () {
+    $form.find("#tabProducts").find("tr.product").each(function () {
         var $tr = $(this),
           $product = $tr.find("select.product-select"),
           product_id = +$product.val();
@@ -315,20 +292,14 @@
             price: +$tr.find(".price").val() || 0,
             quantity: +$tr.find(".quantity").val() || 0,
             stock_id: +$tr.find("select.stock-select").val(),
-            stock_name: $tr
-              .find("select.stock-select")
-              .find(":selected")
-              .html(),
+            stock_name: $tr.find("select.stock-select").find(":selected").html(),
           };
           products.push(item);
         }
       });
 
     // consumables
-    $form
-      .find("#tabConsumables")
-      .find("tr.product")
-      .each(function () {
+    $form.find("#tabConsumables").find("tr.product").each(function () {
         var $tr = $(this),
           $product = $tr.find("select.product-select"),
           product_id = +$tr.find("select.product-select").val();
@@ -340,20 +311,14 @@
             price: +$tr.find(".price").val() || 0,
             quantity: +$tr.find(".quantity").val() || 0,
             stock_id: +$tr.find("select.stock-select").val(),
-            stock_name: $tr
-              .find("select.stock-select")
-              .find(":selected")
-              .html(),
+            stock_name: $tr.find("select.stock-select").find(":selected").html(),
           };
           consumables.push(item);
         }
       });
 
     // expenses
-    $form
-      .find("#tabExpenses")
-      .find("tr.product")
-      .each(function () {
+    $form.find("#tabExpenses").find("tr.product").each(function () {
         var $tr = $(this),
           name = $tr.find("input.expense-name").val(),
           sum = +$tr.find("input.expense-sum").val();
@@ -378,78 +343,25 @@
   });
 
   // Fill Consumables
-  var url_get_consumables_in_option =
-    "{{ url_for('stock.json_consumables_in_option') }}";
+  var url_get_consumables_in_option = "{{ url_for('stock.json_consumables_in_option') }}";
 
   // Stages
   StegesColor();
 
-  // Event Modified
-  $("#DealInfo").on("change", PageModified);
-
-  function PageModified() {
-    $("#DealInfo").find(".sticky-bottom").addClass("active");
-  }
-
-  // Cancel Modified
-  $("#DealInfo").on("click", "[type=reset]", function () {
-    LoadDeal("{{deal.deal_id}}");
-  });
-
-  // Show Services
+  // Раскрыть запись на услуги
   $("body").on("change", "select[name=what_need]", function () {
-    if ($(this).val().indexOf("установка") + 1) {
-      $("#collapseServices").addClass("show");
-    } else {
-      $("#collapseServices").removeClass("show");
-    }
+    if ($(this).val().indexOf("установка") + 1) $("#collapseServices").addClass("show");
+    else $("#collapseServices").removeClass("show");
   });
 
-  // New Contact In Select
-  $("body").on("click", ".select-new-container", function () {
-    $("#contactSelect").select2("close");
-    var $contact_box = $("#contact");
-    $contact_box.find(".to-hidden").addClass("visually-hidden");
-    $contact_box.find(".to-show").removeClass("visually-hidden");
-  });
-
-  // Show inputs
-  $("body").on("click", ".deal-info-edit-link", function () {
-    var $this = $(this);
-    $this.addClass("visually-hidden");
-
-    var $input = $this.next();
-    $input.removeClass("visually-hidden");
-
-    if ($input.is("input")) {
-      data = $input.val();
-      $input.focus().val("").val(data);
-    }
-  });
-
-  // Show Edit Deal Name
-  $("body").on("click", ".deal-info-title", function () {
-    var $this = $(this);
-    $this.addClass("visually-hidden");
-
-    var $input = $this.next();
-    $input.removeClass("visually-hidden");
-    data = $input.val();
-    $input.focus().val("").val(data);
-  });
-
-  // Show Contact Info
-  $("#DealInfo").on("click", ".deal-info-contact", function () {
-    var $this = $(this);
-    $this.parent().addClass("visually-hidden");
-    $this.parent().next().removeClass("visually-hidden");
-  });
-
-  $("body")
-    .find("input.datepicker")
-    .each(function () {
-      new AirDatepicker(this, {
-        position: "right center",
-      });
+  // Datepicker
+  $("body").find("input.datepicker").each(function () {
+      new AirDatepicker(this, {position: "right center",timepicker: true,timeFormat: 'hh:mm'});
     });
+
+  // Пересчитать чекбоксы
+  $('.to-check:checkbox').trigger('change');
+
+  // Показать панель действий при изменениях
+  $(document).on("change", function () {$(document).find(".sticky-bottom").addClass("active");});
 </script>

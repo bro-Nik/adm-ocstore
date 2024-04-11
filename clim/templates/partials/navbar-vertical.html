@@ -32,12 +32,6 @@
             </li>
 
             <li class="nav-item">
-              <a class="nav-link has-arrow" href="@@webRoot/pages/settings.html">
-                Настройки
-              </a>
-            </li>
-
-            <li class="nav-item">
               <a class="nav-link {{ 'active' if request.blueprint == 'other_shops' }}"
                 href="{{ url_for('other_shops.shops') }}">
                 Другие магазины
@@ -98,9 +92,16 @@
         <div id="navCrm" class="collapse {{ 'show' if '/crm/' in request.path }}" data-bs-parent="#sideNavbar">
           <ul class="nav flex-column">
             <li class="nav-item">
-              <a class="nav-link {{ 'active' if request.blueprint == 'deal' }}"
+              <a class="nav-link {{ 'active' if url_for('deal.deals', view=session.get('crm_view')) in request.path }}"
                 href="{{ url_for('deal.deals', view=session.get('crm_view')) }}">
                 Сделки
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if url_for('deal.contacts') in request.path }}"
+                href="{{ url_for('deal.contacts') }}">
+                Контакты
               </a>
             </li>
 

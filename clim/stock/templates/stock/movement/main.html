@@ -6,7 +6,7 @@
 {% block content %}
 
 <form id="movementInfo" method="post" class="d-grid gap-3"
-  action="{{ url_for('stock.movement_update', movement_type=movement_type,
+  action="{{ url_for('stock.movement_info', movement_type=movement_type,
           movement_id=movement.movement_id if movement else None) }}">
     <div class="row">
       <div class="col-lg-12 col-md-12 col-12">
@@ -20,12 +20,12 @@
             <div class="ms-auto d-flex gap-2 action-btns">
               {% if movement.posted %}
                 <button class="btn rounded-3 btn-secondary" type="button"
-                  data-action="cancel">Отменить проведение</button>
+                  data-action="unposting">Отменить проведение</button>
               {% else %}
                 <button class="btn rounded-3 btn-primary" type="button"
                   data-action="save">Сохранить</button>
                 <button class="btn rounded-3 btn-secondary" type="button"
-                  data-action="save and posting">Сохранить и провести</button>
+                  data-action="posting">Сохранить и провести</button>
               {% endif %}
             </div>
           </div>
@@ -54,7 +54,6 @@
           <div class="tab-pane fade" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
             <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-grid gap-3 mb-5">
               {% include 'stock/movement/details.html' %}
-              {{ movement.products }}
             </div>
           </div>
 

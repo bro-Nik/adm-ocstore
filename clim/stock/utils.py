@@ -1,11 +1,9 @@
-from datetime import datetime
 import json
-import pickle
 from typing import Dict
 
-from ..models import Category, Module, Product, Stock, StockMovement, \
-    StockProduct
-from ..app import redis, db
+from ..models import Category, Module
+from ..app import db
+from .models import Stock, StockMovement, StockProduct, Product
 
 
 def get_products():
@@ -46,7 +44,7 @@ def get_categories():
         db.select(Category).order_by(Category.sort_order)).scalars()
 
 
-def json_dumps_or_other(data, default=None):
+def json_dumps(data, default=None):
     return json.dumps(data, ensure_ascii=False) if data else default
 
 
@@ -70,11 +68,9 @@ def product_in_stock(product_id, stock_id):
 
 
 def new_product_in_stock(product_id, stock_id):
-    product_in_stock = StockProduct(
-        product_id=product_id,
-        stock_id=stock_id,
-        quantity=0
-    )
+    product_in_stock = StockProduct(product_id=product_id,
+                                    stock_id=stock_id,
+                                    quantity=0)
     db.session.add(product_in_stock)
     return product_in_stock
 
@@ -114,20 +110,7 @@ def get_consumables_categories_ids():
     return StockSettings.get_item('consumables_categories_ids')
 
 
-def create_new_stock():
-    stock = Stock()
-    db.session.add(stock)
-    return stock
-
-
-def create_new_movement(type):
-    movement = StockMovement(movement_type=type, date=datetime.now().date())
-    db.session.add(movement)
-    return movement
-
-
-def get_stock_product():
-    product = StockProduct()
-    db.session.add(product)
-    db.session.commit()
-    return product
+def get_product_in_stock(product_id, stock_id):
+    return db.session.execute(
+        db.select(StockProduct)
+        .filter_by(product_id=product_id, stock_id=stock_id)).scalar()

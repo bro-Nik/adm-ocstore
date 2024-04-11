@@ -1,5 +1,3 @@
-import json
-from flask import flash
 from flask_login import UserMixin
 
 from .app import db
@@ -74,23 +72,6 @@ class Product(db.Model):
     def find(id):
         return db.session.execute(
             db.select(Product).filter_by(product_id=id)).scalar()
-
-    def get_stock(self, stock_id, create=False):
-        for stock in self.stocks:
-            if stock.stock_id == stock_id:
-                return stock
-        if create:
-            stock = StockProduct(stock_id=stock_id)
-            self.stocks.append(stock)
-            db.session.flush()
-            # db.session.commit()
-            return stock
-
-    def get_quantity(self):
-        quantity = 0
-        for stock in self.stocks:
-            quantity += stock.quantity
-        return quantity
 
 
 class ProductImage(db.Model):
@@ -198,8 +179,8 @@ class Category(db.Model):
                                backref=db.backref('categories', lazy='dynamic'))
     description = db.relationship('CategoryDescription',
                                   backref='description', uselist=False)
-
-    # Relationships
+#
+#     # Relationships
     child_categories = db.relationship(
         "Category",
         primaryjoin="Category.category_id == foreign(Category.parent_id)",
@@ -258,6 +239,7 @@ class OptionDescription(db.Model):
 
 class OptionValue(db.Model):
     __tablename__ = 'oc_option_value'
+
     option_value_id = db.Column(db.Integer, primary_key=True)
     option_id = db.Column(db.Integer,
                           db.ForeignKey('oc_option.option_id'))
@@ -269,6 +251,12 @@ class OptionValue(db.Model):
                                   backref='value', uselist=False)
     products_options = db.relationship('ProductOptionValue',
                                   backref=db.backref('product_option', lazy=True))
+
+    @staticmethod
+    def get(value_id):
+        return db.session.execute(
+            db.select(OptionValue)
+            .filter_by(option_value_id=value_id)).scalar()
 
 
 class OptionSetting(db.Model):
@@ -502,212 +490,3 @@ class SpecialOfferDescription(db.Model):
     name = db.Column(db.String(255))
     description = db.Column(db.Text)
     meta_title = db.Column(db.String(255))
-
-
-class Stock(db.Model):
-    __tablename__ = 'adm_stock'
-    stock_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64))
-    sort = db.Column(db.Integer)
-    products = db.relationship('StockProduct',
-                              backref=db.backref('stock', lazy=True))
-
-    def edit(self, form):
-        self.name = form.get('name')
-        self.sort = form.get('sort')
-        db.session.commit()
-
-    def delete(self):
-        if self.products:
-            flash(f'У склада "{self.name}" есть товары, он не удален')
-        else:
-            db.session.delete(self)
-
-
-class StockProduct(db.Model):
-    __tablename__ = 'adm_stock_product'
-    product_id = db.Column(db.Integer,
-                           db.ForeignKey('oc_product.product_id'),
-                           primary_key=True)
-    stock_id = db.Column(db.Integer,
-                         db.ForeignKey('adm_stock.stock_id'),
-                         primary_key=True)
-    quantity = db.Column(db.Float, default=0)
-    main_product = db.relationship('Product',
-                              backref=db.backref('stocks', lazy=True))
-
-
-class Deal(db.Model):
-    __tablename__ = 'adm_deal'
-    deal_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128))
-    contact_id = db.Column(db.Integer, db.ForeignKey('adm_contact.contact_id'))
-    stage_id = db.Column(db.Integer, db.ForeignKey('adm_deal_stage.stage_id'))
-    details = db.Column(db.Text)
-    products = db.Column(db.Text)
-    consumables = db.Column(db.Text)
-    expenses = db.Column(db.Text)
-    posted = db.Column(db.Boolean)
-    date_add = db.Column(db.Date)
-    date_end = db.Column(db.Date)
-    sum = db.Column(db.Float(15.4))
-    analytics = db.Column(db.Text)
-    profit = db.Column(db.Float(15.4))
-    sort_order = db.Column(db.Integer)
-
-    @property
-    def completed(self):
-        return 'end_' in self.stage.type
-
-    def delete(self):
-        db.session.delete(self)
-
-
-class DealStage(db.Model):
-    __tablename__ = 'adm_deal_stage'
-    stage_id = db.Column(db.Integer, primary_key=True,)
-    name = db.Column(db.String(128))
-    type = db.Column(db.String(64))
-    sort_order = db.Column(db.Integer)
-    color = db.Column(db.String(45))
-    deals = db.relationship('Deal',
-                            backref=db.backref('stage', lazy=True),
-                            order_by='Deal.sort_order'
-                            )
-
-
-class Contact(db.Model):
-    __tablename__ = 'adm_contact'
-    contact_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128))
-    phone = db.Column(db.String(64))
-    email = db.Column(db.String(64))
-    deals = db.relationship('Deal',
-                            backref=db.backref('contact', lazy=True))
-
-
-class StockMovement(db.Model):
-    __tablename__ = 'adm_stock_movement'
-    movement_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64))
-    date = db.Column(db.Date)
-    posted = db.Column(db.Boolean)
-    products = db.Column(db.Text)
-    movement_type = db.Column(db.String(32))
-    details = db.Column(db.Text)
-    stocks = db.Column(db.Text)
-
-    def save(self, data):
-        info = {i['name']: i['value'] for i in data.get('info', {})}
-
-        name = info.get('name')
-        if name:
-            self.name = name
-        elif not self.name:
-            types = {'coming': 'Приход', 'moving': 'Перемещение'}
-            count = StockMovement.query.filter_by(movement_type=self.movement_type).count()
-            name = types.get(self.movement_type, '')
-            self.name = f'{name} #{count}'
-
-        self.products = json.dumps(data.get('products', {}), ensure_ascii=False)
-        self.stocks = json.dumps(data.get('stocks', {}), ensure_ascii=False)
-
-        db.session.commit()
-
-    def posting(self, param=''):
-        direction = -1 if param == 'cancel' else 1
-
-        products = json.loads(self.products)
-
-        for p in products:
-            product = Product.find(p['product_id'])
-            quantity = p['quantity'] * direction
-
-            if not product or quantity == 0:
-                continue
-
-            # Coming
-            if self.movement_type == 'coming':
-                product_stock = product.get_stock(p['stock_id'], create=True)
-
-                product_stock.quantity += quantity
-                if product_stock.quantity < 0:
-                    flash('Нет столько товаров на складе отправителе', 'danger')
-                    db.session.rollback()
-                    return False
-
-                p['stock_name'] = product_stock.stock.name
-                p['product_name'] = product.description.meta_h1
-                p['unit'] = product.unit_class.description.unit
-
-                cost = product.cost
-                t_quantity = product.get_quantity()
-                product.cost = ((cost * t_quantity + p['cost'] * quantity) /
-                                (t_quantity + quantity))
-
-            # Moving
-            elif self.movement_type == 'moving':
-                stock1 = product.get_stock(p['stock_id'], create=True)
-                stock2 = product.get_stock(p['stock2_id'], create=True)
-
-                stock1.quantity -= quantity
-                stock2.quantity += quantity
-
-                if stock1.quantity < 0 or stock2.quantity < 0:
-                    flash('Нет столько товаров на складе', 'danger')
-                    db.session.rollback()
-                    return False
-
-                p['stock_name'] = stock1.stock.name
-                p['stock2_name'] = stock2.stock.name
-                p['product_name'] = stock1.main_product.description.meta_h1
-                p['unit'] = stock1.main_product.unit_class.description.unit
-
-                if stock1.quantity == 0:
-                    db.session.delete(stock1)
-                if stock2.quantity == 0:
-                    db.session.delete(stock2)
-
-        self.products = json.dumps(products)
-        self.posted = False if param == 'cancel' else True
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-
-
-class StockCategory(db.Model):
-    __tablename__ = 'adm_stock_category'
-    stock_category_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64))
-
-
-class Worker(db.Model):
-    __tablename__ = 'adm_worker'
-    worker_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(45))
-    start_day = db.Column(db.Time)
-    end_day = db.Column(db.Time)
-    employments = db.relationship('WorkerEmployment',
-                            backref=db.backref('worker', lazy=True))
-
-
-class WorkerEmployment(db.Model):
-    __tablename__ = 'adm_worker_employment'
-    employment_id = db.Column(db.Integer, primary_key=True)
-    worker_id = db.Column(db.Integer, db.ForeignKey('adm_worker.worker_id'))
-    title = db.Column(db.String(64))
-    date_start = db.Column(db.Date)
-    date_end = db.Column(db.Date)
-    time_start = db.Column(db.Time)
-    time_end = db.Column(db.Time)
-    event = db.Column(db.String(64))
-
-
-class DealService(db.Model):
-    __tablename__ = 'adm_deal_service'
-    service_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(45))
-    time = db.Column(db.Integer)
-
-

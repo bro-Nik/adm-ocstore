@@ -1,1 +1,1 @@
-from clim import app, models, routes, users, reports, jinja_filters, blueprints, general_functions
+from clim import app, models, routes, users, reports, jinja_filters, blueprints, utils

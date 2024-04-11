@@ -1,13 +1,9 @@
 <!-- Nothing or Expenses  -->
-{% if not deal or not deal.posted %}
-{% include 'partials/nothing.html' %}
-{% else %}
+{% if not deal or not deal.posted %} {% include 'partials/nothing.html' %} {%
+else %}
 
 <!-- Expenses  -->
 <div class="card h-100">
-
-
-  <!-- table  -->
   <div class="">
     <table class="table text-nowrap table">
       <thead class="">
@@ -18,9 +14,8 @@
         </tr>
       </thead>
       <tbody>
-        {% set deal_analytics = deal.analytics|to_json %}
-
-        {% for item in deal_analytics %}
+        {% set deal_analytics = deal.analytics|to_json %} {% for item in
+        deal_analytics %}
         <tr>
           <td class="col-4">
             <span class="ana_count"></span>
@@ -32,15 +27,12 @@
             <span class="">₽</span>
           </td>
           <td class="col-auto"></td>
-
         </tr>
         {% endfor %}
 
-        <input id="expenses_count" type="hidden" name="expenses-count" value="">
-
+        <input id="expenses_count" type="hidden" name="expenses-count" value="" />
       </tbody>
     </table>
-
   </div>
 </div>
 <div class="card h-100">
@@ -48,16 +40,17 @@
     <table class="col-3">
       <tbody>
         <tr>
-          <td> <span class="fs-4 fw-bolder">Всего расходов:</span> </td>
-          <td> <span class="fs-4 fw-bolder">{{ (deal.sum - deal.profit)|money }} ₽</span> </td>
+          <td><span class="fs-4 fw-bolder">Всего расходов:</span></td>
+          <td>
+            <span class="fs-4 fw-bolder">{{ (deal.sum - deal.profit)|money }} ₽</span>
+          </td>
         </tr>
         <tr>
-          <td> <span class="fs-4 fw-bolder">Чистая прибыль:</span> </td>
-          <td> <span class="fs-4 fw-bolder">{{ deal.profit|money }} ₽</span> </td>
+          <td><span class="fs-4 fw-bolder">Чистая прибыль:</span></td>
+          <td><span class="fs-4 fw-bolder">{{ deal.profit|money }} ₽</span></td>
         </tr>
       </tbody>
     </table>
   </div>
-
 </div>
 {% endif %}

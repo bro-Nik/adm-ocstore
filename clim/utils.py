@@ -6,37 +6,12 @@ from .models import AttributeDescription, Category, Module, OtherProduct, \
     Product, ProductAttribute, ProductToCategory
 
 
-def json_dumps_or_other(data, default=None):
+def json_dumps(data, default=None):
     return json.dumps(data, ensure_ascii=False) if data else default
 
 
-def json_loads_or_other(data, default=None):
+def json_loads(data, default=None):
     return json.loads(data) if data else default
-
-
-def dict_from_serialize_array(data):
-    # info = {}
-    # for item in data:
-    #     name = item['name']
-    #     value = item['value']
-    #     if info.get(name):
-    #         if type(info.get(name)) != list:
-    #             info[name] = [info[name]]
-    #
-    #         info[name].append(value)
-    #     else:
-    #         info[name] = value
-    # return info
-
-    info = {}
-    for name, value in data.items():
-        if info.get(name):
-            if not isinstance(info.get(name), list):
-                info[name] = [info[name]]
-            info[name].append(value)
-        else:
-            info[name] = value
-    return info
 
 
 def get_module(name):
@@ -100,5 +75,3 @@ def actions_in(data_str: bytes, function: Callable, **kwargs) -> None:
             item = function(item_id, **kwargs)
             if item and hasattr(item, action):
                 getattr(item, action)()
-
-        db.session.commit()

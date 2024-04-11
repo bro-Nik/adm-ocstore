@@ -1,0 +1,155 @@
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
+
+{% block content %}
+
+<form id="ClientInfo" data-url="{{ url_for('.contact_info', contact_id=contact.contact_id) }}">
+  <div class="container-fluid px-6 d-grid gap-3 mt-3 pb-80">
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-12">
+        <div>
+          <div class="d-flex align-items-center">
+            <div class="mb-2 mb-lg-0">
+              <h3 class="mb-0">
+                <span class="deal-info-title">{{ contact.name or 'Новый контакт' }}</span>
+                <input type="text" class="deal-info-title-input visually-hidden to-show" name="deal_name" value="{{ contact.name or '' }}" placeholder="Добавление сделки">
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row align-items-center">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+        <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail" role="tab"
+              aria-controls="pills-detail" aria-selected="true">Общие</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="pills-deals-tab" data-bs-toggle="pill" data-bs-target="#pills-product" role="tab"
+              aria-controls="pills-product" aria-selected="false">Сделки</a>
+          </li>
+
+        </ul>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+        <div class="tab-content" id="pills-tabContent">
+          <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
+            <div class="row">
+              <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-grid gap-3">
+                {% set details = deal.details|to_json if deal and deal.details else {} %}
+
+
+                <div class="crm-editor-section">
+                  <div class="crm-editor-section-header">
+                    <span class="crm-editor-section-header-text">Контакты</span>
+                  </div>
+
+                  <div class="crm-editor-section-body">
+                    <div class="d-grid gap-2">
+
+                      <div class="d-grid">
+                        <label class="deal-info-block-title">ФИО</label>
+                        {% if contact.name %}
+                          <span class="deal-info-edit-link">{{ contact.name }}</span>
+                        {% elif contact.contact_id %}
+                          <span class="deal-info-edit-link">Нет</span>
+                        {% endif %}
+                        <input type="text" class="form-control border
+                          {{ 'visually-hidden' if contact.name or contact.contact_id }} to-show" name="name" value="{{ contact.name or '' }}">
+                      </div>
+
+                      <div class="d-grid">
+                        <label class="deal-info-block-title">Телефон</label>
+                        {% if contact.phone %}
+                          <span class="deal-info-edit-link">{{ contact.phone }}</span>
+                        {% elif contact.contact_id %}
+                          <span class="deal-info-edit-link">Нет</span>
+                        {% endif %}
+                        <input type="phone" class="form-control border
+                          {{ 'visually-hidden' if contact.phone or contact.contact_id }} to-show" name="phone" value="{{ contact.phone or '' }}">
+                      </div>
+
+                      <div class="d-grid">
+                        <label class="deal-info-block-title">E-mail</label>
+                        {% if contact.email %}
+                          <span class="deal-info-edit-link">{{ contact.email }}</span>
+                        {% elif contact.contact_id %}
+                          <span class="deal-info-edit-link">Нет</span>
+                        {% endif %}
+                        <input type="email" class="form-control border
+                          {{ 'visually-hidden' if contact.email or contact.contact_id }} to-show" name="email" value="{{ contact.email or '' }}">
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
+                <div class="crm-editor-section">
+
+                  <div class="crm-editor-section-header">
+                    <span class="crm-editor-section-header-text">Детали</span>
+                  </div>
+
+                  <div class="crm-editor-section-body">
+                    <div class="d-grid gap-2">
+
+                      <div class="d-grid">
+                        <label class="deal-info-block-title">Роль</label>
+                        {% if contact.role and contact.contact_id %}
+                          <span class="deal-info-edit-link">{{ contact.role }}</span>
+                        {% elif contact.contact_id %}
+                          <span class="deal-info-edit-link">Нет</span>
+                        {% endif %}
+                        <div class="{{ 'visually-hidden' if contact.role and contact.contact_id }} to-show">
+                          <select class="general-select" data-placeholder="-- Выбрать --" name="role" data-class="border">
+                            <option></option>
+                            <option {{ 'selected' if contact.role=='Клиент' }}>Клиент</option>
+                            <option {{ 'selected' if contact.role=='Поставщик' }}>Поставщик</option>
+                          </select>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+              <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-grid gap-3">
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-deals-tab" tabindex="0">
+            <div class="col-12 d-grid gap-3">{% include 'deal/contact/deals.html' %}</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    {#}
+  </div>
+    {#}
+
+  <div class="sticky-bottom-box">
+    <div class="sticky-bottom actions bg-white py-2">
+      <button type="submit" class="btn btn-salato" data-this-need-update="true">Сохранить</button>
+      <button class="btn btn-transparent rounded-3" type="reset">Отмена</button>
+    </div>
+  </div>
+
+</form>
+
+<script>
+  // Показать панель действий при изменениях
+  $(document).on("change", function () {$(document).find(".sticky-bottom").addClass("active");});
+</script>
+{% endblock %}
+

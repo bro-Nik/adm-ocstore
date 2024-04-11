@@ -1,0 +1,154 @@
+{# Jinja2 #}
+{% set details = deal.details|to_json if deal.details else {} %}
+
+
+<div class="crm-editor-section">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">О сделке</span>
+  </div>
+
+  <div class="crm-editor-section-body">
+    <div class="d-grid gap-2">
+
+      {% if not deal.deal_id %}
+        <div class="d-grid">
+          <label class="deal-info-block-title">Название</label>
+          <input type="text" class="form-control border" name="deal_name" value="{{ deal.name or '' }}">
+        </div>
+      {% endif %}
+
+      <div class="d-grid">
+        <label class="deal-info-block-title">Сумма</label>
+        {% if deal.sum %}
+          <span class="deal-info-edit-link">{{ deal.sum|money }} ₽</span>
+        {% elif deal.deal_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <input type="number" step="any" class="form-control border {{ 'visually-hidden' if deal.sum or deal.deal_id }} to-show"
+          name="deal_sum" value="{{ deal.sum }}">
+      </div>
+
+      <div class="d-grid">
+        <label class="deal-info-block-title">Клиент</label>
+        {% if deal.contact %}
+          <h5>{{ deal.contact.name }}</h5>
+          <span class="deal-info-contact">{{ deal.contact.phone|smart_phone }}</span>
+          <span class="deal-info-contact">{{ deal.contact.email}}</span>
+        {% elif deal.deal_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <div class="{{ 'visually-hidden' if deal.contact or deal.deal_id }}">
+          <select id="contactSelect" data-placeholder="-- Выбрать --" name="contact_id"></select>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Details  -->
+<div class="crm-editor-section">
+
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">Детали</span>
+  </div>
+
+  <div class="crm-editor-section-body">
+    <div class="d-grid gap-2">
+
+      <div class="d-grid">
+        <label class="deal-info-block-title">Что интересует</label>
+        {% if details.get('what_need') %}
+          <span class="deal-info-edit-link">{{ details.get('what_need') }}</span>
+        {% elif deal.deal_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <div class="{{ 'visually-hidden' if details.get('what_need') or deal.deal_id }} to-show">
+          <select class="general-select" data-placeholder="-- Выбрать --" name="what_need" data-class="border">
+            <option></option>
+            <option {{ 'selected' if details.get('what_need')=='Кондицонер + установка' }}>Кондицонер + установка</option>
+            <option {{ 'selected' if details.get('what_need')=='Только кондиционер' }}>Только кондиционер</option>
+            <option {{ 'selected' if details.get('what_need')=='Только установка' }}>Только установка</option>
+            <option {{ 'selected' if details.get('what_need')=='Другое' }}>Другое</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="d-grid">
+        <label class="deal-info-block-title">Адрес</label>
+        {% if details.get('adress') %}
+          <span class="deal-info-edit-link">{{ details.get('adress') }}</span>
+        {% elif deal.deal_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <input type="text" class="form-control border {{ 'visually-hidden' if details.get('adress') or deal.deal_id }} to-show"
+          name="adress" value="{{ details.get('adress') if details.get('adress') }}">
+      </div>
+
+      <div class="d-grid">
+        <label class="deal-info-block-title">Комментарий</label>
+        {% if details.get('deal_comment') %}
+          <span class="deal-info-edit-link">{{ details.get('deal_comment') }}</span>
+        {% elif deal.deal_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <textarea class="form-control border {{ 'visually-hidden' if details.get('deal_comment') or deal.deal_id }} to-show"
+          name="deal_comment">{{ details.get('deal_comment') if details.get('deal_comment') }}</textarea>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="accordionServices" class="accordion crm-editor-section">
+
+  <div class="crm-editor-section-header">
+    <span
+      class="crm-editor-section-header-text accordion-button {{ 'collapsed' if not details.get('what_need') or 'установка' not in details.get('what_need') }}"
+      data-bs-toggle="collapse" data-bs-target="#collapseServices" aria-expanded="true"
+      aria-controls="collapseServices">Услуги</span>
+  </div>
+
+  <div id="collapseServices"
+    class="crm-editor-section-body accordion-collapse collapse {{ 'show' if details.get('what_need') and 'установка' in details.get('what_need') }}"
+    data-bs-parent="">
+    <div class="d-grid gap-2">
+
+      <div class="d-grid">
+        <label class="deal-info-block-title">Дата и время выезда</label>
+        <div id="DealEmployments" class="deal-info-edit-link-employments">
+          <span class="deal-info-edit-link-booking">{{ 'Для выбора сохраните сделку' if not deal.deal_id else 'Нет' }}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion crm-editor-section" id="accordionOther">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text accordion-button {{ 'collapsed' if not deal.posted }}" data-bs-toggle="collapse"
+      data-bs-target="#collapseOther" aria-expanded="true" aria-controls="collapseOther">Другое</span>
+  </div>
+
+  <div id="collapseOther" class="crm-editor-section-body accordion-collapse collapse {{ 'show' if deal.posted }}"
+    data-bs-parent="#accordionExample">
+    <div class="mb-3 row d-grid gap-2">
+      <div class="d-grid">
+        <label class="deal-info-block-title">Дата завершения</label>
+        {% if deal.date_end %}
+          <span class="deal-info-edit-link">{{ deal.date_end|smart_date }}</span>
+        {% elif deal.deal_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <input type="datetime-local"
+          class="form-control border {{ 'visually-hidden' if deal.date_end or deal.deal_id }} to-show datepicker"
+          name="date_end" value="{{ deal.date_end|string if deal.date_end }}">
+        <input type="text"
+          class="form-control border datepicker"
+          name="date_end2" value="{{ deal.date_end|string if deal.date_end }}">
+      </div>
+    </div>
+  </div>
+
+</div>

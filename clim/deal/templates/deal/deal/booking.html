@@ -7,11 +7,9 @@
 
 <link rel="stylesheet" href="{{ url_for('.static', filename='time-picker/style.css') }}" />
 
-<!-- Container fluid -->
 <div id="BookingPage" class="container-fluid px-6 d-grid gap-3 mt-3">
     <div class="row">
         <div class="col-lg-12 col-md-12 col-12">
-            <!-- Page header -->
             <div>
                 <div class="d-flex align-items-center mb-2 gap-3">
                     <div class="col-2 me-3 mb-lg-0">
@@ -23,13 +21,12 @@
                     </div>
 
                     <div id="service_select">
-                        <select class="selectpicker border" data-none-selected-text="Выберите услугу" width="auto"
-                            data-style="btn-white" data-none-results-text="" name="">
-                            <option value=""></option>
+                        <select class="form-select border">
+                          <option selected>-- Выбрать услугу --</option>
                             {% for service in services %}
-                            <option value="{{ service.time }}" data-subtext="{{ (service.time/60)|smart_int }} ч">
-                                {{ service.name}}
-                            </option>
+                                <option value="{{ service.time }}">
+                                    {{ service.name}} ({{ (service.time/60)|smart_int }} ч)
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -50,6 +47,7 @@
 
     <div class="row">
         <div id="schedule"></div>
+        {#}
         <div class="row">
             <div class="col-md-8">
                 <h3>Log</h3>
@@ -61,6 +59,7 @@
         <div style="padding: 12px 0 0">
             <div id="logs" class="table-responsive"></div>
         </div>
+        {#}
     </div>
 </div>
 
@@ -189,7 +188,10 @@
 
 
     // Selectpicker
-    $('#service_select').find('select').selectpicker();
+    //$('#service_select').find('select').selectpicker();
+
+
+        
 
     var service_time = 3600;
     var service_name = 'Новое дело';

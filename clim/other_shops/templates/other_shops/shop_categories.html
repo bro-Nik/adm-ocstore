@@ -18,7 +18,8 @@
             <div class="mb-2 mb-lg-0">
               <h3 class="mb-0">
                 <a href="{{ url_for('.shops') }}" >Магазины</a>
-                | {{ shop.name }}</h3>
+                | {{ shop.name }}
+              </h3>
             </div>
             <div class="ms-auto d-flex gap-2">
               <span class="btn btn-primary show-category-settings">Добавить</span>
@@ -111,7 +112,7 @@
                       <td class="text-average">{{ subcategory.products|length }}</td>
                       <td class="text-average">
                         {% if subcategory.new_product %}
-                          <a href="{{ url_for('.shop_products',
+                          <a href="{{ url_for('.category_products',
                               shop_id=shop.shop_id, category_id=subcategory.other_category_id,
                               changes='new_product') }}"
                               class="btn btn-transparent btn-sm">
@@ -122,7 +123,7 @@
                           </a>
                         {% endif %}
                         {% if subcategory.new_price %}
-                          <a href="{{ url_for('.shop_products',
+                          <a href="{{ url_for('.category_products',
                               shop_id=shop.shop_id, category_id=subcategory.other_category_id,
                               changes='new_price') }}"
                               class="btn btn-transparent btn-sm">

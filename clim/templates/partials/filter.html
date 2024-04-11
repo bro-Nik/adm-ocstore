@@ -10,7 +10,7 @@
           <div class="col-md-2">
             <label class="form-label h7">Категория</label>
             <select class="ajax-select show-count-selected" multiple name="categories_ids"
-              data-url="{{ url_for('get_list_all_categories') }}" data-placeholder="Все">
+              data-url="{{ url_for('main.get_list_all_categories') }}" data-placeholder="Все">
               {% set categories_ids = session.get('categories_ids') if session.get('categories_ids') else [] %}
               {% for id in categories_ids %}
               <option selected value="{{ id }}">{{ id }}</option>
@@ -20,7 +20,7 @@
 
           <div class="col-md-2">
             <label class="form-label h7">Производитель</label>
-            <select class="ajax-select show-count-selected" data-url="{{ url_for('get_list_all_manufacturers') }}"
+            <select class="ajax-select show-count-selected" data-url="{{ url_for('main.get_list_all_manufacturers') }}"
               data-placeholder="Все" multiple name="manufacturers_ids">
               {% set manufacturers_ids = session.get('manufacturers_ids') if session.get('manufacturers_ids') else []
               %}
@@ -83,7 +83,7 @@
           {% set group_attribute = session.get('group_attribute') %}
           <div class="col-md-2">
             <label class="form-label h7">Группировка</label>
-            <select class="ajax-select" data-placeholder="Нет" data-url="{{ url_for('get_list_all_attributes') }}"
+            <select class="ajax-select" data-placeholder="Нет" data-url="{{ url_for('main.get_list_all_attributes') }}"
               name="group_attribute">
               <option></option>
               {% for attribute in attributes %}

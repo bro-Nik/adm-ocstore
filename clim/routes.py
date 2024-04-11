@@ -13,7 +13,7 @@ from transliterate import slugify
 from werkzeug.utils import secure_filename
 
 from clim.app import db, redis, celery, login_manager
-from clim.general_functions import get_categories, get_module, json_dumps_or_other, json_loads_or_other
+from clim.utils import get_categories, get_module, json_dumps, json_loads
 from clim.models import Module, OtherShops, ProductImage, ProductSpecial, ProductVariant, RedirectManager, Review, SeoUrl, AttributeDescription, Category, \
     CategoryDescription, Manufacturer, OptionValueDescription, \
     Product, ProductAttribute, ProductOptionValue, Option, OptionValue,\
