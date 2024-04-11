@@ -121,7 +121,7 @@ def ajax_consumables():
     for product in consumables:
         result['results'].append({'id': str(product.product_id),
                                   'text': product.description.name,
-                                  'price': product.price,
+                                  'price': product.cost,
                                   'type': 'product',
                                   'unit': product.unit})
     result['pagination'] = {'more': bool(len(result['results']) >= 20)}
@@ -299,7 +299,11 @@ def deal_info():
         # Name
         deal.name = info.get('deal_name') or f'Сделка #{Deal.query.count()}'
         # Date
-        deal.date_end = info.get('date_end') or None
+        # deal.date_end = info.get('date_end') or None
+        date_end = info.get('date_end2')
+        if date_end:
+            date_end = datetime.strptime(date_end, '%d.%m.%Y %H:%M')
+        deal.date_end = date_end or None
         # Sum
         deal.sum = info.get('deal_sum') or 0
 

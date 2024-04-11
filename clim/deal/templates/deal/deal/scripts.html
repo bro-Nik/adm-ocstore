@@ -356,7 +356,17 @@
 
   // Datepicker
   $("body").find("input.datepicker").each(function () {
-      new AirDatepicker(this, {position: "right center",timepicker: true,timeFormat: 'hh:mm'});
+    var date = $(this).data('value');
+    date = [new Date(date)] ? date : "";
+
+    new AirDatepicker(this, {
+      selectedDates: date,
+      buttons: ['today', 'clear'],
+      position: "right center",
+      timepicker: true,
+      minHours: 9,
+      maxHours: 18,
+      minutesStep: 10});
     });
 
   // Пересчитать чекбоксы

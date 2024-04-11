@@ -222,6 +222,7 @@ def json_consumables_in_option(option_value_id=None):
             product = get_product(consumable['product_id'])
             consumable['cost'] = product.cost or 0
             consumable['name'] = product.description.name
+            consumable['unit'] = product.unit
         return consumables
 
     return []

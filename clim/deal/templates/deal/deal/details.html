@@ -141,12 +141,14 @@
         {% elif deal.deal_id %}
           <span class="deal-info-edit-link">Нет</span>
         {% endif %}
+        {#}
         <input type="datetime-local"
           class="form-control border {{ 'visually-hidden' if deal.date_end or deal.deal_id }} to-show datepicker"
           name="date_end" value="{{ deal.date_end|string if deal.date_end }}">
+        {#}
         <input type="text"
-          class="form-control border datepicker"
-          name="date_end2" value="{{ deal.date_end|string if deal.date_end }}">
+          class="form-control border {{ 'visually-hidden' if deal.date_end or deal.deal_id }} to-show datepicker"
+          name="date_end" value="{{ deal.date_end.strftime('%d.%m.%Y %H:%M') if deal.date_end }}" data-value="{{ deal.date_end or '' }}">
       </div>
     </div>
   </div>

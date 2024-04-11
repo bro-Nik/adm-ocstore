@@ -12,90 +12,90 @@
         <thead class="">
           <tr>
             {% if not deal or not deal.posted %}
-            <th scope="col">
-              <input class="form-check-input check-all" type="checkbox" />
-            </th>
+              <th scope="col">
+                <input class="form-check-input check-all" type="checkbox" />
+              </th>
             {% endif %}
             <th scope="col">Название</th>
             <th scope="col">Количество</th>
             <th scope="col">Склад</th>
             {% if not deal or not deal.posted %}
-            <th scope="col">Доступно</th>
+              <th scope="col">Доступно</th>
             {% endif %}
             <th scope="col">Сумма</th>
           </tr>
         </thead>
         <tbody>
-          {% set var = namespace(count=0, all_sum=0) %} {% set deal_consumables =
-          deal.consumables|to_json %} {% if not deal.posted and not
-          deal_consumables %} {% set deal_consumables = [{'product_id': '',
-          'quantity': 0, 'price': 0, 'unit': 'шт'}] %} {% endif %} {% for
-          deal_consumable in deal_consumables %} {% set var.count = var.count + 1
-          %}
+          {% set var = namespace(count=0, all_sum=0) %} {% set deal_consumables = deal.consumables|to_json %}
+          {% if not deal.posted and not deal_consumables %}
+            {% set deal_consumables = [{'product_id': '', 'quantity': 0, 'price': 0, 'unit': 'шт'}] %}
+          {% endif %}
 
+          {% for deal_consumable in deal_consumables %}
+          {% set var.count = var.count + 1 %}
           <tr class="product">
             {% if not deal or not deal.posted %}
-            <td class="main-tab-checkbox">
-              <input class="form-check-input to-check" type="checkbox" value="{{ deal_consumable.product_id }}" />
-            </td>
+              <td class="main-tab-checkbox">
+                <input class="form-check-input to-check" type="checkbox" value="{{ deal_consumable.product_id }}" />
+              </td>
             {% endif %}
             <td>
               <span class="line-count">{{ var.count }}.</span>
-              {% if deal and deal.posted %}
-              <span>{{ deal_consumable.product_name }}</span>
-              {% else %}
-              <select class="product-select" data-placeholder="-- Выбрать товар --"
-                data-url="{{ url_for('.ajax_consumables') }}" data-class="bg-light">
-                <option value="{{ deal_consumable.product_id }}" selected>
-                  {{ deal_consumable.name }}
-                </option>
-              </select>
-              {% endif %}
+                {% if deal and deal.posted %}
+                  <span>{{ deal_consumable.product_name }}</span>
+                {% else %}
+                  <select class="product-select" data-placeholder="-- Выбрать товар --"
+                    data-url="{{ url_for('.ajax_consumables') }}" data-class="bg-light">
+                    <option value="{{ deal_consumable.product_id }}" selected>
+                      {{ deal_consumable.name }}
+                    </option>
+                  </select>
+                {% endif %}
             </td>
 
             {% if not deal or not deal.posted %}
-            <input type="hidden" class="price" value="{{ deal_consumable.price|smart_int }}" />
+              <input type="hidden" class="price" value="{{ deal_consumable.price|smart_int }}" />
             {% endif %}
 
             <td>
               {% if deal and deal.posted %}
-              <span>{{ deal_consumable.quantity }} {{ deal_consumable.unit if
-                deal_consumable.unit else 'шт'}}</span>
+                <span>{{ deal_consumable.quantity }} {{ deal_consumable.unit if deal_consumable.unit else 'шт'}}</span>
               {% else %}
-              <div class="input-group">
-                <input type="number" step="any" class="form-control quantity"
-                  value="{{ deal_consumable.quantity if deal_consumable.quantity }}" placeholder="0" />
-                <span class="input-group-text quantity">
-                  {{ deal_consumable.unit if deal_consumable.unit else 'шт' }}
-                </span>
-              </div>
+                <div class="input-group">
+                  <input type="number" step="any" class="form-control quantity"
+                    value="{{ deal_consumable.quantity if deal_consumable.quantity }}" placeholder="0" />
+                  <span class="input-group-text quantity">
+                    {{ deal_consumable.unit if deal_consumable.unit else 'шт' }}
+                  </span>
+                </div>
               {% endif %}
             </td>
 
             <td>
               {% if deal and deal.posted %}
-              <span>{{ deal_consumable.stock_name }}</span>
+                <span>{{ deal_consumable.stock_name }}</span>
               {% else %}
-              <select class="stock-select" data-class="bg-light">
-                <option value="{{ deal_consumable.stock_id }}" selected>
-                  {{ deal_consumable.stock_name }}
-                </option>
-              </select>
+                <select class="stock-select" data-class="bg-light">
+                  <option value="{{ deal_consumable.stock_id }}" selected>
+                    {{ deal_consumable.stock_name }}
+                  </option>
+                </select>
               {% endif %}
             </td>
 
             {% if not deal or not deal.posted %}
-            <td class="align-middle">
-              <div>
-                <span class="available"></span>
-              </div>
-            </td>
-            {% endif %} {% set var.all_sum = var.all_sum + (deal_consumable.price
-            * deal_consumable.quantity) if deal_consumable.price %}
+              <td class="align-middle">
+                <div>
+                  <span class="available"></span>
+                </div>
+              </td>
+            {% endif %}
+
+            {% set var.all_sum = var.all_sum + (deal_consumable.price * deal_consumable.quantity) if deal_consumable.price else 0 %}
+
             <td class="align-middle">
               <div class="d-flex">
-                <span class="sum">{{ (deal_consumable.price * deal_consumable.quantity)|money
-                  }}</span>
+                <span class="sum">{{ (deal_consumable.price * deal_consumable.quantity)|money }}</span>
                 <span class="">₽</span>
               </div>
             </td>

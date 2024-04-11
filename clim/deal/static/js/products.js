@@ -35,10 +35,9 @@ async function DealConsumablesFillAdd(url, option_quantity) {
       var $tr = $("#tabConsumables").find("tr.product").eq(-1);
       $tr.find("select.product-select").append(new Option(consumables_in_option[i].name, consumables_in_option[i].product_id))
       
-      console.log($tr.find("select.product-select").val())
       $tr.find(".quantity").val(consumables_in_option[i].quantity);
       $tr.find(".price").val(consumables_in_option[i].cost);
-
+      $tr.find(".input-group-text.quantity").text(consumables_in_option[i].unit);
     }
 
     $("#tabConsumables").find("tr.product").each(function () {
