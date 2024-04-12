@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timedelta
 import locale
 
-from flask import render_template, redirect, url_for, request, session
+from flask import abort, render_template, redirect, url_for, request, session
 from flask_login import login_required
 
 from ..utils import actions_in, json_dumps, json_loads
@@ -27,7 +27,7 @@ def update_filter():
 @bp.route('/', methods=['GET'])
 @login_required
 def deals(view=None):
-    if not view:
+    if not view or view not in ['kanban', 'list']:
         view = session.get('crm_view', 'kanban')
         return redirect(url_for('.deals', view=view))
 
@@ -298,32 +298,16 @@ def deal_info():
 
         # Name
         deal.name = info.get('deal_name') or f'Сделка #{Deal.query.count()}'
+        # Contact
+        deal.contact_id = info.get('contact_id')
         # Date
         # deal.date_end = info.get('date_end') or None
-        date_end = info.get('date_end2')
+        date_end = info.get('date_end')
         if date_end:
             date_end = datetime.strptime(date_end, '%d.%m.%Y %H:%M')
         deal.date_end = date_end or None
         # Sum
         deal.sum = info.get('deal_sum') or 0
-
-        # Contact
-        contact_id = info.get('contact_id')
-        if contact_id:
-            deal.contact_id = contact_id
-        else:
-            contact_name = info.get('contact_name', '')
-            contact_phone = info.get('contact_phone', '')
-            contact_email = info.get('contact_email', '')
-
-            if contact_name or contact_phone or contact_email:
-                contact = Contact(name=contact_name,
-                                  phone=contact_phone,
-                                  email=contact_email)
-                db.session.add(contact)
-                # db.session.commit()
-                db.session.flush()
-                deal.contact_id = contact.contact_id
 
         # Details
         deal.details = json.dumps({'adress': info.get('adress', ''),
@@ -337,31 +321,31 @@ def deal_info():
             deal.expenses = json_dumps(data.get('expenses'), '')
 
         # ToDo Проверка смены статуса после постинга
-        new_stage = get_stage(info['stages'])
-        unposting = deal.completed and new_stage and 'end' not in new_stage.type
-        posting = info.get('posting')
+        new_stage = get_stage(info['stages']) or abort(404)
+        unposting = deal.stage.completed and not new_stage.completed
+        posting = new_stage.completed
 
         # Stage
-        if new_stage:
-            if deal.stage.stage_id != new_stage.stage_id:
-                deal.sort_order = 1
-                sort_stage_deals(new_stage.stage_id, deal.deal_id, 0)
-            if not (posting and unposting):
-                deal.stage = new_stage
+        if deal.stage.stage_id != new_stage.stage_id:
+            deal.sort_order = 1
+            sort_stage_deals(new_stage.stage_id, deal.deal_id, 0)
+        if not (posting and unposting):
+            deal.stage = new_stage
 
         # Сохранение перед постингом
         db.session.commit()
 
         # Posting or Unposting
-        if unposting:
-            if deal.unposting():
+        if unposting and deal.posted:
+            deal.unposting()
+            if not deal.posted:
                 deal.stage = new_stage
                 db.session.commit()
-        elif not deal.posted and posting:
-            if deal.posting():
+        elif posting and not deal.posted:
+            deal.posting()
+            if deal.posted:
                 deal.stage = new_stage
                 db.session.commit()
-        db.session.commit()
 
     return render_template('deal/deal/main.html', deal=deal,
                            stages=tuple(get_stages()))

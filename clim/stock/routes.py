@@ -1,6 +1,6 @@
 from datetime import datetime
 import json
-from flask import abort, render_template, redirect, url_for, request
+from flask import abort, flash, render_template, redirect, url_for, request
 from flask_login import login_required
 
 from ..app import db
@@ -54,6 +54,7 @@ def products_load():
 @bp.route('/movements/<string:movement_type>', methods=['GET'])
 @login_required
 def movements(movement_type):
+    flash('New toast')
     movements = (StockMovement.query.filter_by(movement_type=movement_type)
                  .order_by(StockMovement.date.desc())
                  .paginate(page=request.args.get('page', 1, type=int),

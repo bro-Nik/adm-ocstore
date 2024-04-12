@@ -24,12 +24,12 @@
     </div>
   {% endfor %}
 
-  <div class="stage" style="{{ '--deal-stage-color: {};'.format(deal.stage.color if deal.completed else '#56c31e') }}">
-    <input type="radio" class="btn-check" name="stages" {{ 'checked' if deal.completed }}
-      value="{{ deal.stage_id if deal.completed }}">
+  <div class="stage" style="{{ '--deal-stage-color: {};'.format(deal.stage.color if deal.stage.completed else '#56c31e') }}">
+    <input type="radio" class="btn-check" name="stages" {{ 'checked' if deal.stage.completed }}
+      value="{{ deal.stage_id if deal.stage.completed }}">
     <label class="stage-item fs-6 open-modal" data-modal-id="EndOfDealModal"
         data-url="{{ url_for('.deal_modal_close', deal_id=deal.deal_id) }}">
-      {{ deal.stage.name if deal.completed else 'Завершить сделку' }}
+      {{ deal.stage.name if deal.stage.completed else 'Завершить сделку' }}
     </label>
     <div class="deal-stage-line"></div>
   </div>

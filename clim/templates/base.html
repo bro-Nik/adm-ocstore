@@ -2,14 +2,14 @@
 <html lang="ru">
 <head>
   {% block head %}
-    {% include 'partials/head.html' %}
+    {% include 'head.html' %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 
     <!-- Scripts -->
-    {% include 'partials/scripts.html' %}
+    {% include 'scripts.html' %}
 
     <title>{% block title %}{% endblock %}</title>
   {% endblock %}
@@ -18,11 +18,10 @@
 <body class="bg-light">
   <div id="db-wrapper">
 
-    {% include 'partials/navbar-vertical.html' %}
+    {% include 'navbar-vertical.html' %}
 
     <div id="page-content" class="d-flex flex-column">
-        {% include 'partials/header.html' %}
-        {% include 'partials/flashed_messages.html' %}
+        {% include 'header.html' %}
 
         <div id="content" class="container-fluid px-6 py-3 d-flex flex-column gap-3">{% block content %}{% endblock %}</div>
     </div>
@@ -50,13 +49,15 @@
     </div>
 
   </div>
+  {% include 'toasts.html' %}
 
 </body>
+<script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 <script src="{{ url_for('static', filename='js/select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/checkboxes.js') }}"></script>
 
 {#
-{% include 'partials/scripts_code.html' %}
+{% include 'scripts_code.html' %}
 #}
 </html>

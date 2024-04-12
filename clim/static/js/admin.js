@@ -369,7 +369,13 @@ function SendingData(url, data, $btn, $modal) {
   });
 }
 
+function GetFlashedMessages($element = $('body')) {
+  var $messages_box = $element.find('script[data-selector="flashed-messages-page-data-js"]');
+  if($messages_box.length) NewToasts(JSON.parse($messages_box.html()));
+}
+
 StickyBottomActionsUpdate();
 $('body .fade').addClass('show');
 UpdateFocus();
+GetFlashedMessages();
 feather.replace();

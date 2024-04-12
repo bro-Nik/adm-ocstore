@@ -1,6 +1,6 @@
 {# Jinja2 #}
 {% if deal.posted and not deal.products %}
-  {% include 'partials/nothing.html' %}
+  {% include 'nothing.html' %}
 {% else %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='select2/css/select2.css') }}" />

@@ -27,10 +27,6 @@ class Deal(db.Model):
     profit = db.Column(db.Float(15.4))
     sort_order = db.Column(db.Integer)
 
-    @property
-    def completed(self):
-        return 'end_' in self.stage.type
-
     def posting(self, d=1):
 
         def change_quantity(products):
@@ -136,6 +132,10 @@ class DealStage(db.Model):
     color = db.Column(db.String(45))
     deals = db.relationship('Deal', backref=db.backref('stage', lazy=True),
                             order_by='Deal.sort_order')
+
+    @property
+    def completed(self):
+        return 'end_' in self.type
 
 
 class Contact(db.Model):

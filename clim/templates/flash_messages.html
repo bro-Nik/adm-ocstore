@@ -1,0 +1,11 @@
+{# Jinja2 #} 
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% set flashed_messages_page_data_js = {} %}
+    {% set x = flashed_messages_page_data_js.__setitem__('messages', messages) %}
+    <script type="application/json" data-selector="flashed-messages-page-data-js">
+      {{ flashed_messages_page_data_js|tojson }}
+    </script>
+  {% endif %}
+{% endwith %}

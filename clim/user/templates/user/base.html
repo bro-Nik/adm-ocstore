@@ -1,0 +1,37 @@
+{# Jinja #}
+<html lang="ru">
+
+<head>
+  {% include 'head.html' %}
+  <title>{% block title %}{% endblock %}</title>
+</head>
+
+<body class="bg-light">
+  <div class="container d-flex flex-column">
+    <div class="row align-items-center justify-content-center g-0 min-vh-100">
+      <div class="col-12 col-md-8 col-lg-6 col-xxl-4 py-8 py-xl-0">
+        <div class="card smooth-shadow-md">
+          <div class="card-body p-6">
+            <form method="post">
+              {% block content %}{% endblock %}
+              {% include 'toasts.html' %}
+              {% include 'flash_messages.html' %}
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script src="{{ url_for('static', filename='js/jquery-3.6.4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
+<script>
+  var $messages_box = $('script[data-selector="flashed-messages-page-data-js"]');
+  if($messages_box.length) NewToasts(JSON.parse($messages_box.html()));
+</script>
+
+
+</body>
+</html>

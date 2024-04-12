@@ -92,14 +92,15 @@
         </div>
 
       {% else %}
-        {% include 'partials/nothing.html' %}
+        {% include 'nothing.html' %}
       {% endif %}
 
     </div>
   </div>
   {% set products = movements %}
-  {% include 'partials/pagination.html' %}
+  {% include 'pagination.html' %}
 </div>
 
+{% include 'flash_messages.html' %}
 
 {% endblock %}
