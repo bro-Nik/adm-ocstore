@@ -48,13 +48,12 @@ def products_load():
                            products=products,
                            category=get_category(category_id),
                            stocks=tuple(get_stocks()),
-                           products_cost=products_cost)
+                           products_cost=int(products_cost))
 
 
 @bp.route('/movements/<string:movement_type>', methods=['GET'])
 @login_required
 def movements(movement_type):
-    flash('New toast')
     movements = (StockMovement.query.filter_by(movement_type=movement_type)
                  .order_by(StockMovement.date.desc())
                  .paginate(page=request.args.get('page', 1, type=int),

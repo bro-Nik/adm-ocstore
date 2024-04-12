@@ -8,6 +8,7 @@
 
     if ($input.is("input")) {
       data = $input.val();
-      $input.focus().val("").val(data);
+      //$input.focus().val("").val(data);
+      $input.val(data).focus();
     }
   });

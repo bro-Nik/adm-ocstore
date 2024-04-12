@@ -54,7 +54,7 @@
                       {% for product in stock.products %}
                         {% set var.sum = var.sum + product.quantity * product.main_product.cost %}
                       {% endfor %}
-                      {{ var.sum|money }} ₽
+                      {{ var.sum|int|money }} ₽
                     </td>
 
                     <td>{{ stock.sort }}</td>

@@ -8,7 +8,6 @@ from . import bp, utils
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     """Отдает страницу входа и принимает форму."""
-    flash('Ошибка', 'error')
     if current_user.is_authenticated:
         return redirect(url_for('deal.deals'))
 

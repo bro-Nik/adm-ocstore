@@ -31,14 +31,21 @@
       <div class="d-grid">
         <label class="deal-info-block-title">Клиент</label>
         {% if deal.contact %}
-          <h5>{{ deal.contact.name }}</h5>
-          <span class="deal-info-contact">{{ deal.contact.phone|smart_phone }}</span>
-          <span class="deal-info-contact">{{ deal.contact.email}}</span>
+          <div class="deal-info-edit-link">
+            <span>{{ deal.contact.name }}</span>
+            <span class="deal-info-contact">{{ deal.contact.phone|smart_phone }}</span>
+            <span class="deal-info-contact">{{ deal.contact.email }}</span>
+          </div>
+
         {% elif deal.deal_id %}
           <span class="deal-info-edit-link">Нет</span>
         {% endif %}
-        <div class="{{ 'visually-hidden' if deal.contact or deal.deal_id }}">
-          <select id="contactSelect" data-placeholder="-- Выбрать --" name="contact_id"></select>
+        <div class="{{ 'visually-hidden' if deal.contact or deal.deal_id }} to-show">
+          <select id="contactSelect" data-placeholder="-- Выбрать --" name="contact_id">
+            {% if deal.contact %}
+              <option selected value="{{ deal.contact.contact_id }}">{{ deal.contact.name }}</option>
+            {% endif %}
+          </select>
         </div>
       </div>
 

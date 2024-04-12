@@ -2,7 +2,6 @@
 
 <div class="card h-100 flex-grow-1">
   <div class="table-responsive">
-
     <table class="table text-nowrap">
       <thead class="">
         <tr>
@@ -10,7 +9,7 @@
           <th scope="col" class="text-end">Закупочная цена</th>
           <th scope="col" class="text-end">Общее количество</th>
           {% for stock in stocks %}
-          <th scope="col" class="text-end">{{ stock.name }}</th>
+            <th scope="col" class="text-end">{{ stock.name }}</th>
           {% endfor %}
         </tr>
       </thead>
@@ -36,11 +35,10 @@
           </tr>
         {% endfor %}
 
-        {% set var = namespace(quantity=0, unit='') %}
+        {% set var = namespace(quantity=0) %}
 
         {% for product in products %}
           {% set var.quantity = 0 %}
-          {% set var.unit = product.unit_class.description.unit %}
           <tr>
             <td>
               <span class="text-inherit open-modal" data-modal-id="ProductInfoModal" 
@@ -58,8 +56,8 @@
             {% endfor %}
 
             <td class="text-end">
-              {% if var.quantity > 0 %}
-                {{ var.quantity|smart_int }} {{ var.unit }}
+              {% if var.quantity != 0 %}
+                {{ var.quantity|smart_int }} {{ product.unit }}
               {% else %}
                 -
               {% endif %}
@@ -69,7 +67,7 @@
               {% for product_in_stock in stock.products if product_in_stock.product_id == product.product_id %}
                 <td class="text-end">
                   {% if product_in_stock.quantity > 0 %}
-                    {{ product_in_stock.quantity|smart_int }} {{ var.unit }}
+                    {{ product_in_stock.quantity|smart_int }} {{ product.unit }}
                   {% else %}
                     - 
                   {% endif %}

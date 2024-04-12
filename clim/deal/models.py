@@ -74,7 +74,7 @@ class Deal(db.Model):
             self.consumables, cost_price_consumables = change_quantity(json.loads(self.consumables))
 
         if not_stock_id:
-            flash('Заполните склады списания')
+            flash('Заполните склады списания', 'warning')
             return False
 
         # Date
