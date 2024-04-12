@@ -41,6 +41,8 @@
         }
         $tr.find("select.stock-select").empty();
         UpdateStockSelect($tr);
+        $tr.find("select.stock-select").trigger("change");
+        UpdateSum($tr);
       });
     UpdateStockSelect($tr);
   }
@@ -61,6 +63,7 @@
     }
 
     $stockSelect.prop("disabled", !product_id);
+    $tr.find(".available").text(`0 ${$tr.find(".input-group-text.quantity").html()}`);
 
     $stockSelect
       .select2({
