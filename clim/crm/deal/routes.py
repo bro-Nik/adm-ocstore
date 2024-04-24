@@ -50,12 +50,14 @@ def updater():
         details['date_end'] = deal.date_end or details.get('date_end', '')
         details['sum'] = deal.sum or details.get('sum', '')
         details['profit'] = deal.profit or details.get('profit', '')
+        deal.details = json.dumps(details, ensure_ascii=False)
 
     for movement in db.session.execute(db.select(StockMovement)).scalars():
         details = movement.get('details', {})
         details['name'] = movement.name or details.get('name', '')
         details['date'] = movement.date or details.get('date', '')
         details['stocks'] = movement.stocks or details.get('stocks', '')
+        movement.details = json.dumps(details, ensure_ascii=False)
     db.session.commit()
     print('Обновлено')
 

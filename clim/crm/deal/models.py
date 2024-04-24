@@ -17,7 +17,6 @@ class Deal(db.Model, JsonMixin):
     contact_id = db.Column(db.Integer, db.ForeignKey('adm_contact.contact_id'))
     stage_id = db.Column(db.Integer, db.ForeignKey('adm_deal_stage.stage_id'))
     details = db.Column(db.Text)
-    # actions = db.Column(db.Text)
     products = db.Column(db.Text)
     consumables = db.Column(db.Text)
     expenses = db.Column(db.Text)
