@@ -39,8 +39,8 @@ class StockProduct(db.Model):
 class StockMovement(db.Model, JsonMixin):
     __tablename__ = 'adm_stock_movement'
     movement_id = db.Column(db.Integer, primary_key=True)
-    # name = db.Column(db.String(64))
-    # date = db.Column(db.Date)
+    name = db.Column(db.String(64))
+    date = db.Column(db.Date)
     posted = db.Column(db.Boolean)
     products = db.Column(db.Text)
     movement_type = db.Column(db.String(32))
