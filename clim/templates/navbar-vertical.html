@@ -1,3 +1,4 @@
+{# Jinja2 #}
 <!-- Sidebar -->
 <nav class="navbar-vertical navbar">
   <div class="nav-scroller">
@@ -83,30 +84,37 @@
 
       <!-- Nav item -->
       <li class="nav-item">
-        <a class="nav-link has-arrow {{ 'collapsed' if '/crm/' not in request.path }}" href="#!"
+        <a class="nav-link has-arrow {{ 'collapsed' if request.blueprint != 'crm' }}" href="#!"
           data-bs-toggle="collapse" data-bs-target="#navCrm" aria-expanded="false" aria-controls="navCrm">
           <i data-feather="clipboard" class="nav-icon icon-xs me-2"></i>
           Crm
         </a>
 
-        <div id="navCrm" class="collapse {{ 'show' if '/crm/' in request.path }}" data-bs-parent="#sideNavbar">
+        <div id="navCrm" class="collapse {{ 'show' if 'crm' in request.blueprint }}" data-bs-parent="#sideNavbar">
           <ul class="nav flex-column">
             <li class="nav-item">
-              <a class="nav-link {{ 'active' if url_for('deal.deals', view=session.get('crm_view')) in request.path }}"
-                href="{{ url_for('deal.deals', view=session.get('crm_view')) }}">
+              <a class="nav-link {{ 'active' if request.blueprint == 'crm.deal' }}"
+                href="{{ url_for('crm.deal.deals', view=session.get('crm_view')) }}">
                 Сделки
               </a>
             </li>
 
             <li class="nav-item">
-              <a class="nav-link {{ 'active' if url_for('deal.contacts') in request.path }}"
-                href="{{ url_for('deal.contacts') }}">
+              <a class="nav-link {{ 'active' if request.blueprint == 'crm.contact' }}"
+                href="{{ url_for('crm.contact.contacts') }}">
                 Контакты
               </a>
             </li>
 
             <li class="nav-item">
-              <a class="nav-link {{ 'active' if request.blueprint == 'stock' }}" href="{{ url_for('stock.products') }}">
+              <a class="nav-link {{ 'active' if request.blueprint == 'crm.worker' }}"
+                href="{{ url_for('crm.worker.workers_list') }}">
+                Работники
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if request.blueprint == 'crm.stock' }}" href="{{ url_for('crm.stock.products') }}">
                 Склад
               </a>
             </li>

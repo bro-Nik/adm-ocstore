@@ -75,3 +75,16 @@ def actions_in(data_str: bytes, function: Callable, **kwargs) -> None:
             item = function(item_id, **kwargs)
             if item and hasattr(item, action):
                 getattr(item, action)()
+
+
+class JsonMixin:
+    def get(self, attr, default):
+        attr_name = f'{attr}_'
+        if not hasattr(self, attr_name):
+            value = getattr(self, attr, '')
+            setattr(self, attr_name, json.loads(value) if value else default)
+        return getattr(self, attr_name)
+
+    @property
+    def info(self):
+        return self.get('details', {})

@@ -1,0 +1,102 @@
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
+
+{% block content %}
+
+<form id="ConsumablesOption" action="{{ url_for('.consumables_in_option', value_id=value.option_value_id) }}">
+  <div class="row mb-3">
+    <div class="col-lg-12 col-md-12 col-12">
+      <div>
+        <div class="d-flex align-items-center">
+          <h3 class="mb-0">{{ value.description.name if value else 'Новое значение опции' }}</h3>
+          <div class="ms-auto d-flex gap-2">
+            <button type="button" class="btn btn-primary btn-to-submit">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 d-grid gap-3">
+      <div id="tabProducts" class="card h-100">
+        <table class="table text-nowrap table" data-to-server="products">
+          <thead class="">
+            <tr>
+              <th class="main-tab-checkbox">
+                <input class="form-check-input check-all" type="checkbox" />
+              </th>
+              <th>Товар</th>
+              <th class="col-1">Количество</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% set var = namespace(count=0) %}
+            {% if not option_value_consumables %}
+              {% set option_value_consumables = [{}] %}
+            {% endif %}
+            {% for consumable in option_value_consumables %}
+              {% set var.count = var.count + 1 %}
+
+              <tr class="product">
+                <td class="main-tab-checkbox">
+                  <input class="form-check-input to-check" type="checkbox" name="" value="" />
+                </td>
+                <td class="col-4">
+                  <span class="line-count">{{ var.count }}.</span>
+
+                  <select class="product-select" data-placeholder="-- Выбрать товар --"
+                    data-url="{{ url_for('deal.ajax_consumables') }}" data-class="bg-light">
+                    <option selected value="{{ consumable.product_id }}">
+                      {{ consumable.name }}
+                    </option>
+                  </select>
+                </td>
+                <td class="col-2">
+                  <input type="text" class="form-control" name="quantity"
+                    value="{{ consumable.quantity|smart_int if consumable.quantity }}" placeholder="0" />
+                </td>
+                <td></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="d-flex">
+          <div>
+            <div class="m-3 gap-2 justify-content-start actions form-actions">
+              Отмеченно: <span class="checks-count">0 / {{ var.count }}</span>
+              <div class="m-3 gap-2 d-flex justify-content-start actions">
+                <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
+              </div>
+            </div>
+          </div>
+          <div class="m-3 ms-auto gap-2">
+            <button class="btn rounded-3 btn-primary create-new-line" type="button">Добавить строку</button>
+            <button class="btn rounded-3 btn-outline-secondary open-modal" type="button" data-modal-id="SelectProductsModal"
+              data-url="{{ url_for('.set_products_page') }}">Выбрать товары</button>
+            <button class="btn rounded-3" type="button" onclick="changeOptions('cancel')">Отмена</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</form>
+
+<script>
+  $("#tabProducts").find("tr.product").each(function () {
+    UpdateProductSelect($(this));
+  });
+
+  // Focus Select2 Search
+  $(document).on("select2:open", () => {
+    document.querySelector(".select2-search__field").focus();
+  });
+
+</script>
+{% endblock %}

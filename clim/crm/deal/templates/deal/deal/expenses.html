@@ -1,0 +1,98 @@
+{# Jinja2 #}
+{% set expenses = deal.get('expenses', []) %}
+{% if deal.posted and not expenses %}
+  {% include 'nothing.html' %}
+{% else %}
+
+<!-- Expenses  -->
+<div id="tabExpenses" class="card h-100">
+  <table class="table text-nowrap table" data-to-server="expenses">
+    <thead>
+      <tr>
+        {% if not deal.posted %}
+          <th scope="col">
+            <input class="form-check-input check-all" type="checkbox">
+          </th>
+        {% endif %}
+        <th scope="col">Название</th>
+        <th scope="col">Стоимость</th>
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if not deal.posted and not expenses %}
+        {% set expenses = [{}] %}
+      {% endif %}
+      {% for expense in expenses %}
+
+      <tr class="product">
+        {% if not deal.posted %}
+          <td class="main-tab-checkbox">
+            <input class="form-check-input to-check" type="checkbox" value="">
+          </td>
+        {% endif %}
+        <td class="col-4">
+          <span class="line-count">{{ loop.index }}.</span>
+          {% if deal.posted %}
+            <span>{{ expense.name }}</span>
+          {% else %}
+            <div class="d-inline-block w-100">
+              <input type="text" class="form-control" name="name" value="{{ expense.name }}"
+                data-new-line-value="" data-required="true">
+            </div>
+          {% endif %}
+        </td>
+
+        <td class="align-middle">
+          {% if deal.posted %}
+            <span class="sum">{{ expense.price|smart_int }}</span> ₽
+          {% else %}
+            <div class="input-group">
+              <input type="number" class="form-control" name="price" value="{{ expense.price|smart_int or "" }}"
+                placeholder="0" data-new-line-value="">
+              <span class="input-group-text">₽</span>
+            </div>
+            <input type="hidden" name="quantity" value="1" data-new-line-value="1">
+            <span class="visually-hidden sum">{{ expense.price }}</span>
+          {% endif %}
+        </td>
+
+        <td class="col-auto"></td>
+      </tr>
+      {% endfor %}
+
+    </tbody>
+  </table>
+
+  {% if not deal.posted %}
+    <div class="d-flex">
+      <div class="form-actions">
+        <div class="m-3 gap-2 justify-content-start">
+          Отмеченно: <span class="checks-count"></span>
+        </div>
+        <div class="m-3 gap-2 d-flex justify-content-start">
+          <button class="btn rounded-3 delete-product" type="button">Удалить</button>
+        </div>
+      </div>
+      <div class="m-3 ms-auto gap-2">
+        {% if not deal.posted %}
+          <button class="btn rounded-3 btn-primary create-new-line" type="button">Добавить строку</button>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<div class="card h-100">
+  <div class="d-flex justify-content-end align-items-center m-3">
+    <table class="col-3">
+      <tbody>
+        <tr>
+          <td class="fs-4 fw-bolder">Общая сумма:</td>
+          <td class="fs-4 fw-bolder d-flex gap-1"><span class="all-sum"></span> ₽</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}

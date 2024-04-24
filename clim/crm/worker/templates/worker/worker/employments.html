@@ -1,0 +1,49 @@
+{# Jinja2 #}
+
+{% if not worker.employments %}
+  {% include 'nothing.html' %}
+{% else %}
+
+  <div class="row">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+
+      <div class="card h-100">
+
+        <div class="table-responsive">
+          <table id="Employments" class="table text-nowrap">
+            <thead class="">
+              <tr>
+                <th class="main-tab-checkbox">
+                  <input class="form-check-input check-all" type="checkbox">
+                </th>
+                <th scope="col">Название</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {% for employment in worker.employments %}
+                <tr>
+                  <td class="main-tab-checkbox">
+                    <input class="form-check-input to-check" type="checkbox" value="{{ employment.employment_id }}">
+                  </td>
+                  <td>
+                    {{ employment.title }}
+                    {#}
+                    <a class="open-modal text-inherit" data-modal-id="ContactInfoModal"
+                      data-url="{{ url_for('.deal_info', deal_id=deal.deal_id) }}">{{ deal.name }}
+                    </a>
+                    {#}
+                  </td>
+                  </td>
+
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}

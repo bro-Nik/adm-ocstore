@@ -1,0 +1,93 @@
+{% if not request.args.get('only_content') %}
+  {% extends "base.html" %}
+  {% block title %}Клиенты{% endblock %}
+{% endif %}
+
+
+{% block content %}
+
+<form id="ClientsForm" method="post">
+  <div class="d-grid gap-3">
+
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-12">
+        <div>
+          <div class="d-flex align-items-center mb-2">
+            <div class="col-3 me-5 mb-lg-0">
+              <h3 class="mb-0">Клиенты</h3>
+            </div>
+
+            <div class="col-md-3 mb-lg-0 d-flex align-items-center ms-5">
+              <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
+            </div>
+
+            <div class="ms-auto d-flex gap-2">
+              <a class="btn btn-primary open-modal" data-modal-id="DealInfoModal"
+                data-url="{{ url_for('.contact_info') }}">Создать</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+
+        <div class="card h-100">
+
+          <div class="table-responsive">
+            <table id="Clients" class="table text-nowrap">
+              <thead class="">
+                <tr>
+                  <th class="main-tab-checkbox">
+                    <input class="form-check-input check-all" type="checkbox">
+                  </th>
+                  <th scope="col">ФИО</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Телефон</th>
+                  <th scope="col">Связи</th>
+                </tr>
+              </thead>
+
+              <tbody>
+
+                {% for contact in contacts %}
+                  <tr>
+                    <td class="main-tab-checkbox">
+                      <input class="form-check-input to-check" type="checkbox" value="{{ contact.contact_id }}">
+                    </td>
+                    <td>
+                      <a class="open-modal text-inherit" data-modal-id="ContactInfoModal"
+                        data-url="{{ url_for('.contact_info', contact_id=contact.contact_id) }}">{{ contact.name }}
+                      </a>
+                    </td>
+                    <td>{{ contact.email }}</td>
+                    <td>{{ contact.phone }}</td>
+                    <td>{{ contact.deals|length or '' }}</td>
+
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+  <!-- Actions buttons -->
+  <div class="sticky-bottom-buttons">
+    <button class="btn btn-sm rounded-3 open-modal-confirmation" type="button"
+      data-action="delete" data-title="Удалить контакты?">
+      <i data-feather="trash" class="icon-xs"></i>
+      Удалить
+    </button>
+  </div>
+</form>
+
+{% include 'flash_messages.html' %}
+
+{% endblock %}

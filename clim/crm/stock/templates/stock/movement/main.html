@@ -1,0 +1,82 @@
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
+
+{% set details = movement.get('details', {}) %}
+
+{% block content %}
+
+<form id="movementInfo" class="d-grid gap-3" data-url="{{ url_for('.movement_info', movement_type=movement_type, movement_id=movement.movement_id) }}">
+  <div class="row">
+    <div class="col-lg-12 col-md-12 col-12">
+      <div>
+        <div class="d-flex align-items-center">
+          <h3 class="mb-0">
+            {% if movement.movement_id %} {{ details.name }}
+            {% elif movement_type == 'coming' %} Добавление прихода
+            {% elif movement_type == 'moving' %} Новое перемещение {% endif %}
+          </h3>
+          <div class="ms-auto d-flex gap-2">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row align-items-center">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail" role="tab"
+            aria-controls="pills-detail" aria-selected="false">Общие</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="pills-product-tab" data-bs-toggle="pill" data-bs-target="#pills-product"
+            role="tab" aria-controls="pills-product" aria-selected="true">Товары</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="tab-content" id="pills-tabContent">
+        <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
+          {% include 'stock/movement/details.html' %}
+        </div>
+
+        <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-product-tab" tabindex="0">
+          <div class="col-12 d-grid gap-3 mb-5">
+            {% include 'stock/movement/products.html' %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sticky-bottom-box">
+    {% if movement.posted %}
+      <div class="sticky-bottom bg-white py-2 active">
+        <button class="btn rounded-3 btn-outline-secondary btn-to-submit" type="button"
+          data-action="unposting">Отменить проведение</button>
+      </div>
+    {% elif movement.movement_id %}
+      <div class="sticky-bottom bg-white py-2 active">
+        <button class="btn rounded-3 btn-outline-secondary btn-to-submit" type="button"
+          data-action="posting">Провести документ</button>
+      </div>
+    {% endif %}
+    <div class="sticky-bottom change bg-white py-2">
+      <button type="button" class="btn btn-salato btn-to-submit" data-this-need-update="true" data-action="save">Сохранить</button>
+      {% if not movement.posted %}
+        <button type="button" class="btn btn-outline-secondary btn-to-submit" data-this-need-update="true" data-action="save_posting">Сохранить и провести</button>
+      {% endif %}
+      <button class="btn btn-transparent rounded-3" type="reset">Отмена</button>
+    </div>
+  </div>
+</form>
+
+{% include 'flash_messages.html' %}
+
+{% endblock %}

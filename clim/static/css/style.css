@@ -469,7 +469,7 @@ input[type="number"]:focus {
     box-shadow: none;
 }
 .pb-80 {
-    padding-bottom: 80px;
+    padding-bottom: 80px !important;
 }
 .select-new-container {
     border-top: 1px solid #e6e8ea;
@@ -571,4 +571,7 @@ span.multiple-count {
 }
 .sticky-bottom.actions a:hover {
     color: black;
+}
+.toast-container {
+    z-index: 10000;
 }

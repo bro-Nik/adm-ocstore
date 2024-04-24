@@ -27,8 +27,9 @@
 
 // Check All
 $("body").on("change", ".check-all", function () {
-  var $form = $(this).closest("form");
-  $form.find(".to-check").prop("checked", $(this).is(":checked")).trigger("change");
+  // var $form = $(this).closest("form");
+  var $form = $(this).closest("div[id]");
+  $form.find(".to-check").prop("checked", $(this).is(":checked")).first().trigger("change");
 });
 
 // Check Group
@@ -46,7 +47,8 @@ $("body").on("click", ".decheck-all", function () {
 
 // Check Count
 $("body").on("change", ".to-check", function () {
-  var $form = $(this).closest("form"),
+  // var $form = $(this).closest("form"),
+  var $form = $(this).closest("div[id]"),
     checked_count = $form.find(".to-check:checked").length,
     all_count = $form.find(".to-check").length,
     $box_actions = $form.find(".form-actions");
@@ -60,3 +62,4 @@ $("body").on("change", ".to-check", function () {
   $box_actions.find(".checks-count").text(`${checked_count} / ${all_count}`);
   $form.find(".check-all").prop("checked", checked_count > 0);
 });
+

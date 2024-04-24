@@ -5,17 +5,23 @@ import locale
 from clim.main import bp
 
 
-def smart_int(num):
+def smart_int(num, default=0):
     ''' Float без точки, если оно целое '''
+    if not num:
+        return default
+
     try:
+        num = float(num)
         num_abs = abs(num)
         if abs(num_abs - round(num_abs)) <= 0:
             num = round(num)
 
         return num
+    except ValueError:  # строка не является float / int
+        return default
 
     except TypeError:  # строка не является float / int
-        return 0
+        return default
 
 
 bp.add_app_template_filter(smart_int)
@@ -107,3 +113,15 @@ def smart_phone(phone_number: str) -> str:
 
 
 bp.add_app_template_filter(smart_phone)
+
+
+def datetime_from_str(string: str) -> datetime | str:
+    try:
+        return datetime.strptime(string, "%d.%m.%Y %H:%M")
+    except ValueError:
+        return ''
+    except TypeError:
+        return ''
+
+
+bp.add_app_template_filter(datetime_from_str)

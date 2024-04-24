@@ -1,0 +1,106 @@
+{# Jinja 2 #}
+
+<div class="col-xl-4 col-lg-12 col-md-12 col-12 d-grid gap-3 mb-5" data-to-server="info">
+
+  <div class="crm-editor-section">
+    <div class="crm-editor-section-header">
+      <span class="crm-editor-section-header-text">Информация</span>
+    </div>
+    <div class="crm-editor-section-body">
+      <div class="d-grid gap-2">
+
+        <div class="d-grid">
+          <label class="deal-info-block-title">Название</label>
+          {% if details.name %}
+            <span class="deal-info-edit-link">{{ details.name }}</span>
+          {% elif movement.movement_id %}
+            <span class="deal-info-edit-link">Нет</span>
+          {% endif %}
+          <input type="text" class="form-control border {{ 'visually-hidden' if details.name or movement.movement_id }}" name="name" value="{{ details.name if details.name }}">
+        </div>
+
+        <div class="d-grid">
+          <label class="deal-info-block-title">Сумма</label>
+          {% if details.sum %}
+            <span class="deal-info-edit-link">{{ details.sum|money }} ₽</span>
+          {% elif movement.movement_id %}
+            <span class="deal-info-edit-link">Нет</span>
+          {% endif %}
+          <input type="number" step="any" class="form-control border {{ 'visually-hidden' if details.sum or movement.movement_id }} to-show"
+            name="deal_sum" value="{{ details.sum or '' }}">
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="crm-editor-section">
+    <div class="crm-editor-section-header">
+      <span class="crm-editor-section-header-text">Поставщик</span>
+    </div>
+    <div class="crm-editor-section-body">
+      <div class="d-grid gap-2">
+
+        <div class="d-grid">
+          <label class="deal-info-block-title">Контакт</label>
+
+          {% if movement.contact %}
+            <div class="deal-info-edit-link">
+              <span>{{ movement.contact.name }}</span>
+              <span class="deal-info-contact">{{ movement.contact.phone|smart_phone }}</span>
+              <span class="deal-info-contact">{{ movement.contact.email }}</span>
+            </div>
+          {% elif movement.movement_id %}
+            <span class="deal-info-edit-link">Нет</span>
+          {% endif %}
+
+          <div class="{{ 'visually-hidden' if movement.contact or movement.movement_id }} to-show">
+            <select class="contact-select" data-placeholder="-- Выбрать --" name="contact_id"
+              data-url="{{ url_for('crm.deal.ajax_contacts', role='provider') }}" data-width="100%" data-class="border">
+              {% if movement.contact %}
+                <option selected value="{{ movement.contact.contact_id }}">{{ movement.contact.name }}</option>
+              {% endif %}
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="crm-editor-section">
+    <div class="crm-editor-section-header">
+      <span class="crm-editor-section-header-text">Детали</span>
+    </div>
+    <div class="crm-editor-section-body">
+      <div class="d-grid gap-2">
+
+        <div class="d-grid">
+          <label class="deal-info-block-title">Комментарий</label>
+          {% if details.comment %}
+            <span class="deal-info-edit-link">{{ details.comment }}</span>
+          {% elif movement.movement_id %}
+            <span class="deal-info-edit-link">Нет</span>
+          {% endif %}
+          <textarea class="form-control border {{ 'visually-hidden' if details.comment or movement.movement_id }} to-show"
+            name="comment">{{ details.comment if details.comment }}</textarea>
+        </div>
+
+        <div class="d-grid">
+          <label class="deal-info-block-title">Дата</label>
+          {% if details.date %}
+            <span class="deal-info-edit-link">{{ details.date }}</span>
+          {% elif movement.movement_id %}
+            <span class="deal-info-edit-link">Нет</span>
+          {% endif %}
+          <input type="text"
+            class="form-control border {{ 'visually-hidden' if details.date or movement.movement_id }} to-show datepicker"
+            name="date" value="{{ details.date }}" data-value="{{ details.date|datetime_from_str }}">
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+
+</div>

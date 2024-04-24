@@ -43,17 +43,6 @@
     });
   });
 
-  function SendingData(data, $btn, $form) {
-    $.ajax({
-      type: "POST",
-      url: $form.attr("action"),
-      data: JSON.stringify(data),
-      contentType: "application/json; charset=utf-8",
-      //dataType: 'json',
-      success: PageUpdate($btn),
-    }); //.done(PageUpdate($btn));
-  }
-
   function PageUpdate($btn) {
     var apply_url = $btn.attr("data-apply-url");
     if (apply_url) {

@@ -1,0 +1,119 @@
+{% if movement_type == 'coming' %}
+  {% set title = 'Документы прихода' %}
+{% elif movement_type == 'moving' %}
+  {% set title = 'Документы перемещения' %}
+{% endif %}
+
+{% if not request.args.get('only_content') %}
+  {% extends "base.html" %}
+  {% block title %}{{ title }}{% endblock %}
+{% endif %}
+
+{% block content %}
+
+{% include 'stock/header.html' %}
+
+<div class="row">
+  <div class="d-flex align-items-center">
+    <h3 class="mb-0">{{ title }}</h3>
+    <div class="ms-auto">
+      <button class="btn btn-primary open-modal" type="button" data-modal-id="MovementInfoModal"
+        data-url="{{ url_for('.movement_info', movement_type=movement_type) }}">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <div class="card h-100">
+      {% if not not_movements %}
+        <div class="table-responsive">
+          <form id="Movements" method="post" action="{{ url_for('.movements_action', movement_type=movement_type) }}">
+            <table class="table text-nowrap">
+              <thead>
+                <tr>
+                  <th class="main-tab-checkbox">
+                    <input class="form-check-input check-all" type="checkbox">
+                  </th>
+                  <th>Название</th>
+                  <th>Статус</th>
+                  <th>Склады</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                {% for movement in movements %}
+
+                  {% set details = movement.get('details', {}) %}
+                  <tr>
+                    <td class="main-tab-checkbox">
+                      <input class="form-check-input to-check" type="checkbox" value="{{ movement.movement_id }}">
+                    </td>
+
+                    <td>
+                      <div class="d-grid text-inherit open-modal" data-modal-id="MovementInfoModal" 
+                        data-url="{{ url_for('.movement_info', movement_type=movement_type, movement_id=movement.movement_id) }}">
+                        {{ details.name }}
+                        <span class="fs-6">от {{ details.date if details.date }}</span>
+                      </div>
+                    </td>
+
+                    <td>
+                      {% if movement.posted %}
+                        <span class="badge bg-success text-uppercase">Проведен</span> 
+                      {% elif movement.posted == False %}
+                        <span class="badge bg-warning text-dark text-uppercase">Отменен</span>
+                      {% else %}
+                        <span class="badge bg-secondary text-uppercase">Черновик</span>
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      {% for stock in details.stocks %}
+                        {{ stock }}{% if loop.index < details.stocks|length %}, {% endif %}
+                      {% endfor %}
+                    </td>
+                  </tr>
+                {% endfor %}
+
+              </tbody>
+            </table>
+
+            <!-- Actions buttons -->
+            <div class="sticky-bottom-buttons">
+              <button class="btn btn-sm rounded-3 open-modal-confirmation" type="button"
+                data-action="delete" data-title="Удалить документы?"
+                data-text="Будут удалены выбранные документы">
+                <i data-feather="trash" class="icon-xs"></i>
+                Удалить
+              </button>
+              <button class="btn btn-sm rounded-3 open-modal-confirmation" type="button"
+                data-action="posting" data-title="Провести документы?"
+                data-text="Будут проведены выбранные документы">
+                <i data-feather="check-square" class="icon-xs"></i>
+                Провести
+              </button>
+              <button class="btn btn-sm rounded-3 open-modal-confirmation" type="button"
+                data-action="unposting" data-title="Отменить проводку документов?"
+                data-text="Будет отменена проводка выбранных документов">
+                <i data-feather="x-square" class="icon-xs"></i>
+                Отменить проведение
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+      {% else %}
+        {% include 'nothing.html' %}
+      {% endif %}
+
+    </div>
+  </div>
+  {% set products = movements %}
+  {% include 'pagination.html' %}
+</div>
+
+{% include 'flash_messages.html' %}
+
+{% endblock %}

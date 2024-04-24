@@ -1,0 +1,13 @@
+{# Jinja2 #}
+
+{% if employments %}
+  {% for date_time, workers in employments.items() %}
+    {{ date_time }}<br>
+    {% for worker in workers %}
+      {{ worker }}{% if loop.index < workers|length %}, {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% else %}
+  Запланировать выезд
+{% endif %}
+  

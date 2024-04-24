@@ -36,7 +36,7 @@
 
             <div class="col-md-2">
               <label for="category_id" class="form-label h7">Категория</label>
-              <select class="ajax-select" data-width="100%" id="category_id" name="category_id"
+              <select class="general-select" data-width="100%" id="category_id" name="category_id"
                 data-url="{{ url_for('get_list_all_categories') }}" data-class="bg-light" data-placeholder="Все">
                 <option selected value="{{ category.category_id }}">{{ category.description.name }}</option>
               </select>

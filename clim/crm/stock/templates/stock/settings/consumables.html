@@ -1,0 +1,120 @@
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
+
+{% block content %}
+
+<form id="StockSettings" data-url="{{ url_for('.settings_consumables') }}">
+  <div class="row">
+    <div class="col-lg-12 col-md-12 col-12">
+      <div class="d-flex align-items-center">
+        <h3 class="mb-0">Основные настройки</h3>
+        <div class="ms-auto d-flex gap-2">
+          <button class="btn rounded-3 btn-primary" type="submit">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row align-items-center mb-3">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail"
+            role="tab" aria-controls="pills-detail" aria-selected="true">Общие</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="pills-consumables-tab" data-bs-toggle="pill" data-bs-target="#pills-consumables"
+            role="tab" aria-controls="pills-consumables" aria-selected="false">Опции</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tab-content" id="pills-tabContent">
+    <div class="tab-pane fade active show" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
+      <div class="col-12 d-grid gap-3">
+        <div class="row mb-8">
+          <div class="col-xl-3 col-lg-4 col-md-12 col-12">
+            <div class="mb-4 mb-lg-0">
+              <h4 class="mb-1">Расходные материалы</h4>
+            </div>
+          </div>
+
+          <div class="col-xl-9 col-lg-8 col-md-12 col-12">
+            <div class="card">
+              <div class="card-body">
+                <div>
+                  <div class="mb-6">
+                    <h4 class="mb-1">Категория расходных материалов</h4>
+                  </div>
+
+                  <!-- row -->
+                  <div class="mb-3 row">
+                    <div class="col-sm-6 mb-3 mb-lg-0">
+                      <label for="name" class="form-label">Название категорий</label>
+                      <select class="general-select" multiple name="consumables_categories_ids"
+                        data-url="{{ url_for('main.get_list_all_categories') }}">
+                        {% for category in categories %}
+                          <option selected value="{{ category.category_id }}">
+                            {{ category.description.name }} 
+                          </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Consumables in options -->
+    <div class="tab-pane fade" id="pills-consumables" role="tabpanel" aria-labelledby="pills-consumables-tab"
+      tabindex="0">
+      <div class="col-12 d-grid gap-3">
+        <div class="row mb-8">
+          <div class="col-12">
+            <!-- card -->
+            <div class="card">
+              <div class="table-responsive">
+                <table class="table text-nowrap">
+                  <thead>
+                    <tr>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="OptionsTable">
+                    {% for option in options %}
+                    <tr class="table-light">
+                      <td class="">
+                        <span class="text-inherit">
+                          {{ option.description.name }}
+                        </span>
+                      </td>
+                    </tr>
+
+                    {% for value in option.values|sort(attribute='sort_order') %}
+                    <tr>
+                      <td>
+                        <span class="text-inherit open-modal" data-modal-id="OptionValueModal" 
+                          data-url="{{ url_for('.consumables_in_option', value_id=value.option_value_id) }}">
+                          {{ value.description.name }}
+                        </span>
+                      </td>
+                    </tr>
+                    {% endfor %} {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

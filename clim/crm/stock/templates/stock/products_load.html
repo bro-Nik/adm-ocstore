@@ -1,0 +1,135 @@
+{# Jinja #}
+
+<div class="card h-100 flex-grow-1">
+  <div class="table-responsive">
+    <table class="table text-nowrap">
+      <thead class="">
+        <tr>
+          <th scope="col" class="col-4">Название</th>
+          <th scope="col" class="text-end">Закупочная цена</th>
+          <th scope="col" class="text-end">Общее количество</th>
+          {% for stock in stocks %}
+            <th scope="col" class="text-end">{{ stock.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% if category %}
+          <tr>
+            <td colspan="{{ 3 + stocks|length }}">
+              <a href="#" class="text-inherit open-category" data-category-id="{{ category.parent_id }}">
+                ... Назад
+              </a>
+            </td>
+          </tr>
+        {% endif %}
+
+        {% for category in categories %}
+          <tr>
+            <td colspan="{{ 3 + stocks|length }}" class="">
+              <a href="#" class="text-inherit open-category" data-category-id="{{ category.category_id }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder" viewBox="0 0 16 16"><path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4H2.19zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707z"/></svg>
+                {{ category.description.name }}
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+
+        {% for product in products %}
+          <tr>
+            <td>
+              <span class="text-inherit open-modal" data-modal-id="ProductInfoModal" 
+                data-url="{{ url_for('.product_info', product_id=product.product_id) }}">
+                {{ product.name }}
+              </span>
+            </td>
+
+            <td class="text-end">{{ product.cost|money }} ₽</td>
+
+            {% set quantity = product.stock_quantity %}
+
+            <td class="text-end">
+              {% if quantity != 0 %}
+                {{ quantity|smart_int }} {{ product.unit }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+
+            {% for stock in stocks %}
+              {% for product_in_stock in stock.products if product_in_stock.product_id == product.product_id %}
+                <td class="text-end">
+                  {% if product_in_stock.quantity != 0 %}
+                    {{ product_in_stock.quantity|smart_int }} {{ product.unit }}
+                  {% else %}
+                    - 
+                  {% endif %}
+                </td>
+              {% else %}
+                <td class="text-end">-</td>
+              {% endfor %}
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if products.pages > 1 %}
+
+      <div class="row align-items-center justify-content-center mt-3 mb-6">
+        <div class="col-auto">
+          <nav aria-label="">
+            <ul class="pagination">
+              {% if products.has_prev %}
+              <li class="page-item">
+                <a class="page-link" href="#" aria-label="Previous" data-page="{{ products.prev_num }}">
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+              </li>
+              {% endif %}
+              {% for number in products.iter_pages() %}
+                {% if not number %}
+                  <li class="page-item" aria-current="page">
+                    <span class="page-link">...</span>
+                  </li>
+                {% elif products.page != number %}
+                  <li class="page-item">
+                    <a class="page-link" href="#" data-page="{{number}}">{{ number }}</a>
+                  </li>
+                {% else %}
+                  <li class="page-item active" aria-current="page">
+                    <span class="page-link">{{ number }}</span>
+                  </li>
+                {% endif %}
+              {% endfor %}
+            {% if products.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="#" data-page="{{ products.next_num }}" aria-label="Next">
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
+              </li>
+            {% endif %}
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+    {% endif %}
+
+  </div>
+</div>
+
+<div class="card">
+  <div class="d-flex justify-content-end align-items-center m-3">
+    <table class="col-3">
+      <tbody>
+        <tr class="fs-4 fw-bolder">
+          <td>Общая сумма:</td>
+          <td>{{ products_cost|round|money }} ₽</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+

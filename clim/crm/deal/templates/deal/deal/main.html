@@ -1,0 +1,98 @@
+{% if not request.args.get('only_content') %}
+  {% extends "modal_base.html" %}
+  {% set modal_fullscreen = True %}
+{% endif %}
+
+{% block content %}
+{% set details = deal.get('details', {}) %}
+
+<form id="DealInfo" class="d-grid gap-3" data-url="{{ url_for('.deal_info', deal_id=deal.deal_id) }}">
+  {% include 'deal/deal/header.html' %}
+
+  <div class="row">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="tab-content" id="pills-tabContent">
+        <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
+          <div class="row">
+            {% include 'deal/deal/details.html' %}
+            <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-grid gap-3">
+              {% include 'deal/deal/actions.html' %}
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-product-tab" tabindex="0">
+          <div class="col-12 d-grid gap-3">{% include 'deal/deal/products.html' %}</div>
+        </div>
+
+        <div class="tab-pane fade" id="pills-consumables" role="tabpanel" aria-labelledby="pills-consumables-tab" tabindex="0">
+          <div class="col-12 d-grid gap-3">{% include 'deal/deal/consumables.html' %}</div>
+        </div>
+
+        <div class="tab-pane fade" id="pills-expenses" role="tabpanel" aria-labelledby="pills-expenses-tab" tabindex="0">
+          <div class="col-12 d-grid gap-3">{% include 'deal/deal/expenses.html' %}</div>
+        </div>
+
+        <div class="tab-pane fade" id="pills-analytics" role="tabpanel" aria-labelledby="pills-analytics-tab" tabindex="0">
+          <div class="col-12 d-grid gap-3">{% include 'deal/deal/analytics.html' %}</div>
+        </div>
+
+      </div>
+    </div>
+    {#}
+  </div>
+    {#}
+
+  <div class="sticky-bottom-box">
+    <div class="sticky-bottom bg-white py-2 change">
+      <button type="button" class="btn btn-salato btn-to-submit" data-this-need-update="true">Сохранить</button>
+      <button class="btn btn-transparent rounded-3" type="reset">Отмена</button>
+    </div>
+  </div>
+
+</form>
+
+<script>
+  // Fill Consumables
+  var url_get_consumables_in_option = "{{ url_for('crm.stock.json_consumables_in_option') }}";
+
+  // Stages
+  StegesColor();
+
+  // Раскрыть запись на услуги
+  $("body").on("change", "select[name=what_need]", function () {
+    if ($(this).val().indexOf("установка") + 1) $("#collapseServices").addClass("show");
+    else $("#collapseServices").removeClass("show");
+  });
+
+  $("body").on("change", "[name=stages]", function () {
+    $('[name=stage_id]').val($(this).val());
+  });
+</script>
+
+{% if deal.deal_id and not deal.posted %}
+<script>
+  UpdateDealEmployments();
+  function UpdateDealEmployments() {
+    setTimeout(function () {
+      $('body').find('#DealEmployments').load("{{ url_for('.employment',deal_id=deal.deal_id) }}");
+    }, 500)
+  };
+
+  $('body').on("click", '#BookingEventSave', UpdateDealEmployments);
+
+  $('body').on('click', '#DealEmployments', function () {
+    var need_load = !$("#BookingModal").length;
+    if (need_load) LoadToModal('BookingModal', "{{ url_for('crm.booking.booking_page', event_name='deal_' + deal.deal_id|string) }}", false, false);
+    else $('#BookingModal').modal('show');
+    setTimeout(function () {
+      StartBooking('deal_{{ deal.deal_id }}');
+    }, 100);
+  });
+</script>
+{% endif %}
+
+{% include 'flash_messages.html' %}
+
+{% endblock %}
+

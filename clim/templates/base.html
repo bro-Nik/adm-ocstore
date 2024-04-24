@@ -20,10 +20,10 @@
 
     {% include 'navbar-vertical.html' %}
 
-    <div id="page-content" class="d-flex flex-column">
+    <div id="page-content" class="d-flex flex-column pb-80">
         {% include 'header.html' %}
 
-        <div id="content" class="container-fluid px-6 py-3 d-flex flex-column gap-3">{% block content %}{% endblock %}</div>
+        <div id="content" class="container-fluid px-5 py-3 d-flex flex-column gap-3">{% block content %}{% endblock %}</div>
     </div>
 
     <div id="Modals">
@@ -56,6 +56,12 @@
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 <script src="{{ url_for('static', filename='js/select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/checkboxes.js') }}"></script>
+<script src="{{ url_for('static', filename='js/products.js') }}"></script>
+<script>
+  const url_stocks_list = "{{ url_for('crm.deal.ajax_stocks') }}";
+  const url_stock_first = "{{ url_for('crm.deal.ajax_stocks_first') }}";
+  const url_contact_info = "{{ url_for('crm.contact.contact_info') }}";
+</script>
 
 {#
 {% include 'scripts_code.html' %}

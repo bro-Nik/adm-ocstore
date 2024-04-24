@@ -301,7 +301,7 @@ function PageUpdate($modal) {
 }
 
 // Focus
-function UpdateFocus($element = $("body")) {
+function UpdateFocus($element=$("body")) {
   if ($element.find('.focus').length) {
     $element.find('.focus').focus();
   } else {
@@ -310,14 +310,51 @@ function UpdateFocus($element = $("body")) {
 }
 
 // Update Page
-function UpdateScripts($element) {
+function UpdateScripts($element=$("body")) {
   StickyBottomActionsUpdate($element);
   UpdateSelects($element);
+  GetFlashedMessages($element)
+  UpdateProductItems($element)
+  UpdateDatepicker($element)
   feather.replace();
 }
 
+function UpdateProductItems($element=$("body")) {
+  // Посчитать общие суммы во вкладках
+  $element.find(".all-sum").each(function () {
+    $(this).closest(".tab-pane").find(".sum").eq(-1).trigger("change");
+  });
+
+  // Посчитать суммы в товарах
+  $element.find(".tr.product").each(function () {
+    $(this).find("[name=quantity]").trigger("change");
+  });
+
+  // Иницилизировать селекты
+  $element.find("tr.product").each(function () {
+    UpdateProductSelect($(this));
+    UpdateStockSelect($(this));
+  });
+
+  // Сброс изменений
+  $element.on("reset", function () {
+    var $modal = $(this).closest(".modal");
+    if ($modal.length) LoadToModal($modal.attr("id"), $modal.data("url"), true);
+  });
+
+  // Пересчитать чекбоксы
+  $element.find('.check-all:checkbox').trigger('change');
+
+  // Показать панель действий при изменениях
+  $element.on("change", function (event) {
+    if (event.target.type !== "checkbox" && event.target.nodeName !== "SPAN") {
+      $element.find(".sticky-bottom.change").addClass("active");
+    }
+  });
+}
+
 // Sticky Bottom Actions
-function StickyBottomActionsUpdate($element = $("body")) {
+function StickyBottomActionsUpdate($element=$("body")) {
 
   if ($element.find('form').length > 1) {
     $element.find('form').each(function () {
@@ -360,7 +397,8 @@ function SendingData(url, data, $btn, $modal) {
     contentType: "application/json; charset=utf-8",
   }).done(function (response) {
     if(response.redirect) {
-      window.location.href = response.redirect;
+      LoadToModal($modal.attr('id'), response.redirect, true);
+      // window.location.href = response.redirect;
     } else if ($btn.attr('data-this-need-update')) {
       LoadToModal($modal.attr('id'), $modal.attr("data-url"), true);
     } else {
@@ -369,13 +407,103 @@ function SendingData(url, data, $btn, $modal) {
   });
 }
 
-function GetFlashedMessages($element = $('body')) {
+function GetFlashedMessages($element=$('body')) {
   var $messages_box = $element.find('script[data-selector="flashed-messages-page-data-js"]');
   if($messages_box.length) NewToasts(JSON.parse($messages_box.html()));
 }
+
+
+// Data To Server
+$("body").on("click", ".btn-to-submit", function () {
+  var $btn = $(this),
+    $form = $btn.closest("form");
+
+  var data = {};
+  // Действие
+  if ($btn.attr("data-action")) data.action = $btn.attr("data-action")
+
+  // Данные
+  $form.find("[data-to-server]").each(function(index, element){
+    // Ключ данных
+    var data_name = $(element).attr("data-to-server");
+
+    if (element.tagName === "DIV") {
+      if (data[data_name] === undefined) data[data_name] = {}
+      // Проходим по полям
+      $(element).find("input, select, textarea").each(function (index, field) {
+        if ($(field).attr('name')) data[data_name][$(field).attr('name')] = $(field).val();
+      });
+
+    } else if (element.tagName === "TABLE") {
+      if (data[data_name] === undefined) data[data_name] = []
+
+      $(element).find("tr.product").each(function (index, tr) {
+        var item = {},
+          skip = false;
+        $(tr).find("td").each(function (index, td) {
+          // Проходим по полям
+          $(td).find("input, select, textarea").each(function (index, field) {
+            if ($(field).attr('data-required') && !$(field).val()) skip = true;
+            if ($(field).attr('name')) item[$(field).attr('name')] = $(field).val();
+          });
+        });
+        if (skip) return;
+        else data[data_name].push(item);
+      });
+    }
+  });
+
+  SendingData($form.data("url"), data, $btn, $btn.closest(".modal"));
+  $(".sticky-bottom").removeClass("active");
+});
 
 StickyBottomActionsUpdate();
 $('body .fade').addClass('show');
 UpdateFocus();
 GetFlashedMessages();
 feather.replace();
+
+
+function getUrlArg(url, arg="") {
+  var hash;
+  var hashes = url.slice(url.indexOf('?') + 1).split('&');
+  for(var i = 0; i < hashes.length; i++) {
+    hash = hashes[i].split('=');
+    if (hash[0] !== arg) continue;
+    return hash[1];
+  }
+}
+
+
+// Show inputs
+$("body").on("click", ".deal-info-edit-link", function () {
+  var $this = $(this);
+  $this.addClass("visually-hidden");
+
+  var $input = $this.next();
+  $input.removeClass("visually-hidden");
+
+  if ($input.is("input")) {
+    data = $input.val();
+    //$input.focus().val("").val(data);
+    $input.val(data).focus();
+  }
+});
+
+
+// Datepicker
+function UpdateDatepicker($element=$("body")) {
+  $element.find("input.datepicker").each(function () {
+    var date = $(this).data('value');
+    date = [new Date(date)] ? date : "";
+
+    new AirDatepicker(this, {
+      selectedDates: date,
+      buttons: ['today', 'clear'],
+      position: "right center",
+      timepicker: true,
+      minHours: 9,
+      maxHours: 18,
+      minutesStep: 10});
+  });
+}

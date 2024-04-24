@@ -1,0 +1,57 @@
+{# Jinja2 #}
+{% set analytics = deal.get('analytics', {}) %}
+{% if not analytics %}
+  {% include 'nothing.html' %}
+{% else %}
+
+<!-- Expenses  -->
+<div class="card h-100">
+  <div class="">
+    <table class="table text-nowrap table">
+      <thead class="">
+        <tr>
+          <th scope="col">Название</th>
+          <th scope="col">Стоимость</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for name, key in {'Товары': 'cost_products', 'Расходные материалы': 'cost_consumables', 'Прочие расходы': 'cost_expenses'}.items() %}
+          <tr>
+            <td class="col-4">
+              <span class="ana_count"></span>
+              <span class="">{{ name }}</span>
+            </td>
+
+            <td class="col-2">
+              <span class="">{{ analytics.get(key)|smart_int|money }}</span>
+              <span class="">₽</span>
+            </td>
+            <td class="col-auto"></td>
+          </tr>
+        {% endfor %}
+
+        <input id="expenses_count" type="hidden" name="expenses-count" value="" />
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="card h-100">
+  <div class="d-flex justify-content-end align-items-center m-3">
+    <table class="col-3">
+      <tbody>
+        <tr>
+          <td><span class="fs-4 fw-bolder">Всего расходов:</span></td>
+          <td>
+            <span class="fs-4 fw-bolder">{{ (deal.info.sum|smart_int - deal.info.profit|smart_int)|smart_int|money }} ₽</span>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="fs-4 fw-bolder">Чистая прибыль:</span></td>
+          <td><span class="fs-4 fw-bolder">{{ deal.info.profit|smart_int|money }} ₽</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}

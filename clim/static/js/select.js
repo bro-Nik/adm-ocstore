@@ -1,45 +1,7 @@
-var defaultSelectClass = "bg-light";
-
-// Ajax Selects
-function UpdateAjaxSelects($element = $("body")) {
-  $element.find(".ajax-select").each(function () {
-    $(this).select2({
-      theme: "bootstrap-5",
-      width: $(this).data("width") || "100%",
-      dropdownAutoWidth: true,
-      dropdownParent: $(this).closest(".modal"),
-      selectionCssClass: $(this).data("class") || defaultSelectClass,
-      language: {
-        noResults: function () {
-          return "Ничего не найдено";
-        },
-      },
-      ajax: {
-        delay: 250,
-        url: $(this).data("url"),
-        dataType: "json",
-        data: function (params) {
-          var query = {
-            search: params.term,
-            page: params.page || 1,
-          };
-          return query;
-        },
-      },
-    });
-  });
-}
-
-// General Select
+// Ajax Select// General Select
 function UpdateGeneralSelects($element = $("body")) {
   $element.find(".general-select").each(function () {
-    $(this).select2({
-      theme: "bootstrap-5",
-      width: $(this).data("width") || "100%",
-      dropdownAutoWidth: true,
-      minimumResultsForSearch: 10,
-      selectionCssClass: $(this).data("class") || defaultSelectClass,
-    });
+    UpdateSelect($(this));
   });
 }
 
@@ -69,14 +31,11 @@ function MultipleSelectCount($select) {
 
 function UpdateSelects($element) {
   UpdateGeneralSelects($element);
-  UpdateAjaxSelects($element);
   UpdateMultipleSelectCount($element);
+  UpdateContactSelect($element)
 }
 
 UpdateSelects($("body"))
-// UpdateAjaxSelects();
-// UpdateGeneralSelects();
-// UpdateMultipleSelectCount();
 
 
 $(document).on("change", ".show-count-selected", function (e) {
@@ -99,3 +58,72 @@ $(document).on("select select2:open", function () {
   // $search.focus();
 });
 
+
+function UpdateSelect($select, url_args={}) {
+  // var $select = $tr.find("select");
+
+  var ajax = null;
+  if ($select.data("url")) {
+    ajax = {
+      delay: 250,
+      url: $select.data("url"),
+      dataType: "json",
+      data: function (params) {
+        var query = {
+          search: params.term,
+          page: params.page || 1,
+        };
+        $.extend(query, url_args);
+        return query;
+      },
+    }
+  }
+
+
+  $select
+    .select2({
+      theme: "bootstrap-5",
+      width: $select.data("width"),
+      dropdownParent: $select.data("parent") || $select.closest("div[id]"),
+      dropdownAutoWidth: true,
+      selectionCssClass: $select.data("class") || "bg-light",
+      templateResult: formatOption,
+      language: {
+        noResults: function () {
+          return "Ничего не найдено";
+        },
+      },
+      escapeMarkup: function (markup) {
+        return markup;
+      },
+      ajax,
+    })
+}
+
+
+function formatOption(option) {
+  return $(`<span class="text">${option.text}<small class="text-muted">${option.subtext || ""}</small></span>`)
+}
+
+
+// Инициализировать селект контакта
+function UpdateContactSelect($element=$("body")) {
+  $element.find("select.contact-select").each(function () {
+    var $contactSelect = $(this);
+    UpdateSelect($contactSelect);
+
+    $contactSelect.on("select2:open", () => {
+      var $box = $(".select2-results:not(:has(button))");
+      if (!$box.find('.select-new-container').length) {
+        // Кнопка создания нового
+        var role = getUrlArg($contactSelect.data("url"), "role");
+        var url = `${url_contact_info}${url_contact_info.indexOf("?") > 0 ? "&" : "?"}role=${role}`;
+        $box.append(
+          `<div class='select-new-container open-modal' data-modal-id="ContactInfoModal" data-url="${url}">
+            <div class='select-new-text'>создать новый контакт</div>
+          </div>`,
+        );
+      }
+    });
+  });
+}

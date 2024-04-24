@@ -1,0 +1,88 @@
+{% extends "deal/deals.html" %}
+
+{% block deals_content %}
+<div class="row">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+
+    <div class="card h-100">
+
+      <div class="table-responsive">
+        <table id="Deals" class="table text-nowrap">
+          <thead class="">
+            <tr>
+              <th class="main-tab-checkbox">
+                <input class="form-check-input check-all" type="checkbox">
+              </th>
+              <th scope="col">Название</th>
+              <th scope="col">Дата создания</th>
+              <th scope="col">Сумма</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {% for stage in stages %}
+
+              <tr style="{{ 'background: {};'.format(stage.color) if stage.color }}"
+                class="stage-column" data-stage="{{ stage.stage_id }}">
+
+                <input type="hidden" class="stage-type" value="{{ stage.type }}">
+                <input type="hidden" class="stage-color" value="{{ stage.color if stage.color }}">
+
+                <td class="main-tab-checkbox py-1">
+                  <input id="stage_id_{{ stage.stage_id }}" class="form-check-input check-stage" type="checkbox">
+                </td>
+                <td class="py-1 text-white">
+                  <div class="d-flex stage-header">
+                    <div class="stage-name">{{ stage.name }}</div>
+                    <div class="stage-deal-count ms-1">({{ stage.deals|length }})</div>
+                    <div class="ms-auto stage-action">
+                      <i data-feather="edit" class="nav-icon icon-xs me-2 open-modal"
+                        data-modal-id="StageSettingsModal" data-url="{{ url_for('.stage_settings', stage_id=stage.stage_id) }}"></i>
+                      <i data-feather="plus-circle" class="nav-icon icon-xs me-2 new-stage"></i>
+                    </div>
+                  </div>
+                </td>
+                <td colspan=3>
+                </td>
+              </tr>
+
+              {% for deal in stage.deals %}
+                {% set details = deal.get('details', {}) %}
+
+                <tr>
+                  <td class="main-tab-checkbox">
+                    <input class="form-check-input to-check stage_id_{{ stage.stage_id }}" type="checkbox"
+                                                              value="{{ deal.deal_id }}">
+                  </td>
+                  <td data-deal-id="{{ deal.deal_id }}">
+                    <a class="open-modal text-inherit" data-modal-id="DealInfoModal"
+                      data-url="{{ url_for('.deal_info', deal_id=deal.deal_id) }}">{{ details.name }}</a>
+                    <br>
+                    <span class="fs-6"></span>
+                  </td>
+                  <td class="">
+                    <span class="fs-6">{{ details.date_add }}</span>
+                  </td>
+                  <td class="">
+                    <span class="fs-6">{{ details.sum|money }} ₽</span>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Check Stage
+  $('#Deals').on("change", '.check-stage', function () {
+    $('.' + this.id).prop('checked', $(this).is(':checked'));
+    $('#Deals').find('.to-check:checkbox').trigger('change');
+  })
+</script>
+{% endblock %}

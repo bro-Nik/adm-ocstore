@@ -1,0 +1,6 @@
+.jq-schedule .sc_bar .text {
+  font-size: 0.8rem;
+  line-height: normal;
+  overflow: auto !important;
+  height: 2.5em !important;
+}
