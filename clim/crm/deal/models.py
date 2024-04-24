@@ -29,10 +29,9 @@ class Deal(db.Model, JsonMixin):
     profit = db.Column(db.Float(15.4))
     sort_order = db.Column(db.Integer)
 
-    @property
-    def name(self):
-        print(self.info.get('name', ''))
-        return self.info.get('name', '')
+    # @property
+    # def name(self):
+    #     return self.info.get('name', '')
 
     def save(self):
         details = self.get('details', {})

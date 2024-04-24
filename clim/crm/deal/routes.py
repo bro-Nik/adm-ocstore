@@ -38,10 +38,10 @@ def deals(view=None):
 
 
 def updater():
-    deal = db.session.execute(db.select(Deal)).scalar()
-    if deal.info.get('name'):
-        print('Выход')
-        return
+    # deal = db.session.execute(db.select(Deal)).scalar()
+    # if deal.info.get('name'):
+    #     print('Выход')
+    #     return
 
     for deal in db.session.execute(db.select(Deal)).scalars():
         details = deal.get('details', {})
