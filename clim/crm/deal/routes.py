@@ -74,6 +74,10 @@ def updater():
                 p['price'] = p['product_price']
                 del p['product_price']
 
+            if p.get('cost'):
+                p['price'] = p['cost']
+                del p['cost']
+
             if p.get('product_quantity'):
                 p['quantity'] = p['product_quantity']
                 del p['product_quantity']
