@@ -105,6 +105,7 @@ class StockMovement(db.Model, JsonMixin):
                 db.session.delete(stock_product)
 
         if direction == 1 and self.posted:
+            print(f'direction={direction}, self.posted={self.posted}')
             flash(f'Документ {self.info["name"]} уже проведен', 'warning')
             return
 
@@ -152,6 +153,7 @@ class StockMovement(db.Model, JsonMixin):
         if not error:
             self.products = json.dumps(products)
             self.posted = direction == 1
+            print(f'direction={direction}, self.posted={self.posted}')
 
     def unposting(self):
         self.posting(-1)

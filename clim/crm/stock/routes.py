@@ -81,17 +81,23 @@ def movement_info(movement_type):
 
         data = json.loads(request.data) if request.data else {}
         action = data.get('action', '')
-        if 'save' in action:
-            movement.save(data)
-            db.session.commit()
-        if 'posting' in action:
-            movement.posting()
-            if movement.posted:
-                db.session.commit()
-        if 'unposting' in action:
+
+        # Отменить проведение
+        if action == 'unposting':
             movement.unposting()
             if not movement.posted:
                 db.session.commit()
+        else:
+            # Сохранить
+            if 'save' in action:
+                movement.save(data)
+                db.session.commit()
+
+            # Провести
+            if 'posting' in action:
+                movement.posting()
+                if movement.posted:
+                    db.session.commit()
         return {'redirect': str(url_for('.movement_info',
                                         movement_type=movement_type,
                                         movement_id=movement.movement_id))}
