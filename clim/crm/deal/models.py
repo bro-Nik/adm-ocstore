@@ -100,7 +100,6 @@ class Deal(db.Model, JsonMixin):
                     errors.append(f'Не указан склад для {product["name"]}')
                     continue
 
-                print(product)
                 product_in_stock = get_product_in_stock(product['id'],
                                                         product['stock_id'])
                 if not product_in_stock:
@@ -108,7 +107,7 @@ class Deal(db.Model, JsonMixin):
                                                             product['stock_id'])
                     db.session.flush()
 
-                product_in_stock.quantity -= float(product.get('quantity')) * d
+                product_in_stock.quantity -= float(product['quantity'] or 0) * d
 
                 if product_in_stock.quantity < 0:
                     errors.append(f'Нет достаточного количества на складе '
