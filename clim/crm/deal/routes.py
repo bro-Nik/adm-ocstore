@@ -39,17 +39,19 @@ def deals(view=None):
 
 def updater():
     for deal in db.session.execute(db.select(Deal)).scalars():
-        products = deal.get('consumables', [])
-        for p in products:
-            if p.get('product_id'):
-                p['id'] = p['product_id']
-                del p['product_id']
+        # products = deal.get('consumables', [])
+        details = deal.get('details')
+        details['employments'] = {}
+        # for p in products:
+        #     if p.get('product_id'):
+        #         p['id'] = p['product_id']
+        #         del p['product_id']
+        #
+        #     if p.get('product_name'):
+        #         p['name'] = p['product_name']
+        #         del p['product_name']
 
-            if p.get('product_name'):
-                p['name'] = p['product_name']
-                del p['product_name']
-
-        deal.consumables = json.dumps(products, ensure_ascii=False)
+        deal.details = json.dumps(details, ensure_ascii=False)
 
     # for movement in db.session.execute(db.select(StockMovement)).scalars():
     #     products = movement.get('products', [])
