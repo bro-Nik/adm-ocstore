@@ -26,7 +26,6 @@ def update_filter():
 @bp.route('/', methods=['GET'])
 @login_required
 def deals(view=None):
-    updater()
     if not view or view not in ['kanban', 'list']:
         view = session.get('crm_view', 'kanban')
         return redirect(url_for('.deals', view=view))
@@ -35,31 +34,6 @@ def deals(view=None):
     stage_type = session.get('stage_type', 'in_work')
     return render_template(f'deal/deals_{view}.html', stage_type=stage_type,
                            stages=tuple(get_stages(stage_type)))
-
-
-def updater():
-    # deal = db.session.execute(db.select(Deal)).scalar()
-    # if deal.info.get('name'):
-    #     print('Выход')
-    #     return
-
-    for deal in db.session.execute(db.select(Deal)).scalars():
-        details = deal.get('details', {})
-        details['name'] = deal.name or details.get('name', '')
-        details['date_add'] = dt_to_str(datetime.combine(deal.date_add, time(10))) if deal.date_add else details.get('date_add', '')
-        details['date_end'] = dt_to_str(datetime.combine(deal.date_end, time(10))) if deal.date_end else details.get('date_end', '')
-        details['sum'] = deal.sum or details.get('sum', '')
-        details['profit'] = deal.profit or details.get('profit', '')
-        deal.details = json.dumps(details, ensure_ascii=False)
-
-    for movement in db.session.execute(db.select(StockMovement)).scalars():
-        details = movement.get('details', {})
-        details['name'] = movement.name or details.get('name', '')
-        details['date'] = dt_to_str(datetime.combine(movement.date, time(10))) if movement.date else details.get('date', '')
-        details['stocks'] = movement.stocks or details.get('stocks', '')
-        movement.details = json.dumps(details, ensure_ascii=False)
-    db.session.commit()
-    print('Обновлено')
 
 
 @bp.route('/ajax_products', methods=['GET'])

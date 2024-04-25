@@ -66,20 +66,21 @@ class StockMovement(db.Model, JsonMixin):
         # Contact
         self.contact_id = info.get('contact_id')
 
-        # Товары
-        products = data.get('products', [])
-        self.products = json.dumps(products, ensure_ascii=False)
+        if not self.posted:
+            # Товары
+            products = data.get('products', [])
+            self.products = json.dumps(products, ensure_ascii=False)
 
-        details['stocks'] = []
-        details['sum'] = 0
-        for product in products:
-            # Склады
-            for key, value in product.items():
-                if 'stock' in key and 'name' in key and value not in details['stocks']:
-                    details['stocks'].append(value)
+            details['stocks'] = []
+            details['sum'] = 0
+            for product in products:
+                # Склады
+                for key, value in product.items():
+                    if 'stock' in key and 'name' in key and value not in details['stocks']:
+                        details['stocks'].append(value)
 
-            # Сумма
-            details['sum'] += float(product['quantity'] or 0) * float(product['price'] or 0)
+                # Сумма
+                details['sum'] += float(product['quantity'] or 0) * float(product['price'] or 0)
 
         self.details = json.dumps(details, ensure_ascii=False)
 

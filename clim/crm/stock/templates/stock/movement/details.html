@@ -56,7 +56,7 @@
 
           <div class="{{ 'visually-hidden' if movement.contact or movement.movement_id }} to-show">
             <select class="contact-select" data-placeholder="-- Выбрать --" name="contact_id"
-              data-url="{{ url_for('crm.deal.ajax_contacts', role='provider') }}" data-width="100%" data-class="border">
+              data-url="{{ url_for('crm.contact.ajax_contacts', role='provider') }}" data-width="100%" data-class="border">
               {% if movement.contact %}
                 <option selected value="{{ movement.contact.contact_id }}">{{ movement.contact.name }}</option>
               {% endif %}
