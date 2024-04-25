@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, time
 
 from flask import abort, render_template, redirect, url_for, request, session
 from flask_login import login_required
@@ -8,7 +8,7 @@ from clim.crm.booking.utils import get_event_booking
 
 from ..stock.utils import get_consumables_categories_ids
 from ..stock.models import Stock, StockMovement, StockProduct
-from ..utils import actions_in, smart_int
+from ..utils import actions_in, dt_to_str, smart_int
 from ..models import Product, db, OptionValueDescription, ProductDescription, \
     Option, OptionValue, Category
 from .models import Deal, DealStage
@@ -46,8 +46,8 @@ def updater():
     for deal in db.session.execute(db.select(Deal)).scalars():
         details = deal.get('details', {})
         details['name'] = deal.name or details.get('name', '')
-        details['date_add'] = deal.date_add or details.get('date_add', '')
-        details['date_end'] = deal.date_end or details.get('date_end', '')
+        details['date_add'] = dt_to_str(datetime.combine(deal.date_add, time(10))) if deal.date_add else details.get('date_add', '')
+        details['date_end'] = dt_to_str(datetime.combine(deal.date_end, time(10))) if deal.date_end else details.get('date_end', '')
         details['sum'] = deal.sum or details.get('sum', '')
         details['profit'] = deal.profit or details.get('profit', '')
         deal.details = json.dumps(details, ensure_ascii=False)
@@ -55,7 +55,7 @@ def updater():
     for movement in db.session.execute(db.select(StockMovement)).scalars():
         details = movement.get('details', {})
         details['name'] = movement.name or details.get('name', '')
-        details['date'] = movement.date or details.get('date', '')
+        details['date'] = dt_to_str(datetime.combine(movement.date, time(10))) if movement.date else details.get('date', '')
         details['stocks'] = movement.stocks or details.get('stocks', '')
         movement.details = json.dumps(details, ensure_ascii=False)
     db.session.commit()
