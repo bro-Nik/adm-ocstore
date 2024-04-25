@@ -80,7 +80,7 @@ class Deal(db.Model, JsonMixin):
             self.expenses = json.dumps(expenses, ensure_ascii=False)
             analytics['cost_expenses'] = 0  # Затраты
             for expense in expenses:
-                analytics['cost_expenses'] += float(expense.get('price', 0))
+                analytics['cost_expenses'] += float(expense['price'] or 0)
 
             details['profit'] = (details['sum'] - (analytics['cost_products'] +
                                  analytics['cost_consumables'] + analytics['cost_expenses']))
