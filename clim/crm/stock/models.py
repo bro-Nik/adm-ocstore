@@ -95,7 +95,8 @@ class StockMovement(db.Model, JsonMixin):
             # Изменение количества на складе
             stock_product.quantity += quantity * direction
             if stock_product.quantity < 0:
-                flash(f'Нет столько товаров на складе {stock_product.stock.name}', 'warning')
+                flash(f'Товара {stock_product.name} не хватает на складе '
+                      f'{stock_product.stock.name}', 'warning')
                 db.session.rollback()
                 error = True
                 return

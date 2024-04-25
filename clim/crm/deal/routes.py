@@ -26,6 +26,7 @@ def update_filter():
 @bp.route('/', methods=['GET'])
 @login_required
 def deals(view=None):
+    updater()
     if not view or view not in ['kanban', 'list']:
         view = session.get('crm_view', 'kanban')
         return redirect(url_for('.deals', view=view))
@@ -34,6 +35,43 @@ def deals(view=None):
     stage_type = session.get('stage_type', 'in_work')
     return render_template(f'deal/deals_{view}.html', stage_type=stage_type,
                            stages=tuple(get_stages(stage_type)))
+
+
+def updater():
+    # for deal in db.session.execute(db.select(Deal)).scalars():
+    #     products = deal.get('products', [])
+    #     for p in products:
+    #         if p.get('product_id'):
+    #             p['id'] = p['product_id']
+    #             del p['product_id']
+    #
+    #         if p.get('product_name'):
+    #             p['name'] = p['product_name']
+    #             del p['product_name']
+    #
+    #         if p.get('product_price'):
+    #             p['price'] = p['product_price']
+    #             del p['product_price']
+    #
+    #         if p.get('product_quantity'):
+    #             p['quantity'] = p['product_quantity']
+    #             del p['product_quantity']
+    #
+    #     deal.products = json.dumps(products, ensure_ascii=False)
+
+    for movement in db.session.execute(db.select(StockMovement)).scalars():
+        products = movement.get('products', [])
+        details = movement.get('details')
+        details['stocks'] = []
+        for product in products:
+            # Склады
+            for key, value in product.items():
+                if 'stock' in key and 'name' in key and value not in details['stocks']:
+                    details['stocks'].append(value)
+
+        movement.details = json.dumps(details, ensure_ascii=False)
+    db.session.commit()
+    print('Обновлено')
 
 
 @bp.route('/ajax_products', methods=['GET'])
