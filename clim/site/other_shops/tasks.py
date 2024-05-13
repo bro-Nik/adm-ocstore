@@ -30,21 +30,17 @@ def get_other_products_task(category_id, test=None):
         return block and block != -1
 
     error = ''
-    attempts = 5
+    attempts = 3
     while True:
-        attempts -= 1
         if attempts < 0 or not parsing:
             return
-
-        # ToDo
-        if page > 5:
-            break
 
         if error:
             if test:
                 flash(error, 'warning')
                 return
             print(error)
+            attempts -= 1
             error = ''
 
         url = f"{cat.url}{f'?page={page}' if page > 1 else ''}"
@@ -52,10 +48,8 @@ def get_other_products_task(category_id, test=None):
 
         if not response or response.status_code != 200:
             error = f'Ошибка запроса {response.status_code if response else ""}'
-            # time.sleep(15)
             continue
 
-        print(page)
         bs = BeautifulSoup(response.text, "lxml")
         blocks = bs.find(parsing['blocks_type'], parsing['blocks_class'])
         if not block_find(blocks):
@@ -144,7 +138,7 @@ def get_other_products_task(category_id, test=None):
 
             try:
                 product_in_base.price = float(product_in_base.price)
-            except ValueError:
+            except TypeError:
                 product_in_base.price = float(0)
 
             if product_in_base.price != price:

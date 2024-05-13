@@ -10,9 +10,9 @@ from ..app import db, redis
 from . import bp
 
 
-# @bp.route('/', methods=['GET'])
-# def main_redirect():
-#     return redirect(url_for('crm.stock.products'))
+@bp.route('/', methods=['GET'])
+def main_redirect():
+    return redirect(url_for('crm.stock.products'))
 
 
 @bp.route('/ajax/list_all_categories', methods=['GET'])
