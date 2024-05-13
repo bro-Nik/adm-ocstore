@@ -4,11 +4,12 @@ from datetime import datetime, time
 from flask import abort, render_template, redirect, url_for, request, session
 from flask_login import login_required
 
+from clim.utils import actions_in
 from clim.crm.booking.utils import get_event_booking
 
 from ..stock.utils import get_consumables_categories_ids
-from ..stock.models import Stock, StockMovement, StockProduct
-from ..utils import actions_in, dt_to_str, smart_int
+from ..stock.models import Stock, StockProduct
+from ..utils import smart_int
 from ..models import Product, db, OptionValueDescription, ProductDescription, \
     Option, OptionValue, Category
 from .models import Deal, DealStage
@@ -22,10 +23,15 @@ def update_filter():
     return ''
 
 
-@bp.route('/<string:view>', methods=['GET'])
-@bp.route('/', methods=['GET'])
+@bp.route('/<string:view>', methods=['GET', 'POST'])
+@bp.route('/', methods=['GET', 'POST'])
 @login_required
 def deals(view=None):
+    if request.method == 'POST':
+        actions_in(request.data, get_deal)
+        db.session.commit()
+        return ''
+
     if not view or view not in ['kanban', 'list']:
         view = session.get('crm_view', 'kanban')
         return redirect(url_for('.deals', view=view))
@@ -229,14 +235,6 @@ def stage_update():
         db.session.commit()
 
     return redirect(url_for('deals'))
-
-
-@bp.route('/action', methods=['POST'])
-@login_required
-def deals_action():
-    actions_in(request.data, get_deal)
-    db.session.commit()
-    return ''
 
 
 @bp.route('/close_deal', methods=['GET'])

@@ -1,88 +1,69 @@
-{% if not request.args.get('only_content') %}
-  {% extends "base.html" %}
-  {% block title %}Склады{% endblock %}
-{% endif %}
+{% extends "base.html" %}
+{% set page_settings = {"title": "Склады", "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
 
 {% block content %}
-
 {% include 'stock/header.html' %}
+<form id="Stocks" class="d-grid gap-3" action="{{ url_for('.stocks_action') }}">
 
-<div class="row">
-  <div class="d-flex align-items-center">
-    <h3 class="mb-0">Склады</h3>
-    <div class="ms-auto">
-      <button class="btn btn-primary open-modal" type="button" data-modal-id="StockSettingsModal"
-        data-url="{{ url_for('.stock_settings') }}">Добавить</button>
-    </div>
-  </div>
-</div>
+  {# Блок названия и кнопок #}
+  {% set heading_btns %}
+    <a class="btn btn-primary" data-modal-id="StockSettingsModal" data-url="{{ url_for('.stock_settings') }}">Добавить</a>
+  {% endset %}
+  {{ m.heading("Склады", heading_btns) }}
 
-<div class="row">
-  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-    <div class="card h-100">
-      <div class="table-responsive">
-        <form id="Stocks" action="{{ url_for('.stocks_action') }}">
-          <table class="table text-nowrap">
-            <thead>
-              <tr>
-                <th class="main-tab-checkbox">
-                  <input class="form-check-input check-all" type="checkbox">
-                </th>
-                <th>Название</th>
-                <th>Товаров на сумму</th>
-                <th>Сортировка</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% set var = namespace(count=0, sum=0) %}
+  {# Блок таблицы #}
+  {% set table %}
+    <thead>
+      <tr>
+        <th class="checkbox"><input class="form-check-input check-all" type="checkbox"></th>
+        <th>Название</th>
+        <th>Товаров на сумму</th>
+        <th>Сортировка</th>
+      </tr>
+    </thead>
 
-              {% for stock in stocks %}
-                {% set var.sum = 0 %}
-                <tr>
-                    <td class="text-average main-tab-checkbox">
-                      <input class="form-check-input to-check" type="checkbox" value="{{ stock.stock_id }}">
-                    </td>
+    <tbody>
+      {% set var = namespace(count=0, sum=0) %}
 
-                    <td>
-                      <div class="text-inherit open-modal"  data-modal-id="StockSettingsModal"
-                        data-url="{{ url_for('.stock_settings', stock_id=stock.stock_id) }}">
-                        {{ stock.name }}
-                      </div>
-                    </td>
+      {% for stock in stocks %}
+        {% set var.sum = 0 %}
+        <tr>
+          {# Чекбокс #}
+          <td class="checkbox">{{ m.checkbox(stock.stock_id) }}</td>
 
-                    <td>
-                      {% for product in stock.products %}
-                        {% set var.sum = var.sum + product.quantity * product.main_product.cost %}
-                      {% endfor %}
-                      {{ var.sum|int|money }} ₽
-                    </td>
+          {# Ссылка на склад #}
+          <td>
+            <div class="text-inherit" data-modal-id="StockSettingsModal"
+              data-url="{{ url_for('.stock_settings', stock_id=stock.stock_id) }}">
+              {{ stock.name }}
+            </div>
+          </td>
 
-                    <td>{{ stock.sort }}</td>
+          <td>
+            {% for product in stock.products %}
+              {% set var.sum = var.sum + product.quantity * product.main_product.cost %}
+            {% endfor %}
+            {{ var.sum|int|money }} ₽
+          </td>
 
-                  </tr>
-              {% endfor %}
+          <td>{{ stock.sort }}</td>
 
-            </tbody>
-          </table>
+        </tr>
+      {% endfor %}
 
-          <!-- Actions buttons -->
-          <div class="sticky-bottom-buttons">
-            <button class="btn btn-sm rounded-3 open-modal-confirmation" type="button"
-              data-action="delete" data-title="Удалить склады?"
-              data-text="Будут удалены выбранные склады">
-              <i data-feather="trash" class="icon-xs"></i>
-              Удалить
-            </button>
-          </div>
+    </tbody>
+    {% set products = stocks %}
+    {% include 'pagination.html' %}
+  {% endset %}
+  {{ m.table(table) }}
 
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
+  {# Кнопки действий таблицы #}
+  {% set table_btns %}
+    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="delete"
+      data-title="Удалить склады?" data-text="Будут удалены выбранные склады" data-after="update">Удалить</button>
+  {% endset %}
+  {{ m.table_actions(table_btns) }}
 
-{% set products = stocks %}
-{% include 'pagination.html' %}
-
-{% include 'flash_messages.html' %}
+</form>
 {% endblock %}

@@ -1,0 +1,129 @@
+{# Jinja2 #}
+
+{# Блок названия и кнопок #}
+{% macro heading(heading, btns='') %}
+  <div class="row">
+    <div class="col-lg-12 col-md-12 col-12">
+      <div>
+        <div class="d-flex align-items-center">
+          <div class="mb-2 mb-lg-0">
+            <h3 class="mb-0">{{ heading }}</h3>
+          </div>
+          <div class="ms-auto d-flex gap-2">{{ btns }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+{# Блок таблицы #}
+{% macro table(table, btns='', attrs='') %}
+  <div class="row">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="card h-100">
+        <div class="table-responsive">
+          <table class="table text-nowrap" {{ attrs }}>{{ table }}</table>
+          {% if btns %}
+            <div class="d-flex">
+              <div>
+                <div class="m-3 gap-2 justify-content-start actions form-actions">
+                  Отмеченно: <span class="checks-count"></span>
+                  <div class="m-3 gap-2 d-flex justify-content-start actions">
+                    <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
+                  </div>
+                </div>
+              </div>
+              <div class="m-3 ms-auto gap-2">{{ btns }}</div>
+            </div>
+          {% endif %}
+        </div>
+        {% if products and products.pages %}
+          {% include 'pagination.html' %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+{# Ссылка #}
+{% macro a(text, class='', attrs='') %}
+  <a class="{{ class }}" {{ attrs }}>{{ text }}</a>
+{% endmacro %}
+
+{# Чекбокс #}
+{% macro checkbox(id) %}
+  <input class="form-check-input to-check" type="checkbox" value="{{ id }}">
+{% endmacro %}
+
+{# Блок меню #}
+{% macro menu_head(items) %}
+  <div class="row">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
+        {% for item in items %}
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {{ item.class }}" id="pills-{{ item.key }}-tab" data-bs-toggle="pill" data-bs-target="#pills-{{ item.key }}"
+              role="tab" aria-controls="pills-{{ item.key }}" aria-selected="true">{{ item.text }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+{% endmacro %}
+
+{# Блок вкладок меню #}
+{% macro menu_tabs(tabs) %}
+  <div class="row">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="tab-content" id="pills-tabContent">
+        {{ tabs }}
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+{# Блок вкладок меню #}
+{% macro menu_tab(key, tab, class='') %}
+  <div class="tab-pane fade {{ class }}" id="pills-{{ key }}" role="tabpanel" aria-labelledby="pills-{{ key }}-tab" tabindex="0">
+    {{ tab }}
+  </div>
+{% endmacro %}
+
+{# Переход по внешней ссылке #}
+{% macro external_link(url) %}
+<a class="d-flex align-items-start" target="_blank" href="{{ url }}">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-up-right icon-xxs" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"/><path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"/></svg>
+</a>
+{% endmacro %}
+
+{# Кнопки действий таблицы #}
+{% macro table_actions(btns) %}
+  <div class="sticky-bottom form-actions">
+    <div class="col-12">
+      <div class="bg-white h-100 d-flex gap-2 align-items-center align-items-center">
+        <span class="ms-5">Отмечено:</span>
+        <span class="checks-count"></span>
+        <a class="ms-3 decheck-all text-secondary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>
+        </a>
+        <div class="vr my-3"></div>
+        <div class="d-flex gap-3">{{ btns }}</div>
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+{# Кнопки действий формы #}
+{% macro form_actions(active_btns=None) %}
+  <div class="sticky-bottom-box">
+    {% if active_btns %}
+      <div class="sticky-bottom bg-white py-2 active">{{ active_btns }}</div>
+    {% endif %}
+    <div class="sticky-bottom change bg-white py-2">
+      <button type="submit" class="btn btn-salato rounded-3" data-after="close">Сохранить</button>
+      <button type="submit" class="btn btn-transparent" data-after="update">Сохранить и остаться</button>
+      <button type="reset" class="btn btn-transparent">Отмена</button>
+    </div>
+  </div>
+{% endmacro %}
+

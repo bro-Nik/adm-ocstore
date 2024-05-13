@@ -1,0 +1,142 @@
+{% extends "product/base.html" %}
+{% set page_name = 'Товары' %}
+
+{% block table %}
+<form class="" id="Products" method="post" action="{{ url_for('.products', path=request.args.get('path')) }}">
+  <table class="table text-nowrap">
+    <thead>
+      <tr>
+        <th>Название</th>
+        {% for attribute in attributes_in_products %}
+          <th>{{ attribute }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+
+    <tbody>
+      {% set var = namespace(group_count=0, group_name='') %}
+
+      {% for product in products %}
+        {% for attribute in product.attributes if attribute.attribute_id == session.get('group_attribute')|int %}
+          {% if attribute.text != var.group_name %}
+            {% set var.group_count = var.group_count + 1 %}
+            {% set var.group_name = attribute.text %}
+            <tr>
+              <td colspan=1>
+                <b class="cursor-pointer" onclick="Hidden('{{ var.group_count }}')">{{ attribute.text }}</b>
+              </td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+
+        <tr class="group-{{ var.group_count|string }}">
+          <td class="text-average">
+            {{ product.description.name }}
+            <a class="" target="_blank" href="https://climkey.ru?product_id={{ product.product_id }}">
+              <i class="icon-xxs" data-feather="external-link"></i>
+            </a>
+          </td>
+            {% for attribute in attributes_in_products %}
+            {% for product_attribute in product.attributes if product_attribute.main_attribute.description.name == attribute %}
+              <td>{{ product_attribute.text }}</td>
+            {% else %}
+              <td>-</td>
+            {% endfor %}
+            {% endfor %}
+          <td class="">{{ product.quantity }}</td>
+          <td class="">{{ product.viewed }}</td>
+          <td class="">{{ product.isbn }}</td>
+          <td class="">{{ product.ean }}</td>
+          <td class="">{{ product.jan }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <input type="hidden" name="products-count" value="{{ var.product_count }}">
+  <div class="m-3 d-grid gap-2 d-flex justify-content-end to-show hidden-btns visually-hidden">
+    <div class="col-md-4">
+      <input type="text" class="form-control" name="other">
+    </div>
+    <div class="col-md-2">
+        <select class="selectpicker" data-width="100%" data-none-selected-text = "Что делать?" name="action">
+          <option></option>
+
+          <optgroup label="Варианты товаров">
+            <option value="prodvar_update">Обновить варианты</option>
+          </optgroup>
+
+          <optgroup label="Поля">
+            {% for field in ['EAN', 'JAN', 'ISBN'] %}
+              <option value="clean_field_{{ field|lower }}">Очистить {{ field }}</option>
+            {% endfor %}
+          </optgroup>
+
+          <optgroup label="Изменить статус">
+            {% for status in stock_statuses %}
+              <option value="{{ 'stock_status_' + status.stock_status_id|string }}">{{ status.name }}</option>
+            {% endfor %}
+            <option value="stock_status_price_request">Запрос цены</option>
+          </optgroup>
+
+          <optgroup label="Удалить">
+            {% set delete = {'С редиректом на категорию': 'redirect_to_category',
+                             'С редиректом из поля': 'redirect_to',
+                             'Без редиректа': 'not_redirect'} %}
+            {% for value in delete %}
+              <option value="{{ 'delete_' + delete[value] }}">{{ value }}</option>
+            {% endfor %}
+          </optgroup>
+        </select>
+    </div>
+    <button class="btn rounded-3 btn-primary" type="submit">OK</button>
+    <button class="btn rounded-3 btn-secondary" type="button" onclick="changeOptions('cancel')">Отмена</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+// Чекбоксы принятия ссылки
+function Check(group) {
+  if (group){
+    // Выбор группы
+    var status = document.getElementById(`${'group-' + group}`).checked;
+    var toCheck = document.querySelectorAll(`${'.to-check.group-' + group}`);
+  }
+  else {
+    var status = document.getElementById('check_all').checked;
+    var toCheck = document.querySelectorAll('.to-check');
+  }
+  toCheck.forEach(element => {
+    element.checked = status;
+  });
+  ShowButtons('show');
+}
+
+function ShowButtons(status = none) {
+  var Buttons = document.querySelectorAll('.hidden-btns');
+    Buttons.forEach(element => {
+      if (status === 'show') {element.classList.remove("visually-hidden");}
+      else {element.classList.add("visually-hidden");}
+    });
+}
+// Клик по чекбоксам
+document.addEventListener("click", function(e) {
+  if (e.target.classList.contains('to-check')) {
+  ShowButtons('show');
+  }
+});
+
+// Скрыть товары атрибута
+function Hidden(attribute) {
+  var toHidden = document.querySelectorAll(`${'.group-' + attribute}`);
+    toHidden.forEach(element => {
+      if (element.classList.contains('visually-hidden'))
+        element.classList.remove("visually-hidden");
+      else 
+        element.classList.add("visually-hidden");
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<div id="ShopProducts" class="d-grid gap-3">
+
+  {# Блок названия и кнопок #}
+  {% set heading %}<span class="text-primary">{{ category.shop.name }}</span> | {{ category.name }} | Тестовый парсинг{% endset %}
+  {{ m.heading(heading) }}
+
+  {# Блок таблицы #}
+  {% set table %}
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Цена</th>
+        <th>Ссылка</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in (products or [])|sort(attribute='name') %}
+      <tr>
+        <td>{{ product.name }}</td>
+        <td>{{ product.price }}</td>
+
+        <td class="d-flex gap-2">
+          {{ product.link }}
+          {{ m.external_link(product.link) }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  {% endset %}
+  {{ m.table(table) }}
+</div>
+
+{% endblock %}

@@ -2,8 +2,8 @@ import json
 from typing import Callable
 
 from .app import db
-from .models import AttributeDescription, Category, Module, OtherProduct, \
-    Product, ProductAttribute, ProductToCategory
+from .models import AttributeDescription, Category, Module, \
+    Product, ProductAttribute
 
 
 def json_dumps(data, default=None):
@@ -34,31 +34,44 @@ def get_product(product_id: int):
         db.select(Product).filter_by(product_id=product_id)).scalar()
 
 
-def get_main_category(product_id):
-    return db.session.execute(
-        db.select(ProductToCategory)
-        .filter_by(product_id=product_id, main_category=1)).scalar()
+class DiscountProducts:
+    def __init__(self):
+        self.attributes = None
+
+    def load(self):
+        if not self.attributes:
+            # Получем метки
+            label = db.session.execute(
+                db.select(AttributeDescription).filter_by(name='Метка')).scalar()
+            self.attributes = list(db.session.execute(
+                    db.select(ProductAttribute)
+                    .filter(ProductAttribute.attribute_id == label.attribute_id,
+                            ProductAttribute.text.contains('Спецпредложение'))
+            ).scalars())
+
+    def get(self):
+        self.load()
+        attrs = self.attributes
+        return [attribute.product_id for attribute in attrs] if attrs else []
 
 
-def get_discount_products():
-    # Получем метки
-    label = db.session.execute(
-        db.select(AttributeDescription).filter_by(name='Метка')).scalar()
-    attributes = db.session.execute(
-            db.select(ProductAttribute)
-            .filter_by(attribute_id=label.attribute_id)).scalars()
+def smart_int(num, default=0):
+    ''' Float без точки, если оно целое '''
+    if not num:
+        return default
 
-    # Отделяем акционные товары
-    discount_product_ids = []
-    for attribute in attributes:
-        if 'Спецпредложение' in attribute.text:
-            discount_product_ids.append(attribute.product_id)
-    return discount_product_ids
+    try:
+        num = float(num)
+        num_abs = abs(num)
+        if abs(num_abs - round(num_abs)) <= 0:
+            num = round(num)
 
+        return num
+    except ValueError:  # строка не является float / int
+        return default
 
-def get_other_product(product_id: int):
-    return db.session.execute(
-        db.select(OtherProduct).filter_by(other_product_id=product_id)).scalar()
+    except TypeError:  # строка не является float / int
+        return default
 
 
 def actions_in(data_str: bytes, function: Callable, **kwargs) -> None:

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<div id="ShopProducts" class="d-grid gap-3">
+
+  {# Блок названия и кнопок #}
+  {% set heading %}<span class="text-primary">{{ shop.name }}</span> {{ ' | ' + category.name if category }}{% endset %}
+  {{ m.heading(heading) }}
+
+  {# Блок фильтра #}
+  <div class="row">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="card h-100">
+        <div class="card-body">
+          <form id="Filter" class="update-after-change" data-url="{{ url_for('.category_products', shop_id=shop.shop_id) }}">
+            <div class="row g-2">
+
+              <div class="col-md-3">
+                <label class="form-label h7">Категория</label>
+                <select class="general-select" name="category_id"
+                  data-url="{{ url_for('.ajax_categories', shop_id=shop.shop_id) }}" data-placeholder="Все" data-width="100%">
+                  {% if category %}
+                    <option selected value="{{ category.other_category_id }}">{{ category.name }}</option>
+                  {% endif %}
+                </select>
+              </div>
+
+              <div class="col-md-3">
+                <div class="mb-1">
+                  <label class="form-label h7">Изменения</label>
+                  <select class="general-select" data-width="100%" data-placeholder="Все"
+                    name="changes" data-class="bg-light" data-width="100%">
+                    <option value="">Все</option>
+
+                    {% if new_product_ids %}
+                      <option value="new_product" {{ 'selected' if changes=='new_product' }}>Новые товары</option>
+                    {% endif %}
+
+                    {% if new_price_ids %}
+                      <option value="new_price" {{ 'selected' if changes=='new_price' }}>Цена обновилась</option>
+                    {% endif %}
+
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <div class="mb-1">
+                  <label class="form-label h7">Поиск</label>
+                  <input type="text" class="form-control" name="search" value="{{ search }}">
+                </div>
+              </div>
+
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Блок таблицы #}
+  {% set table %}
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Цена</th>
+        <th>Наша цена</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in products|sort(attribute='name') %}
+      <tr>
+        {# Название и ссылка #}
+        <td class="d-flex gap-2">
+          {{ product.name }}
+          {{ m.external_link(product.link) }}
+        </td>
+
+        <td>{{ product.price }} {{ '(' + product.text|how_long_ago + ')' if product.text }}</td>
+        <td>{{ product.product.price|smart_int }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  {% endset %}
+  {{ m.table(table) }}
+
+</div>
+{% endblock %}

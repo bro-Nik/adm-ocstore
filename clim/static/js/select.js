@@ -1,12 +1,12 @@
 // Ajax Select// General Select
-function UpdateGeneralSelects($element = $("body")) {
+function UpdateGeneralSelects($element=$("body")) {
   $element.find(".general-select").each(function () {
     UpdateSelect($(this));
   });
 }
 
 // Multiple Select Names > Count
-function UpdateMultipleSelectCount($element = $("body")) {
+function UpdateMultipleSelectCount($element=$("body")) {
   $element.find("select.show-count-selected").each(function () {
     MultipleSelectCount($(this));
   });
@@ -21,9 +21,7 @@ function MultipleSelectCount($select) {
     if ($count_span.length) {
       $count_span.html("+ " + count);
     } else {
-      $select
-        .parent()
-        .find(".select2-selection.select2-selection--multiple")
+      $select.parent().find(".select2-selection.select2-selection--multiple")
         .append($(`<span class="multiple-count" >+ ${count}</span>`));
     }
   }
@@ -119,7 +117,7 @@ function UpdateContactSelect($element=$("body")) {
         var role = getUrlArg($contactSelect.data("url"), "role");
         var url = `${url_contact_info}${url_contact_info.indexOf("?") > 0 ? "&" : "?"}role=${role}`;
         $box.append(
-          `<div class='select-new-container open-modal' data-modal-id="ContactInfoModal" data-url="${url}">
+          `<div class='select-new-container' data-modal-id="ContactInfoModal" data-url="${url}">
             <div class='select-new-text'>создать новый контакт</div>
           </div>`,
         );

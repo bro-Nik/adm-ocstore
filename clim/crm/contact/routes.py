@@ -1,9 +1,10 @@
 import json
 
-from flask import render_template, request
+from flask import render_template, request, url_for
 from flask_login import login_required
 
-from ..utils import actions_in
+from clim.utils import actions_in
+
 from ..models import db
 from .models import Contact
 from .utils import ROLES, get_contact
@@ -64,12 +65,13 @@ def contact_info():
         if not contact.contact_id:
             db.session.add(contact)
 
-        contact.name = request.form.get('name', '')
-        contact.phone = request.form.get('phone', '')
-        contact.email = request.form.get('email', '')
-        contact.role = request.form.get('role', '')
+        data = json.loads(request.data) if request.data else {}
+        contact.name = data.get('name', '')
+        contact.phone = data.get('phone', '')
+        contact.email = data.get('email', '')
+        contact.role = data.get('role', '')
         db.session.commit()
-        return ''
+        return {'redirect': url_for('.contact_info', contact_id=contact.contact_id)}
 
     return render_template('contact/contact/main.html', contact=contact,
                            roles=ROLES)

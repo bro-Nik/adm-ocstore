@@ -1,10 +1,7 @@
-{% if not request.args.get('only_content') %}
-    {% extends "modal_base.html" %}
-    {% set modal_fullscreen = True %}
-{% endif %}
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
 
 {% block content %}
-
 <link rel="stylesheet" href="{{ url_for('.static', filename='time-picker/style.css') }}" />
 
 <div id="BookingPage" class="d-grid gap-3">

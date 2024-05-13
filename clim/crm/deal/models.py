@@ -92,29 +92,27 @@ class Deal(db.Model, JsonMixin):
 
         def change_quantity(products):
             nonlocal errors
-            for product in products:
-                if product.get('type') == 'service':
+            for p in products:
+                if p.get('type') == 'service':
                     continue
 
-                if not product.get('stock_id'):
-                    errors.append(f'Не указан склад для {product["name"]}')
+                if not p.get('stock_id'):
+                    errors.append(f'Не указан склад для {p["name"]}')
                     continue
 
-                product_in_stock = get_product_in_stock(product['id'],
-                                                        product['stock_id'])
+                product_in_stock = get_product_in_stock(p['id'], p['stock_id'])
                 if not product_in_stock:
-                    product_in_stock = new_product_in_stock(product['id'],
-                                                            product['stock_id'])
+                    product_in_stock = new_product_in_stock(p['id'], p['stock_id'])
                     db.session.flush()
 
-                product_in_stock.quantity -= float(product['quantity'] or 0) * d
+                product_in_stock.quantity -= float(p['quantity'] or 0) * d
 
                 if product_in_stock.quantity < 0:
                     errors.append(f'Нет достаточного количества на складе '
-                                  f'{product["stock_name"]} - {product["name"]}')
+                                  f'{p["stock_name"]} - {p["name"]}')
                     continue
 
-                # delete product if quantity 0
+                # Удалить, если нет остатков
                 if product_in_stock.quantity == 0:
                     db.session.delete(product_in_stock)
 

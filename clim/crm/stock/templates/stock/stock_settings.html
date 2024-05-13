@@ -1,21 +1,13 @@
-{% if not request.args.get('only_content') %}
-  {% extends "modal_base.html" %}
-  {% set modal_fullscreen = True %}
-{% endif %}
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
 
 {% block content %}
+<form id="StockSettings" class="d-grid gap-3" action="{{ url_for('.stock_settings', stock_id=stock.stock_id) }}">
 
+  {# Блок названия и кнопок #}
+  {{ m.heading(stock.name if stock else 'Добавить новый') }}
 
-<div class="row">
-  <div class="d-flex align-items-center">
-    <h3 class="mb-0">{{ stock.name if stock else 'Добавить новый' }}</h3>
-    <div class="ms-auto">
-      <button type="submit" form="StockSettings" class="btn btn-primary">Сохранить</button>
-    </div>
-  </div>
-</div>
-
-<form id="StockSettings" data-url="{{ url_for('.stock_settings', stock_id=stock.stock_id if stock else None) }}">
   <div class="row">
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
       <div class="card h-100">
@@ -47,7 +39,8 @@
       </div>
     </div>
   </div>
+
+  {# Кнопки действий формы #}
+  {{ m.form_actions() }}
 </form>
-<script>
-</script>
 {% endblock %}

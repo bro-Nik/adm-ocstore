@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "Посещаемость товаров", "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<div class="d-grid gap-3">
+
+  {# Блок названия и кнопок #}
+  {% set heading_btns %}
+    <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#dangerModal">Сбросить</a>
+  {% endset %}
+  {{ m.heading("Посещаемость товаров", heading_btns) }}
+
+  {# Блок таблицы #}
+  {% set table %}
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Посещаемость</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for product in products %}
+        <tr>
+          <td>{{ product.description.name }}</td>
+          <td>{{ product.viewed }}</td>
+        </tr>
+      {% endfor %}
+
+    </tbody>
+  {% endset %}
+  {{ m.table(table) }}
+</div>
+{% endblock %}

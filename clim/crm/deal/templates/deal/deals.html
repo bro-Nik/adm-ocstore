@@ -1,117 +1,87 @@
-{% if not request.args.get('only_content') %}
-  {% extends "base.html" %}
-  {% block title %}Сделки{% endblock %}
-  {% block head %}
-    {{ super() }}
-    <link rel="stylesheet" href="{{ url_for('.static', filename='css/style.css') }}" />
-  {% endblock %}
-{% endif %}
+{% extends "base.html" %}
+{% set page_settings = {"title": "Сделки", "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
 
+{% block head %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('.static', filename='css/style.css') }}">
+{% endblock %}
 
 {% block content %}
+<form class="d-grid gap-3" id="DealsForm" action="{{ url_for('.deals') }}">
 
-<form class="" id="DealsForm" method="post" action="{{ url_for('.deals_action') }}">
-  <div class="d-grid gap-3">
+  {# Блок названия и кнопок #}
+  {% set heading_btns %}
+    <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
 
-    <div class="row">
-      <div class="col-lg-12 col-md-12 col-12">
-        <div>
-          <div class="d-flex align-items-center mb-2">
-            <div class="col-3 me-5 mb-lg-0">
-              <h3 class="mb-0">Сделки</h3>
-            </div>
-
-            <div class="col-md-3 mb-lg-0 d-flex align-items-center ms-5">
-              <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
-            </div>
-
-            {% set filter = session.get('stage_type', '') %}
-
-            <div class="col-md-3 mb-lg-0 d-flex gap-2 align-items-center ms-5">
-              <div class="form-check">
-                <label class="form-check-label">
-                  <input class="form-check-input stage-type" type="checkbox" value="in_work" {{ 'checked' if 'in_work' in filter }}>
-                  В работе
-                </label>
-              </div>
-              <div class="form-check">
-                <label class="form-check-label">
-                  <input class="form-check-input stage-type" type="checkbox" value="end" {{ 'checked' if 'end' in filter }}>
-                  Завершенные
-                </label>
-              </div>
-              <input type="hidden" name="stage_type">
-            </div>
-            <script>
-              $('body').on('change', 'input.stage-type', function () {
-                var checked = [];
-                $('input.stage-type:checked').each(function() {
-	                checked.push($(this).val());
-                });
-                $('[name=stage_type]').val(JSON.stringify(checked));
-
-                $.ajax({
-                  type: "POST",
-                  url: '{{ url_for('.update_filter') }}',
-                  data: $('[name=stage_type]').serialize(),
-                  success: function () {
-                    window.location.href = "{{ url_for('.deals') }}";
-                  }
-                });
-              })
-            </script>
-
-            <div class="ms-auto d-flex gap-2">
-              <a class="btn btn-primary open-modal" data-modal-id="DealInfoModal"
-                data-url="{{ url_for('.deal_info', deal_id=0) }}" >Создать</a>
-            </div>
-          </div>
-        </div>
+    {% set filter = session.get('stage_type', '') %}
+    <div class="d-flex gap-3 align-items-center col-auto">
+      <div class="form-check">
+        <label class="form-check-label">
+        <input class="form-check-input stage-type" type="checkbox" value="in_work" {{ 'checked' if 'in_work' in filter }}>В работе</label>
+      </div>
+      <div class="form-check">
+        <label class="form-check-label">
+        <input class="form-check-input stage-type" type="checkbox" value="end" {{ 'checked' if 'end' in filter }}>Завершенные</label>
       </div>
     </div>
 
-    <div>
-      <hr>
+    <input type="hidden" name="stage_type">
+    <script>
+      $('body').on('change', 'input.stage-type', function () {
+        var checked = [];
+        $('input.stage-type:checked').each(function() {
+	        checked.push($(this).val());
+        });
+        $('[name=stage_type]').val(JSON.stringify(checked));
 
-      <div class="row align-items-center">
-        <div class="">
-          <!-- Bg -->
-          <div class="bg-gray-300 rounded-pill d-inline-block">
-            <!-- nav -->
-            <ul class="nav nav-lt-tab" id="pills-tab" role="tablist">
+        $.ajax({
+          type: "POST",
+          url: '{{ url_for('.update_filter') }}',
+          data: $('[name=stage_type]').serialize(),
+          success: function () {
+            window.location.href = "{{ url_for('.deals') }}";
+          }
+        });
+      })
+    </script>
 
-              {% set menu = [
-              {'url': url_for('.deals', view='kanban'), 'name': 'Канбан'},
-              {'url': url_for('.deals', view='list'), 'name': 'Список'}
-              ] %}
+    <a class="btn btn-primary" data-modal-id="DealInfoModal" data-url="{{ url_for('.deal_info', deal_id=0) }}" >Создать</a>
+  {% endset %}
+  {{ m.heading("Сделки", heading_btns) }}
 
-              {% for item in menu %}
-                <li class="nav-item">
-                  <a class="nav-link p-0 link-secondary {{ 'active' if item['url'] in request.path }}"
-                    href="{{ item['url'] }}">{{
-                    item['name']}}</a>
-                </li>
-              {% endfor %}
 
-            </ul>
-          </div>
+  <div>
+    <hr>
+
+    <div class="row align-items-center">
+      <div class="">
+        <div class="bg-gray-300 rounded-pill d-inline-block">
+          <ul class="nav nav-lt-tab" id="pills-tab" role="tablist">
+
+            {% set menu = {'Канбан': url_for('.deals', view='kanban'),
+                           'Список': url_for('.deals', view='list')} %}
+
+            {% for name, url in menu.items() %}
+              <li class="nav-item">
+                <a class="nav-link p-0 link-secondary {{ 'active' if url in request.path }}" href="{{ url }}">{{ name }}</a>
+              </li>
+            {% endfor %}
+
+          </ul>
         </div>
       </div>
     </div>
-
-    {% block deals_content %}
-    {% endblock %}
-
   </div>
 
-  <!-- Actions buttons -->
-  <div class="sticky-bottom-buttons">
-    <button class="btn btn-sm rounded-3 open-modal-confirmation" type="button"
-      data-action="delete" data-title="Удалить сделки?">
-      <i data-feather="trash" class="icon-xs"></i>
-      Удалить
-    </button>
-  </div>
+  {% block deals_content %}{% endblock %}
+
+  {# Кнопки действий таблицы #}
+  {% set table_btns %}
+    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="delete"
+      data-title="Удалить сделки?" data-text="Будут удалены выбранные магазины" data-after="update">Удалить</button>
+  {% endset %}
+  {{ m.table_actions(table_btns) }}
 
 </form>
 

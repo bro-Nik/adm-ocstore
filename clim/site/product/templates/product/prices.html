@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "Цены", "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<form id="Products" class="d-grid gap-3" action="{{ url_for('.products_action_prices', page=request.args.get('page')) }}">
+
+  {# Блок названия и кнопок #}
+  {% set heading_btns %}
+    {# Меню #}
+    <div class="dropdown">
+      <button class="btn btn-primary" type="button" data-bs-toggle="dropdown">Действия</button>
+      <ul class="dropdown-menu">
+        <button class="dropdown-item" type="submit" name="all_products" value="normal_price">Для всех товаров - Обычная цена</option>
+        <button class="dropdown-item" type="submit" name="all_products" value="special_price">Для всех товаров - Спец цена</option>
+        <button class="dropdown-item" type="submit" name="by_filter" value="normal_price">Для отфильтрованных - Обычная цена</button>
+        <button class="dropdown-item" type="submit" name="by_filter" value="special_price">Для отфильтрованных - Спец цена</button>
+      </ul>
+    </div>
+    <a class="btn btn-primary" data-modal-id="PricesSettingsModal" data-url="{{ url_for('.products_prices_settings') }}">Настройки</a>
+  {% endset %}
+  {{ m.heading("Цены", heading_btns) }}
+
+  {# Блок фильтра #}
+  {% include 'filter.html' %}
+
+  {# Блок таблицы #}
+  {% set table %}
+    <thead>
+      <tr>
+        <th class="sticky-table">Название</th>
+        <th>Цена</th>
+        {% for shop in other_shops %}
+          <th>
+            <input id="shop-{{ shop.shop_id }}" class="form-check-input check-group" type="checkbox">
+            {{ shop.name }}
+          </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% set var = namespace(group_count=0, group_name='') %}
+
+      {% for product in products %}
+        {% for attribute in product.attributes if attribute.attribute_id == session.get('group_attribute')|int %}
+          {% if attribute.text != var.group_name %}
+            {% set var.group_count = var.group_count + 1 %}
+            {% set var.group_name = attribute.text %}
+            <tr>
+              <td><b>{{ attribute.text }}</b></td>
+              <td></td>
+              {% for shop in other_shops %}
+                <td>
+                  <input id="shop-{{ shop.shop_id }}-group-{{ var.group_count }}" class="form-check-input check-group" type="checkbox">
+                </td>
+              {% endfor %}
+            </tr>
+          {% endif %}
+        {% endfor %}
+
+        <tr>
+          <td class="sticky-table">{{ product.description.name }}</td>
+          <td>
+            {% if product.special_offers %}
+              {% set special_price = (product.special_offers|sort(attribute='price'))[0].price %}
+              {{ special_price|smart_int }}
+              <del>{{ product.price|smart_int }}</del>
+            {% else %}
+              {{ product.price|smart_int }}
+            {% endif %}
+          </td>
+
+          {% for shop in other_shops %}
+            <td>
+              {% if product.other_shop %}
+                {% for other_product in product.other_shop %}
+                  {% if other_product.shop_id == shop.shop_id %}
+                    {% if other_product.link_confirmed %}
+                      {% if special_price and other_product.price|int == special_price|int %}
+                        <span class="text-success">{{ other_product.price }}</span>
+                      {% elif not special_price and other_product.price|int == product.price|int %}
+                        <span class="text-success">{{ other_product.price }}</span>
+                      {% else %}
+                        <input class="form-check-input to-check shop-{{ shop.shop_id }} shop-{{ shop.shop_id }}-group-{{ var.group_count }}" type="radio"
+                        value="{{ product.product_id }}-{{ other_product.price }}">
+                        <span class="text-danger">{{ other_product.price }}</span>
+                      {% endif %}
+                      {{ '(' + other_product.text|how_long_ago + ')' if other_product.text }}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  {% endset %}
+  {{ m.table(table) }}
+
+  {# Кнопки действий таблицы #}
+  {% set table_btns %}
+    <select class="general-select" data-width="300px" data-class="border select-sm rounded-3" data-placeholder="Что делать?" name="manual">
+      <option></option>
+      <optgroup label="Выбранные цены">
+        <option value="normal_price">Обычная цена</option>
+        <option value="special_price">Спец цена</option>
+      </optgroup>
+    </select>
+
+    <button class="btn btn-sm rounded-3" type="submit" data-after="update">Применить</button>
+  {% endset %}
+  {{ m.table_actions(table_btns) }}
+
+</form>
+{% endblock %}

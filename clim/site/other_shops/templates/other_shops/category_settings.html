@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<form id="ShopCategories" class="d-grid gap-3" action="{{ url_for('.category_settings', shop_id=shop.shop_id, category_id=category.other_category_id) }}">
+  {% set parsing = category.parsing|to_json if category.parsing else {} %}
+
+  {# Блок названия и кнопок #}
+  {% set heading %}<span class="text-primary">{{ shop.name }}</span> | {{ category.name if category.other_category_id else 'Добавить категорию' }}{% endset %}
+  {{ m.heading(heading) }}
+
+  {# Блок настроек #}
+  <div class="row mb-8">
+    <div class="col-xl-3 col-lg-4 col-md-12 col-12">
+      <div class="mb-4 mb-lg-0">
+        <h4 class="mb-1">Настройки</h4>
+        <p class="mb-0 fs-5 text-muted">Настройки категории </p>
+      </div>
+    </div>
+
+    <div class="col-xl-9 col-lg-8 col-md-12 col-12">
+      <div class="card">
+        <div class="card-body">
+          <div>
+            <div class="mb-6">
+              <h4 class="mb-1">Основная информация</h4>
+            </div>
+
+            <div class="mb-3 row">
+              <div class="col-sm-3 mb-3">
+                <label for="name" class="form-label">Название категории</label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ category.name or '' }}" required>
+              </div>
+
+              <div class="col-sm-4">
+                <label for="url" class="form-label">URL</label>
+                <input type="url" class="form-control" placeholder="https://" id="url" name="url" value="{{ category.url or '' }}" required>
+              </div>
+
+              <div class="col-sm-3">
+                <label for="url" class="form-label">Родительская категория</label>
+                <select class="form-select" id="location" name="parent_id">
+                  <option></option>
+                  {% for cat in shop.categories %}
+                    <option {{ 'selected' if cat.other_category_id==category.parent_id }}
+                      value="{{ cat.other_category_id }}">{{ cat.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="col-sm-2">
+                <label for="sort" class="form-label">Сортировка</label>
+                <input type="number" class="form-control" id="sort" name="sort"
+                  value="{{ category.sort or '' }}">
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Блок настроек парсинга #}
+  <div class="row mb-8">
+    <div class="col-xl-3 col-lg-4 col-md-12 col-12">
+      <div class="mb-4 mb-lg-0">
+        <h4 class="mb-1">Настройки парсинга</h4>
+        <p class="mb-0 fs-5 text-muted">Парсинг цен и товаров </p>
+      </div>
+    </div>
+
+    <div class="col-xl-9 col-lg-8 col-md-12 col-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="mb-6">
+            <h4 class="mb-1">Парсинг</h4>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-4 col-form-label form-label">Блок с товарами</label>
+
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Тип элемента</span>
+                <input type="text" class="form-control" name="blocks_type" placeholder="div, ul, ..." value="{{ parsing['blocks_type'] }}">
+              </div>
+            </div>
+
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Класс элемента</span>
+                <input type="text" class="form-control" name="blocks_class" value="{{ parsing['blocks_class'] }}">
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="mb-3 row">
+            <label class="col-sm-4 col-form-label form-label">Блок названия</label>
+
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Тип элемента</span>
+                <input type="text" class="form-control" name="block_name_type" placeholder="div, ul, ..." value="{{ parsing['block_name_type'] }}">
+              </div>
+            </div>
+
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Класс элемента</span>
+                <input type="text" class="form-control" name="block_name_class" value="{{ parsing['block_name_class'] }}">
+              </div>
+            </div>
+
+            <div class="col-sm-4 mb-3"></div>
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Вложенный элемент</span>
+                <input type="text" class="form-control" placeholder="a, p, ..." name="block_name_inside" value="{{ parsing['block_name_inside'] }}">
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="mb-3 row">
+            <label class="col-sm-4 col-form-label form-label">Блок с ссылкой</label>
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Тип элемента</span>
+                <input type="text" class="form-control" name="block_link_type" placeholder="div, ul, ..." value="{{ parsing['block_link_type'] }}">
+              </div>
+            </div>
+
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Класс элемента</span>
+                <input type="text" class="form-control" name="block_link_class" value="{{ parsing['block_link_class'] }}">
+              </div>
+            </div>
+
+          </div>
+
+          <hr class="my-3">
+
+          <div class="mb-3 row">
+            <label class="col-sm-4 col-form-label form-label">Блок с ценой</label>
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Тип элемента</span>
+                <input type="text" class="form-control" name="block_price_type" placeholder="div, ul, ..." value="{{ parsing['block_price_type'] }}">
+              </div>
+            </div>
+
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Класс элемента</span>
+                <input type="text" class="form-control" name="block_price_class" value="{{ parsing['block_price_class'] }}">
+              </div>
+            </div>
+
+            <label class="col-sm-4 col-form-label form-label">Блок с ценой (вариант 2)</label>
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Тип элемента</span>
+                <input type="text" class="form-control" name="block_other_price_type" placeholder="div, ul, ..." value="{{ parsing['block_other_price_type'] }}">
+              </div>
+            </div>
+
+            <div class="col-sm-4 mb-3">
+              <div class="input-group">
+                <span class="input-group-text">Класс элемента</span>
+                <input type="text" class="form-control" name="block_other_price_class" value="{{ parsing['block_other_price_class'] }}">
+              </div>
+            </div>
+
+          </div>
+
+          <hr class="my-3">
+
+          <div class="mb-3 row">
+            <label class="col-sm-4 col-form-label form-label">Минус слова (разделитель запятая)</label>
+            <div class="col-md-8 col-12">
+              <textarea class="form-control" rows="5" name="minus">{{ parsing['minus'] }}</textarea>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Кнопки действий формы #}
+  {% if category.other_category_id %}
+    {% set btns %}
+    <button class="btn btn-transparent" type="button" onclick="copyCategory()">Копировать в новую</button>
+    <button class="btn btn-transparent" type="button" data-modal-id="TestProductsModal"
+      data-url="{{ url_for('.get_products_test', category_id=category.other_category_id) }}">Тестовый запрос</button>
+    {% endset %}
+  {% endif %}
+  {{ m.form_actions(btns) }}
+
+</form>
+
+<script>
+  // Копия категории
+  function copyCategory() {
+    $('form').attr('action', "{{ url_for('.category_settings', shop_id=shop.shop_id, category_id=None) }}");
+    $('#name').val($('#name').val() + ' (копия)').trigger("change");
+  }
+</script>
+
+{% endblock %}

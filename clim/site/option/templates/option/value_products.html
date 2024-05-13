@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<div id="ValueProducts" class="d-grid gap-3">
+
+  {# Блок названия и кнопок #}
+  {% set heading %} <span class="text-primary">{{ value.description.name }}</span> | Товары{% endset %}
+  {{ m.heading(heading) }}
+
+  {# Блок фильтра #}
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <div class="card h-100">
+
+      <div class="card-body">
+        <div id="Filter" class="update-after-change" action="{{ url_for('.value_products', option_id=option_id, value_id=value.option_value_id) }}">
+          <div class="row g-2">
+            <div class="col-md-2">
+              <div class="mb-1">
+                <label class="form-label h7">Производитель</label>
+
+                <select class="general-select show-count-selected" data-placeholder="Все" multiple name="manufacturers_ids">
+                  {% for manufacturer in manufacturers %}
+                    {% set id = manufacturer.manufacturer_id %}
+                    <option {{ 'selected' if filter.get('manufacturers_ids') and id|string in
+                      filter.get('manufacturers_ids') }} value="{{ id }}">{{ manufacturer.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+
+              </div>
+            </div>
+
+            <div class="col-md-2">
+              <div class="mb-1">
+                <label class="form-label h7">Опции</label>
+                <select class="general-select" name="options" data-width="100%">
+                  <option value="">Все</option>
+                  <option {{ 'selected' if filter.get('options')=='whith options' }} value="whith options">Товары с опциями</option>
+                  <option {{ 'selected' if filter.get('options')=='whithout options' }} value="whithout options">Товары без опций</option>
+                </select>
+              </div>
+            </div>
+
+            {% set per_page = session.get('results_per_page') %}
+            <div class="col-md-1">
+              <div class="mb-1">
+                <label class="form-label h7">Результатов</label>
+                <select class="general-select" name="per_page">
+                  {% for i in [20, 40, 60, 80, 100] %}
+                  <option {{ 'selected' if filter.get('per_page')|int==i }} value="{{ i }}">{{ i }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Блок таблицы #}
+  {% set table %}
+    <thead>
+      <tr>
+        <th class="checkbox"><input class="form-check-input check-all" type="checkbox"></th>
+        <th>Название</th>
+        <th>Опции</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% set group_attribute = namespace(name='') %}
+
+      {% for product in products %}
+        {% for attribute in product.attributes if attribute.attribute_id == filter.get('attribute_id')|int %}
+          {% if attribute.text != group_attribute.name %}
+            {% set group_attribute.name = attribute.text %}
+            <tr>
+              <td colspan=3><b>{{ attribute.text }}</b></td>
+            </tr>
+          {% endif %}
+      {% endfor %}
+
+      <tr>
+
+        {# Чекбокс #}
+        <td class="checkbox">{{ m.checkbox(product.product_id) }}</td>
+
+        <td class="sticky-table">{{ product.name }}</td>
+
+        <td>
+          {% for option in product.options %}
+            {{ option.product_option_value.product_option.description.name if option.product_option_value.product_option }}
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  {% endset %}
+  {{ m.table(table) }}
+
+  {% if other_products %}
+    {# Блок названия и кнопок #}
+    {% set heading %} <span class="text-primary">{{ value.description.name }}</span> | Товары{% endset %}
+    {{ m.heading("Товары не подходящие по фильтру") }}
+
+    {# Блок таблицы #}
+    {% set table %}
+      <thead>
+        <tr>
+          <th class="sticky-table"> Название </th>
+          <th></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for product in other_products %}
+          <tr>
+            <td class="sticky-table">{{ product.mpn }}</td>
+            <td>
+              {% for option in product.options %}
+                {{ option.product_option_value.product_option.description.name }}
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    {% endset %}
+    {{ m.table(table) }}
+  {% endif %}
+
+  {# Кнопки действий таблицы #}
+  {% set table_btns %}
+    <button class="btn btn-sm btn-transparent" type="button" data-action="option_to_products" data-after="update">Привязать</button>
+    <button class="btn btn-sm btn-transparent" type="button" data-action="delete" data-after="update">Отвязать</button>
+  {% endset %}
+  {{ m.table_actions(table_btns) }}
+
+</div>
+{% endblock %}

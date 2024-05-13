@@ -13,3 +13,5 @@ CATALOG_DOMAIN = os.environ.get('CATALOG_DOMAIN')
 
 IMAGE_PATH = os.environ.get('IMAGE_PATH')
 DOWNLOAD_PATH = os.environ.get('DOWNLOAD_PATH')
+
+PROXY_KEY = os.environ.get('PROXY_KEY')

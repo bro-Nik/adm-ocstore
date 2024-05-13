@@ -1,4 +1,25 @@
+from functools import cached_property
+import json
+import os
+from flask import current_app, flash
+
 from .app import db
+
+
+def delete(obj, orj_id_attr_name, attrs):
+    # Удаление зависимых данных
+    for attr in attrs:
+        to_del = getattr(obj, attr, None)
+        if to_del:
+            # Приводим к списку
+            to_del = to_del if isinstance(to_del, list) else [to_del]
+            for item in to_del:
+                if hasattr(item, orj_id_attr_name):
+                    setattr(item, orj_id_attr_name, None)
+                if hasattr(item, 'delete'):
+                    item.delete()
+                else:
+                    db.session.delete(item)
 
 
 class Product(db.Model):
@@ -53,23 +74,112 @@ class Product(db.Model):
     suppler_code = db.Column(db.Integer, default=0)
     suppler_type = db.Column(db.Integer, default=0)
     attributes = db.relationship('ProductAttribute',
-                                   backref='product', lazy=True)
+                                 backref='product', lazy=True)
     stock_status_id = db.Column(db.Integer,
                                 db.ForeignKey('oc_stock_status.stock_status_id'),
                                 default=0)
     stock_status = db.relationship('StockStatus',
-            backref=db.backref('products', lazy=True))
+                                   backref=db.backref('products', lazy=True))
     special_offers = db.relationship('ProductSpecial',
-                              backref=db.backref('products', lazy=True))
+                                     backref=db.backref('products', lazy=True))
     variants = db.relationship('ProductVariant',
                                   backref='product', uselist=False)
     unit_class = db.relationship('WeightClass',
                                    backref=db.backref('products', lazy=True))
+    reviews = db.relationship('Review',
+                              backref=db.backref('product', lazy=True))
 
-    @staticmethod
-    def find(id):
+    @cached_property
+    def main_category(self):
+        d = db.session.execute(
+            db.select(ProductToCategory)
+            .filter_by(product_id=self.product_id, main_category=1)).scalar()
+        return d.category if d else None
+
+    @cached_property
+    def url(self):
         return db.session.execute(
-            db.select(Product).filter_by(product_id=id)).scalar()
+            db.select(SeoUrl)
+            .filter_by(query=f'product_id={self.product_id}')).scalar()
+
+    def delete(self) -> bool:
+        """ Удаление товара и все, что с ним связано """
+
+        # Если есть остатки - не удалять
+        if self.stocks:
+            flash(f'У товара {self.name} есть остатки на складе', 'warning')
+            return True  # error
+
+        # Удаление зависимых данных
+        for attr in ('description', 'url', 'related_products', 'attributes', 'reviews', 'options'):
+            to_del = getattr(self, attr, None)
+            if to_del:
+                # Приводим к списку
+                to_del = to_del if isinstance(to_del, list) else [to_del]
+                for item in to_del:
+                    if hasattr(item, 'product_id'):
+                        setattr(item, 'product_id', None)
+                    if hasattr(item, 'delete'):
+                        item.delete()
+                    else:
+                        db.session.delete(item)
+
+        image_path = current_app.config['IMAGE_PATH']
+        if self.image and os.path.isfile(image_path + self.image):
+            os.remove(image_path + self.image)
+
+        if self.images:
+            for image in self.images:
+                other_images = db.session.execute(
+                    db.select(ProductImage).filter(
+                        (ProductImage.product_id != self.product_id)
+                        & (ProductImage.image == image.image))).scalar()
+                if not other_images and os.path.isfile(image_path + image.image):
+                    os.remove(image_path + image.image)
+
+                image.product_id = None
+                db.session.delete(image)
+
+        if self.categories:
+            for category in self.categories:
+                category.products.remove(self)
+
+        if self.other_shop:
+            for other_product in self.other_shop:
+                other_product.link_confirmed = None
+                other_product.product_id = 0
+
+        product_variants = (ProductVariant.query
+                            .filter_by(product_id=self.product_id)).all()
+        if product_variants:
+            for variant in product_variants:
+                db.session.delete(variant)
+        variants_in_products = ProductVariant.query.all()
+        if variants_in_products:
+            for variant in variants_in_products:
+                ids = variant.prodvar_product_str_id.split(',')
+                id = str(self.product_id)
+                if id in ids:
+                    ids.remove(id)
+                    variant.prodvar_product_str_id = ','.join(ids)
+
+        download_path = current_app.config['DOWNLOAD_PATH']
+        if self.downloads:
+            for download in self.downloads:
+
+                if len(download.products) == 1:
+                    if os.path.isfile(download_path + download.filename):
+                        os.remove(download_path + download.filename)
+
+                    if download.description:
+                        db.session.delete(download.description)
+
+                    db.session.delete(download)
+                else:
+                    download.products.remove(self)
+
+        db.session.delete(self)
+        return False
 
 
 class ProductImage(db.Model):
@@ -99,8 +209,8 @@ class ProductVariant(db.Model):
 class ProductSpecial(db.Model):
     __tablename__ = 'oc_product_special'
     product_special_id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'),
-                           primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'))
+                           # primary_key=True)
     customer_group_id = db.Column(db.Integer)
     priority = db.Column(db.Integer, default=0)
     price = db.Column(db.Float)
@@ -139,9 +249,7 @@ class ProductToCategory(db.Model):
                             db.ForeignKey('oc_category.category_id'),
                             primary_key=True)
     main_category = db.Column(db.Boolean)
-    category = db.relationship('Category',
-                               uselist=False,
-                               viewonly=True)
+    category = db.relationship('Category', uselist=False, viewonly=True)
 
 
 product_to_download = db.Table('oc_product_to_download',
@@ -171,7 +279,7 @@ class DownloadDescription(db.Model):
 class Category(db.Model):
     __tablename__ = 'oc_category'
     category_id = db.Column(db.Integer, primary_key=True)
-    parent_id = db.Column(db.Integer, db.ForeignKey('category.category_id'))
+    parent_id = db.Column(db.Integer, db.ForeignKey('oc_category.category_id'))
     sort_order = db.Column(db.Integer)
     products = db.relationship('Product', secondary='oc_product_to_category',
                                backref=db.backref('categories', lazy='dynamic'))
@@ -185,6 +293,11 @@ class Category(db.Model):
         viewonly=True,
         # backref=db.backref('parent_category', lazy=True)
     )
+
+    @cached_property
+    def url(self):
+        param = f'category_id={self.category_id}'
+        return db.session.execute(db.select(SeoUrl).filter_by(query=param)).scalar()
 
 
 # class CategoryPath(db.Model):
@@ -208,10 +321,9 @@ class ProductAttribute(db.Model):
                            db.ForeignKey('oc_product.product_id'),
                            primary_key=True)
     attribute_id = db.Column(db.Integer,
-                           db.ForeignKey('oc_attribute.attribute_id'),
-                           primary_key=True)
+                             db.ForeignKey('oc_attribute.attribute_id'),
+                             primary_key=True)
     text = db.Column(db.Text)
-
 
 class Option(db.Model):
     __tablename__ = 'oc_option'
@@ -226,6 +338,23 @@ class Option(db.Model):
     values = db.relationship('OptionValue',
                                    backref=db.backref('option', lazy=True))
 
+    def delete(self):
+        # Удаление зависимых данных
+        for attr in ('description', 'settings'):
+            to_del = getattr(self, attr, None)
+            if to_del:
+                # Приводим к списку
+                to_del = to_del if isinstance(to_del, list) else [to_del]
+                for item in to_del:
+                    if hasattr(item, 'option_id'):
+                        setattr(item, 'option_id', None)
+                    if hasattr(item, 'delete'):
+                        item.delete()
+                    else:
+                        db.session.delete(item)
+
+        db.session.delete(self)
+
 
 class OptionDescription(db.Model):
     __tablename__ = 'oc_option_description'
@@ -233,6 +362,9 @@ class OptionDescription(db.Model):
                           db.ForeignKey('oc_option.option_id'), primary_key=True)
     language_id = db.Column(db.Integer)
     name = db.Column(db.String(128))
+
+    def delete(self):
+        db.session.delete(self)
 
 
 class OptionValue(db.Model):
@@ -256,6 +388,52 @@ class OptionValue(db.Model):
             db.select(OptionValue)
             .filter_by(option_value_id=value_id)).scalar()
 
+    def delete(self):
+        delete(self, 'option_value_id', ['settings', 'description'])
+        if self.products_options:
+            for product in self.products_options:
+                product.delete()
+        db.session.delete(self)
+
+    def auto_compare(self):
+        settings = json.loads(option_value.option.settings.text)
+        products = get_products(filter=get_filter_options(option_value),
+                                pagination=False)
+
+        products_ids = []
+        for product in products:
+            products_ids.append(product.product_id)
+            product_have_this_option = product_clean_other_options(product,
+                                                                   option_value)
+
+            db.session.commit()
+
+            if product_have_this_option:
+                continue
+            else:
+                product_option = new_product_option(product.product_id,
+                                                    option_value,
+                                                    settings)
+
+                product.options.append(product_option)
+        db.session.commit()
+
+        other_products_in_option = other_products_in_option_value(option_value)
+
+        for product in other_products_in_option:
+            for option in product.options:
+                db.session.delete(option.product_option_value)
+                db.session.delete(option)
+
+    def clean_options(self):
+        for product_option in self.products_options:
+            product = get_product(product_option.product_id)
+
+            for option in product.options:
+                if option.product_option_value:
+                    db.session.delete(option.product_option_value)
+                db.session.delete(option)
+
 
 class OptionSetting(db.Model):
     __tablename__ = 'adm_option_settings'
@@ -263,6 +441,9 @@ class OptionSetting(db.Model):
                           db.ForeignKey('oc_option.option_id'),
                           primary_key=True)
     text = db.Column(db.Text)
+
+    def delete(self):
+        db.session.delete(self)
 
 
 class OptionValueDescription(db.Model):
@@ -290,14 +471,21 @@ class ProductOption(db.Model):
     __tablename__ = 'oc_product_option'
     product_option_id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer,
-                                db.ForeignKey('oc_product.product_id'))
+                           db.ForeignKey('oc_product.product_id'))
     option_id = db.Column(db.Integer)
     value = db.Column(db.Text)
     required = db.Column(db.Boolean)
     product_option_value = db.relationship('ProductOptionValue',
-                                  backref='product_option_', uselist=False)
+                                           backref='product_option_',
+                                           uselist=False)
     product = db.relationship('Product',
-                                   backref=db.backref('options', lazy=True))
+                              backref=db.backref('options', lazy=True))
+
+    def delete(self):
+        self.product_id = 0
+        if self.product_option_value:
+            self.product_option_value.delete()
+        db.session.delete(self)
 
 
 class ProductOptionValue(db.Model):
@@ -321,6 +509,9 @@ class ProductOptionValue(db.Model):
     weight_prefix = db.Column(db.String(1))
     model = db.Column(db.String(256))
     optsku = db.Column(db.String(64))
+
+    def delete(self):
+        db.session.delete(self)
 
 
 class Attribute(db.Model):
@@ -358,33 +549,6 @@ class WeightClassDescription(db.Model):
     unit = db.Column(db.String(4))
 
 
-class OtherShops(db.Model):
-    __tablename__ = 'adm_other_shops'
-    shop_id = db.Column(db.Integer, primary_key=True)
-    domain = db.Column(db.String(64))
-    name = db.Column(db.String(64))
-    parsing = db.Column(db.String(256))
-
-
-class OtherProduct(db.Model):
-    __tablename__ = 'adm_other_product'
-    other_product_id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'), nullable=True)
-    shop = db.relationship('OtherShops',
-                                   backref=db.backref('products', lazy=True))
-    shop_id = db.Column(db.Integer,
-                                db.ForeignKey('adm_other_shops.shop_id'))
-    name = db.Column(db.String(256))
-    price = db.Column(db.String(64))
-    link = db.Column(db.String(256))
-    link_confirmed = db.Column(db.Boolean)
-    text = db.Column(db.String(256))
-    category = db.relationship('OtherCategory',
-                                   backref=db.backref('products', lazy=True))
-    category_id = db.Column(db.Integer,
-                                db.ForeignKey('adm_other_category.other_category_id'))
-
-
 class SeoUrl(db.Model):
     __tablename__ = 'oc_seo_url'
     seo_url_id = db.Column(db.Integer, primary_key=True)
@@ -392,29 +556,12 @@ class SeoUrl(db.Model):
     keyword = db.Column(db.String(255))
 
 
-class OtherCategory(db.Model):
-    __tablename__ = 'adm_other_category'
-    other_category_id = db.Column(db.Integer, primary_key=True)
-    parent_id = db.Column(db.Integer)
-    name = db.Column(db.String(256))
-    minus = db.Column(db.String(1024))
-    url = db.Column(db.String(256))
-    parsing = db.Column(db.String(1024))
-    last_parsing = db.Column(db.String(256))
-    changes = db.Column(db.String(1024))
-    shop = db.relationship('OtherShops',
-                                   backref=db.backref('categories', lazy=True))
-    shop_id = db.Column(db.Integer,
-                                db.ForeignKey('adm_other_shops.shop_id'))
-    new_price = db.Column(db.Text)
-    new_product = db.Column(db.Text)
-    sort = db.Column(db.Integer)
-
-
 class Review(db.Model):
     __tablename__ = 'oc_review'
     review_id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer)
+    # product_id = db.Column(db.Integer)
+    product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'),
+                           primary_key=True)
 
 
 class RedirectManager(db.Model):

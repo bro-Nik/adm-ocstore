@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "Категории", "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<div class="d-grid gap-3">
+
+  {# Блок названия и кнопок #}
+  {{ m.heading("Категории") }}
+
+  {# Блок таблицы #}
+  {% set table %}
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Товаров</th>
+        <th>В наличии</th>
+        <th>Под заказ</th>
+        <th>Запрос цены</th>
+        <th>Нет в наличии</th>
+      </tr>
+    </thead>
+
+    <tbody id="tab-categories">
+      {# Шаблон категории #}
+      {% macro tr(category, lvl='') %}
+        <tr>
+          <td><a class="text-inherit">{{ lvl }} {{ category.name }}</a></td>
+          <td>{{ category.products|length }}</td>
+          <td>{{ result[category.category_id]['in_stock'] }}</td>
+          <td>{{ result[category.category_id]['on_order'] }}</td>
+          <td>{{ result[category.category_id]['price_request'] }}</td>
+          <td>{{ result[category.category_id]['not_in_stock'] }}</td>
+        </tr>
+      {% endmacro %}
+
+      {# Проход по категориям #}
+      {% for category in categories|sort(attribute='sort_order') if not category.parent_id %}
+        {{ tr(category) }}
+        {% for subcategory in category.child_categories|sort(attribute='sort_order') %}
+          {{ tr(subcategory, '--') }}
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  {% endset %}
+  {{ m.table(table) }}
+</div>
+
+{% endblock %}

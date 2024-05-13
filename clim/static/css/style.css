@@ -16,7 +16,7 @@ div#wrapper {
 }
 div#content {
 /*     flex: 1 0 auto; */
-    height: calc(100vh - 61px);
+    /* height: calc(100vh - 61px); */
 }
 div#footer {
     flex: 0 0 auto;
@@ -219,7 +219,7 @@ td.sticky-table {
     background: white;
     z-index: 1;
     }
-.main-tab-checkbox {
+td.checkbox {
     width: 15px;
     padding-right: 0 !important;
     margin: 0;

@@ -26,7 +26,7 @@ def unit(self):
 
 @property
 def name(self):
-    return self.description.name
+    return self.description.name if self.description else ''
 
 
 Product.get_stock = get_stock
@@ -34,6 +34,9 @@ Product.stock_quantity = stock_quantity
 Product.unit = unit
 Product.name = name
 
+Category.name = name
+Option.name = name
+OptionValue.name = name
 
 class Service(db.Model):
     __tablename__ = 'adm_deal_service'

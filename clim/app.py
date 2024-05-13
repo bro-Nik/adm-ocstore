@@ -5,8 +5,11 @@ from flask_login import LoginManager
 import redis
 from celery import Celery
 
+from clim.mixins import ModelMixin
 
-db = SQLAlchemy()
+
+# db = SQLAlchemy()
+db = SQLAlchemy(model_class=ModelMixin)
 migrate = Migrate()
 celery = Celery()
 redis = redis.StrictRedis('127.0.0.1', 6379)
@@ -25,16 +28,12 @@ def create_app():
     login_manager.init_app(app)
     init_celery(app, celery)
 
-    from clim.blueprints import make_blueprints
-    make_blueprints(app)
+    from . import site, main, user, crm
+    app.register_blueprint(crm.bp, url_prefix='/crm')
+    app.register_blueprint(site.bp, url_prefix='/site')
+    app.register_blueprint(user.bp, url_prefix='/crm/user')
+    app.register_blueprint(main.bp)
 
-    # with app.app_context():
-    #     if db.engine.url.drivername == 'sqllite':
-    #         migrate.init_app(app, db, render_as_batch=True)
-    #     else:
-    #         migrate.init_app(app, db)
-    #     db.create_all()
-    # 
     return app
 
 

@@ -1,9 +1,5 @@
-{# Jinja2 #}
-{% if not request.args.get('only_content') %}
-  {% extends "modal_base.html" %}
-  {% set modal_fullscreen = False %}
-  {% set modal_title = stage.name if stage.stage_id else 'Новая стадия' %}
-{% endif %}
+{% extends "base.html" %}
+{% set page_settings = {"title": stage.name if stage.stage_id else 'Новая стадия', "modal": True, "fullscreen": False} %}
 
 {% block content %}
 <form id="StageForm" method="post" action="{{ url_for('.stage_settings', stage_id=stage.stage_id) }}">

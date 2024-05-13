@@ -1,100 +1,42 @@
 const $modalsBox = $('#Modals');
 
 $(function () {
-
-
-  // Action
-  $("body").on("click", ".action", function () {
-    var $btn = $(this),
-      checked = [];
-
-    // If button not in form
-    if ($btn.attr("data-form")) {
-      var $form = $($btn.attr("data-form"));
-    } else {
-      var $form = $btn.closest("form");
-    }
-
-    // If info not in main form
-    if ($btn.attr("data-form-info")) {
-      var info = $($btn.attr("data-form-info")).serializeArray();
-    } else {
-      var info = $form.serializeArray();
-    }
-
-    if ($btn.attr("data-id")) {
-      checked.push($btn.attr("data-id"));
-    } else {
-      $form.find(".to-check:checked").each(function () {
-        checked.push($(this).val());
-      });
-    }
-
-    var data = {
-      action: $btn.attr("data-action"),
-      info: info,
-      ids: checked,
-    };
-
-    var $modal = $btn.closest('.modal');
-    $modal.attr('data-pre-need-update', true);
-
-    SendingData($form.attr("action"), data, $btn, $modal);
-    // $.ajax({
-    // }).done(function (response) {
-    //   if(response.redirect) {
-    //     window.location.href = response.redirect;
-    //   } else if ($btn.attr('data-this-need-update')) {
-    //     LoadToModal($modal.attr('id'), $modal.attr("data-url"), true);
-    //   } else {
-    //     setTimeout(PageUpdate, 500, $modal);
-    //   }
-    // });
-  });
-
-
   // Modals
   //
   // Open modal to confirm
-  $("body").on("click", ".open-modal-confirmation", function () {
+  $("body").on("click", "[data-modal-confirm]", function () {
     var $modal = $("#ModalConfirmation"),
       $btn = $(this);
+    var $modal_btn = $modal.find("[type=submit]");
 
-    if ($btn.attr("data-form")) {
-      $modal.find(".action").attr("data-form", $btn.attr("data-form"));
-    } else {
-      $modal.find(".action").attr("data-form", `#${$btn.closest("form").attr("id")}`);
-    }
+    if ($btn.data("form")) $modal_btn.attr("form", $btn.data("form"));
+    else $modal_btn.attr("form", `${$btn.closest("form").attr("id")}`);
 
     // if modal then update
-    var pre_modal_id = $btn.closest(".modal").attr("id");
-    if (pre_modal_id) {
-      $modal.attr("data-pre-modal-id", pre_modal_id);
-    } else {
-      $modal.removeAttr("data-pre-modal-id");
-    }
-    var pre_need_clean = $btn.attr("data-pre-need-clean") || false;
-    $modal.attr("data-pre-need-clean", pre_need_clean);
+    // var pre_modal_id = $btn.closest(".modal").attr("id");
+    // if (pre_modal_id) $modal.data("pre-modal-id", pre_modal_id);
+    // else $modal.removeAttr("data-pre-modal-id");
+
+    // var pre_need_clean = $btn.data("pre-need-clean") || false;
+    // $modal.data("pre-need-clean", pre_need_clean);
 
     // to modal action
-    var title = $btn.attr("data-title"),
-      action = $btn.attr("data-action"),
-      id = $btn.attr("data-id") || "",
-      text = $btn.attr("data-text") || "";
-    $modal.find(".modal-title").text(title);
-    $modal.find(".modal-text").text(text);
-    $modal.find(".action").attr("data-action", action);
-    $modal.find(".action").attr("data-id", id);
+    $modal.find(".modal-title").text($btn.data("title"));
+    $modal.find(".modal-text").text($btn.data("text") || "");
+
+    $modal_btn.data("action", $btn.data("action"));
+    $modal_btn.data("after", $btn.data("after"));
+    $modal_btn.data("modal", $btn.closest(".modal").attr("id"));
     $modal.modal({backdrop: false}).modal("show");
   });
 
-  $("body").on("click", ".open-modal", function () {
-    var modal_id = $(this).attr("data-modal-id"),
-      url = $(this).attr("data-url"),
+  $("body").on("click", "[data-modal-id]", function () {
+    var modal_id = $(this).data("modal-id"),
+      url = $(this).data("url"),
       pre_modal_id = $(this).closest('.modal').attr('id');
-    if ($(this).hasClass('not-update')) {
-      pre_modal_id = false;
-    }
+
+    // Не обновлять предыдущее при закрытии
+    if ($(this).hasClass('not-update')) pre_modal_id = false;
     LoadToModal(modal_id, url, false, pre_modal_id);
   });
 
@@ -146,9 +88,7 @@ $(function () {
   $("body").on("hide.bs.modal", ".modal", function () {
     var $modal = $(this);
 
-    if (!$(".modal.show").length > 1) {
-      return false;
-    }
+    if (!$(".modal.show").length > 1) return false;
 
     var z_index = parseInt($modal.css("z-index"));
     var max_z_index = 0;
@@ -172,43 +112,80 @@ $(function () {
   $("body").on("hidden.bs.modal", ".modal", function () {
     var $modal = $(this);
     // Fade
-    if (!$modal.find(".modal-fullscreen").length) {
-      $("body .modal-backdrop").eq(-1).remove();
-    }
+    if (!$modal.find(".modal-fullscreen").length) $("body .modal-backdrop").eq(-1).remove();
   });
 
   $('body').on('hide.bs.modal', '.modal', function () {
     var $modal = $(this);
+    // if $modal.data('')
     if ($modal.attr('id') != 'ModalConfirmation' && !$modal.hasClass('not-update')) {
       PageUpdate($modal);
     }
   })
 
-  $('body').on("click", ".load-page-or-modal", function () {
-    var modal_id = $(this).closest(".modal").attr("id"),
-      url = $(this).attr("data-url");
-
-    if (modal_id) {
-      LoadToModal(modal_id, url);
-    } else {
-      LoadToPage(url);
-    }
-  });
-
   // Form
   $('body').on("submit", function(event) {
-    var $form = $(event.target), $modal = $form.closest(".modal");
+    var $form = $(event.target),
+      $modal = $form.closest(".modal"),
+      $btn = $(event.originalEvent.submitter);
 
-    if ($modal.length) {
-      event.preventDefault();
+    event.preventDefault();
 
-      var posting = $.post($form.attr("data-url"), $form.serialize());
+    // Если кнопка меняет Action
+    let url = $btn.attr("formaction") || $form.attr("action");
 
-      posting.done(function (data) {
-        $modal.attr('data-pre-need-update', true);
-        $modal.modal("hide");
+    var data = {};
+    if ($btn.data("action")) data.action = $btn.data("action")
+
+    // Данные
+    if ($form.find("[data-to-server]").length) {
+      // Несколько элементов с даннымы
+      $form.find("[data-to-server]").each(function(index, element){
+        // Ключ данных
+        var data_name = $(element).data("to-server");
+
+        if (element.tagName === "DIV") {
+          // if (data[data_name] === undefined) data[data_name] = {}
+          // Проходим по полям
+          data[data_name] = Serialize($(element))
+
+        } else if (element.tagName === "TABLE") {
+          if (data[data_name] === undefined) data[data_name] = []
+
+          $(element).find("tr.product").each(function (index, tr) {
+            var item = Serialize($(tr), required=true);
+            // Если не пусто - добавляем
+            if (!$.isEmptyObject(item)) data[data_name].push(item);
+          });
+        }
+      });
+    };
+
+    // Остальные поля
+    // Объединить данные формы и кнопки
+    $.extend(data, Serialize($form));
+
+    if ($btn.attr("name")) {
+      var btn_data = {}
+      btn_data[$btn.attr("name")] = $btn.attr("value");
+      $.extend(data, btn_data);
+    }
+
+    // Если нужно собрать ID
+    var ids = [];
+    if ($btn.data("id")) ids.push($btn.data("id"));
+    else {
+      $form.find(".to-check:checked").each(function () {
+        ids.push($(this).val());
       });
     }
+    if (!$.isEmptyObject(ids)) data.ids = ids;
+
+    SendingData(url, data, $btn);
+
+    // $.post(action, data).done(function (response) {
+    //   UpdateAfterLoad(response, $modal);
+    // });
   });
 
   // Show more content
@@ -228,8 +205,8 @@ $(function () {
 function LoadToPage(url) {
   if (!url) {
     url = $(location).attr('href');
-    url += `${url.indexOf("?") > 0 ? "&" : "?"}only_content=true`;
   }
+  url += `${url.indexOf("?") > 0 ? "&" : "?"}only_content=true`;
   $('#content').load(url, function () {
     UpdateScripts($('#content'));
     UpdateFocus($('#content'));
@@ -239,20 +216,19 @@ function LoadToPage(url) {
 
 // Load to Modal
 function LoadToModal(modal_id, url, pre_need_update, pre_modal_id) {
-  var $modal = $("#" + modal_id);
+  var $modal = $(`#${modal_id}`),
+    $loadIn = $modal;
 
   // нужно для обновления контента в модульном
   if ($modal.length) {
     // load only content
     if ($modal.find(".modal-fullscreen").length) {
-      var $loadIn = $modal.find(".modal-body").empty();
+      $loadIn = $modal.find(".modal-body");
       url += `${url.indexOf("?") > 0 ? "&" : "?"}only_content=true`;
-    } else {
-      var $loadIn = $modal.empty();
     }
   } else {
     // create and load full modal
-    var $loadIn = $modal = $('<div>', {
+    $loadIn = $modal = $('<div>', {
       id: modal_id,
       class: 'modal fade',
       tabindex: '-1'
@@ -261,18 +237,18 @@ function LoadToModal(modal_id, url, pre_need_update, pre_modal_id) {
     .appendTo($modalsBox);
   }
   
-  $modal.attr("data-pre-need-update", pre_need_update || false);
+  $modal.data("pre-need-update", pre_need_update || false);
   if (pre_modal_id) {
-    $modal.attr("data-pre-modal-id", pre_modal_id);
+    $modal.data("pre-modal-id", pre_modal_id);
   }
 
-  $loadIn.load(url, function () {
+  $loadIn.empty().load(url, function () {
     UpdateScripts($modal);
     $modal.modal({
       backdrop: false,
       keyboard: true,
     });
-    $modal.attr("data-url", url);
+    $modal.data("url", url);
     if (!$modal.hasClass("show")) {
       $modal.modal("show");
     } else {
@@ -282,18 +258,19 @@ function LoadToModal(modal_id, url, pre_need_update, pre_modal_id) {
 }
 
 function PageUpdate($modal) {
-  var this_need_update = $modal.attr("data-this-need-update"),
-    pre_need_update = $modal.attr("data-pre-need-update"),
-    pre_need_clean = $modal.attr("data-pre-need-clean"),
-    pre_modal_id = $modal.attr("data-pre-modal-id"),
+  var this_need_update = $modal.data("after-update"),
+    pre_need_update = $modal.data("pre-need-update"),
+    pre_need_clean = $modal.data("pre-need-clean"),
+    pre_modal_id = $modal.data("pre-modal-id"),
     $pre_modal = $(`#${pre_modal_id}`);
 
   if (pre_need_clean == 'true') {
-    $pre_modal.attr('data-pre-need-update', true);
+    $pre_modal.data('pre-need-update', true);
     $pre_modal.modal('hide');
-  } else if (pre_need_update == 'true') {
-    if (pre_modal_id) {
-      LoadToModal(pre_modal_id, $pre_modal.attr("data-url"), true);
+  // } else if (pre_need_update == 'true') {
+  } else  {
+    if (pre_modal_id !== undefined) {
+      LoadToModal(pre_modal_id, $pre_modal.data("url"), true);
     } else {
       LoadToPage();
     }
@@ -311,13 +288,14 @@ function UpdateFocus($element=$("body")) {
 
 // Update Page
 function UpdateScripts($element=$("body")) {
-  StickyBottomActionsUpdate($element);
   UpdateSelects($element);
   GetFlashedMessages($element)
   UpdateProductItems($element)
   UpdateDatepicker($element)
-  feather.replace();
+  // feather.replace();
 }
+
+UpdateScripts();
 
 function UpdateProductItems($element=$("body")) {
   // Посчитать общие суммы во вкладках
@@ -349,62 +327,40 @@ function UpdateProductItems($element=$("body")) {
   $element.on("change", function (event) {
     if (event.target.type !== "checkbox" && event.target.nodeName !== "SPAN") {
       $element.find(".sticky-bottom.change").addClass("active");
+      $element.find(".sticky-bottom").addClass("active");
     }
   });
 }
 
-// Sticky Bottom Actions
-function StickyBottomActionsUpdate($element=$("body")) {
-
-  if ($element.find('form').length > 1) {
-    $element.find('form').each(function () {
-      CreateStickyBottomActions($(this));
-    })
-  } else {
-    CreateStickyBottomActions($element);
-  }
-}
-
-function CreateStickyBottomActions($element) {
-  var $content = $(`
-    <div class="sticky-bottom form-actions">
-      <div class="col-12">
-        <div class="bg-white h-100 d-flex gap-2 align-items-center align-items-center">
-          <span class="ms-5">Отмечено:</span>
-          <span class="checks-count"></span>
-          <a class="ms-3 decheck-all text-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>
-          </a>
-          <div class="vr my-3"></div>
-          <div class="buttons"></div>
-        </div>
-      </div>
-    </div>
-  `);
-  var stickyBottomButtons = $element.find(".sticky-bottom-buttons");
-  if (stickyBottomButtons.length) {
-    $content.find('.buttons').append(stickyBottomButtons.children());
-    stickyBottomButtons.parent().append($content);
-    stickyBottomButtons.remove();
-  }
-}
-
-function SendingData(url, data, $btn, $modal) {
+function SendingData(url, data, $btn) {
   $.ajax({
     type: "POST",
     url: url,
     data: JSON.stringify(data),
     contentType: "application/json; charset=utf-8",
   }).done(function (response) {
-    if(response.redirect) {
-      LoadToModal($modal.attr('id'), response.redirect, true);
-      // window.location.href = response.redirect;
-    } else if ($btn.attr('data-this-need-update')) {
-      LoadToModal($modal.attr('id'), $modal.attr("data-url"), true);
-    } else {
-      setTimeout(PageUpdate, 500, $modal);
-    }
+      UpdateAfterLoad(response, $btn);
   });
+}
+
+function UpdateAfterLoad(response, $btn) {
+  var url,
+    $modal = $(`#${$btn.data("modal")}`),
+    do_after = $btn.data('after');
+
+  if (!$modal.length && $btn.closest(".modal").attr("id") !== "ModalConfirmation") $modal = $btn.closest(".modal");
+
+  if (response.redirect) url = response.redirect;
+  if (!url && $modal.length) url = $modal.data("url");
+
+  if (do_after === 'update') {
+    if ($modal.length) LoadToModal($modal.attr('id'), url, true);
+    else LoadToPage(url);
+  } else if (do_after === 'close') $modal.modal("hide");
+
+  // if ($btn && $btn.data('after-update')) {
+  // } else if ($btn && $btn.data('after-close')) $modal.modal("hide");
+  // else setTimeout(PageUpdate, 500, $modal);
 }
 
 function GetFlashedMessages($element=$('body')) {
@@ -420,48 +376,43 @@ $("body").on("click", ".btn-to-submit", function () {
 
   var data = {};
   // Действие
-  if ($btn.attr("data-action")) data.action = $btn.attr("data-action")
+  if ($btn.data("action")) data.action = $btn.data("action")
 
   // Данные
-  $form.find("[data-to-server]").each(function(index, element){
-    // Ключ данных
-    var data_name = $(element).attr("data-to-server");
+  if ($form.find("[data-to-server]").length) {
+    // Несколько элементов с даннымы
+    $form.find("[data-to-server]").each(function(index, element){
+      // Ключ данных
+      var data_name = $(element).data("to-server");
 
-    if (element.tagName === "DIV") {
-      if (data[data_name] === undefined) data[data_name] = {}
-      // Проходим по полям
-      $(element).find("input, select, textarea").each(function (index, field) {
-        if ($(field).attr('name')) data[data_name][$(field).attr('name')] = $(field).val();
-      });
+      if (element.tagName === "DIV") {
+        // if (data[data_name] === undefined) data[data_name] = {}
+        // Проходим по полям
+        data[data_name] = Serialize($(element))
 
-    } else if (element.tagName === "TABLE") {
-      if (data[data_name] === undefined) data[data_name] = []
+      } else if (element.tagName === "TABLE") {
+        if (data[data_name] === undefined) data[data_name] = []
 
-      $(element).find("tr.product").each(function (index, tr) {
-        var item = {},
-          skip = false;
-        $(tr).find("td").each(function (index, td) {
-          // Проходим по полям
-          $(td).find("input, select, textarea").each(function (index, field) {
-            if ($(field).attr('data-required') && !$(field).val()) skip = true;
-            if ($(field).attr('name')) item[$(field).attr('name')] = $(field).val();
-          });
+        $(element).find("tr.product").each(function (index, tr) {
+          var item = Serialize($(tr), required=true);
+          // Если не пусто - добавляем
+          if (!$.isEmptyObject(item)) data[data_name].push(item);
         });
-        if (skip) return;
-        else data[data_name].push(item);
-      });
-    }
-  });
+      }
+    });
+    var $modal = $btn.closest('.modal');
+    // $modal.modal("hide");
+    SendingData($form.attr("action"), data, $btn, $modal);
+  } else $form.submit();
+  // } else data["form"] = Serialize($form)
 
-  SendingData($form.data("url"), data, $btn, $btn.closest(".modal"));
-  $(".sticky-bottom").removeClass("active");
+  $(".sticky-bottom.change").removeClass("active");
 });
 
-StickyBottomActionsUpdate();
 $('body .fade').addClass('show');
 UpdateFocus();
-GetFlashedMessages();
-feather.replace();
+// GetFlashedMessages();
+// feather.replace();
 
 
 function getUrlArg(url, arg="") {
@@ -506,4 +457,55 @@ function UpdateDatepicker($element=$("body")) {
       maxHours: 18,
       minutesStep: 10});
   });
+}
+
+// Update Page After Change
+$("body").on("change", ".update-after-change select, .update-after-change input", function (e) {
+  var $form = $(this).closest("form"),
+    url = $(this).closest(".update-after-change").attr("action"),
+    $modal = $(this).closest(".modal-body");
+
+  $.post(OnlyContentUrl(url), $form.serialize()).done(function (data) {
+    LoadTo($modal, data);
+  });
+});
+
+// Update Page After Click Pagination
+$("body").on("click", ".pagination a", function (e) {
+  var url = $(this).attr("href"),
+    $modal = $(this).closest(".modal-body");
+
+  e.preventDefault();
+
+  $.get(OnlyContentUrl(url)).done(function (data) {
+    LoadTo($modal, data);
+  });
+});
+
+function OnlyContentUrl(url) {
+  url += `${url.indexOf("?") > 0 ? "&" : "?"}only_content=true`;
+  return url;
+}
+
+function LoadTo($modal, content) {
+  var $load_to;
+  if ($modal.length) $load_to = $modal;
+  else $load_to = $("#content");
+
+  $load_to.html($(content));
+  UpdateScripts($load_to);
+}
+
+
+// Проходим по полям
+function Serialize($element, required=false) {
+  var dict = {}
+  $element.find("input, select, textarea").each(function (index, field) {
+    // Если нужно проверить на обязательные поля элемента
+    if (required && $(field).data('required') && !$(field).val()) return false;
+    // Записываем имя поля и значение
+    if ($(field).attr('name')) dict[$(field).attr('name')] = $(field).val();
+    $(field).removeAttr("name")
+  });
+  return dict;
 }

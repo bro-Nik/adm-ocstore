@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<form id="ShopSettings" class="d-grid gap-3" action="{{ url_for('.shop_settings', shop_id=shop.shop_id) }}">
+
+  {# Блок названия и кнопок #}
+  {% set heading %}
+    <span class="text-primary">{{ shop.name if shop.shop_id }}</span>{{ ' | Настройки' if shop.shop_id else 'Новый магазин' }}
+  {% endset %}
+  {{ m.heading(heading) }}
+
+  {# Блок меню #}
+  {{ m.menu_head([{'text': 'Общие', 'key': 'detail', 'class': 'active'}]) }}
+
+  {# Блок вкладок меню #}
+  {% set detail_tab %}
+    <div class="col-12 d-grid gap-3">
+
+      <div class="card h-100">
+        <div class="card-body">
+          <div>
+            <div class="mb-3 row">
+              <label class="col-sm-3 col-form-label form-label">Название</label>
+              <div class="col-md-9 col-12">
+                <input type="text" class="form-control" id="name" name="name" value="{{ shop.name or '' }}" required>
+              </div>
+            </div>
+
+            <div class="mb-3 row">
+              <label class="col-sm-3 col-form-label form-label">Домен</label>
+              <div class="col-md-9 col-12">
+                <input type="url" class="form-control" placeholder="https://" id="domain" name="domain" value="{{ shop.domain or '' }}">
+              </div>
+            </div>
+
+            <div class="mb-3 row">
+              <label class="col-sm-3 col-form-label form-label">Ссылка на товар</label>
+              <div class="col-md-9 col-12">
+                <select class="general-select" data-width="100%" data-class="border" name="parsing" required>
+                  <option {{ 'selected' if shop.parsing=='domain' }} value="domain">Домен + товар</option>
+                  <option {{ 'selected' if shop.parsing=='category' }} value="category">Домен + категория + товар</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endset %}
+
+  {% set menu_tabs %}
+    {{ m.menu_tab("detail", detail_tab, "show active") }}
+  {% endset %}
+  {{ m.menu_tabs(menu_tabs) }}
+
+  {# Кнопки действий формы #}
+  {{ m.form_actions() }}
+
+</form>
+{% endblock %}

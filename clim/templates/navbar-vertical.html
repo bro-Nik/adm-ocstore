@@ -1,14 +1,12 @@
 {# Jinja2 #}
-<!-- Sidebar -->
 <nav class="navbar-vertical navbar">
   <div class="nav-scroller">
-    <!-- Brand logo -->
+    <!-- Logo -->
     <a class="navbar-brand" href="">
-      <img src="" alt="" />
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="" />
     </a>
-    <!-- Navbar nav -->
+
     <ul class="navbar-nav flex-column" id="sideNavbar">
-      <!-- Nav item -->
       <li class="nav-item">
         <a class="nav-link has-arrow {{ 'collapsed' if '/site/' in request.path }}" href="#!" data-bs-toggle="collapse"
           data-bs-target="#navPages" aria-expanded="false" aria-controls="navPages">
@@ -19,22 +17,22 @@
         <div id="navPages" class="collapse {{ 'show' if '/site/' in request.path }}" data-bs-parent="#sideNavbar">
           <ul class="nav flex-column">
             <li class="nav-item">
-              <a class="nav-link has-arrow {{ 'active' if request.blueprint == 'option' }}"
-                href="{{ url_for('option.options') }}">
+              <a class="nav-link has-arrow {{ 'active' if request.blueprint == 'site.option' }}"
+                href="{{ url_for('site.option.options') }}">
                 Опции
               </a>
             </li>
 
             <li class="nav-item">
-              <a class="nav-link has-arrow {{ 'active' if url_for('main.categories') == request.path }}"
-                href="{{ url_for('main.categories') }}">
+              <a class="nav-link has-arrow {{ 'active' if url_for('site.category.categories') == request.path }}"
+                href="{{ url_for('site.category.categories') }}">
                 Категории
               </a>
             </li>
 
             <li class="nav-item">
-              <a class="nav-link {{ 'active' if request.blueprint == 'other_shops' }}"
-                href="{{ url_for('other_shops.shops') }}">
+              <a class="nav-link {{ 'active' if request.blueprint == 'site.other_shops' }}"
+                href="{{ url_for('site.other_shops.shops') }}">
                 Другие магазины
               </a>
             </li>
@@ -44,45 +42,46 @@
                 data-bs-target="#navMenuLevelSecond" aria-expanded="false" aria-controls="navMenuLevelSecond">
                 Товары
               </a>
-              <div id="navMenuLevelSecond" class="collapse {{ 'show' if url_for('product.products') in request.path }}"
+              <div id="navMenuLevelSecond" class="collapse {{ 'show' if url_for('site.product.products') in request.path }}"
                 data-bs-parent="#navMenuLevel">
                 <ul class="nav flex-column">
                   <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.path == url_for('product.products') }}"
-                      href="{{ url_for('product.products') }}">
+                    <a class="nav-link {{ 'active' if request.full_path == url_for('site.product.products', path='products') }}"
+                      href="{{ url_for('site.product.products', path='products') }}">
                       Товары
                     </a>
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.path == url_for('product.products', path='comparison') }}"
-                      href="{{ url_for('product.products', path='comparison') }}">
+                    <a class="nav-link {{ 'active' if request.full_path == url_for('site.product.products', path='comparison') }}"
+                      href="{{ url_for('site.product.products', path='comparison') }}">
                       Сопоставление
                     </a>
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.path == url_for('product.products', path='prices') }}"
-                      href="{{ url_for('product.products', path='prices') }}">
+                    <a class="nav-link {{ 'active' if request.full_path == url_for('site.product.products', path='prices') }}"
+                      href="{{ url_for('site.product.products', path='prices') }}">
                       Цены
                     </a>
                   </li>
-                  <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.path == url_for('main.work_plan') }}"
-                      href="{{ url_for('main.work_plan') }}">
-                      План работ
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link {{ 'active' if url_for('main.viewed_products') in request.path }}"
-                      href="{{ url_for('main.viewed_products') }}">Просмотренные</a>
-                  </li>
                 </ul>
               </div>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if request.path == url_for('main.work_plan') }}"
+                href="{{ url_for('main.work_plan') }}">
+                План работ
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if url_for('site.report.viewed_products') in request.path }}"
+                href="{{ url_for('site.report.viewed_products') }}">Просмотренные</a>
             </li>
           </ul>
         </div>
       </li>
 
-      <!-- Nav item -->
       <li class="nav-item">
         <a class="nav-link has-arrow {{ 'collapsed' if request.blueprint != 'crm' }}" href="#!"
           data-bs-toggle="collapse" data-bs-target="#navCrm" aria-expanded="false" aria-controls="navCrm">

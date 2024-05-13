@@ -142,9 +142,9 @@
 }
 
 .icon-xxs {
-  width: 0.875rem;
-  height: 0.875rem;
-  line-height: 0.875rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  line-height: 0.7rem;
 }
 
 .icon-xs {
@@ -25979,7 +25979,8 @@ textarea.form-control-lg {
   display: block;
 }
 .navbar-vertical .navbar-brand img {
-  height: 1.875rem;
+  /* height: 1.875rem; */
+  width: 100%;
 }
 .navbar-vertical .navbar-heading {
   color: #454F5B;
@@ -26164,7 +26165,7 @@ textarea.form-control-lg {
 }
 
 #db-wrapper {
-  overflow-x: hidden;
+  /* overflow-x: hidden; */
   display: flex;
 }
 

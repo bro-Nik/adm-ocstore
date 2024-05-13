@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<form id="ShopCategories" class="d-grid gap-3" action="{{ url_for('.shop_categories', shop_id=shop.shop_id) }}">
+
+  {# Блок названия и кнопок #}
+  {% set heading %}<span class="text-primary">{{ shop.name }}</span> | Категории{% endset %}
+  {% set heading_btns %}
+    <a class="btn btn-primary" data-modal-id="ShopCategorySettingsModal"
+      data-url="{{ url_for('.category_settings', shop_id=shop.shop_id) }}">Добавить</a>
+
+    {# Меню #}
+    <div class="dropdown">
+      <button class="btn btn-primary" type="button" data-bs-toggle="dropdown">Еще</button>
+      <ul class="dropdown-menu">
+        <button class="dropdown-item" type="button" data-modal-id="ShopSettings"
+          data-url="{{ url_for('.shop_settings', shop_id=shop.shop_id) }}">Настройки</option>
+        <button class="dropdown-item" type="button" data-modal-confirm
+          data-action="delete" data-title="Удалить магазин?" data-text="Все категории и товары в этом магазине будут удалены"
+          data-id="{{ shop.shop_id}}" formaction="{{ url_for('.shops')}}" data-after="close">Удалить</option>
+      </ul>
+    </div>
+  {% endset %}
+  {{ m.heading(heading, heading_btns) }}
+
+  {# Блок таблицы #}
+  {% set table %}
+    <thead>
+      <tr>
+        <th class="checkbox"><input class="form-check-input check-all" type="checkbox"></th>
+        <th>Название</th>
+        <th>Товаров</th>
+        <th>Изменения</th>
+        <th>Последний парсинг</th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {# Шаблон категории #}
+      {% macro tr(category, lvl='') %}
+        <tr>
+          {# Чекбокс #}
+          <td class="checkbox">{{ m.checkbox(category.other_category_id) }}</td>
+
+          {# Ссылка на категорию #}
+          <td>
+            <a class="text-inherit" data-modal-id="ShopCategoryProductsModal"
+              data-url="{{ url_for('.category_products', shop_id=shop.shop_id, category_id=category.other_category_id) }}">{{ lvl }} {{ category.name }}</a>
+
+          {# Количество товаров в категории #}
+          <td>{{ category.products|length if category.products }}</td>
+
+          {# Бейджи новых товаров и цен #}
+          <td>
+            {% set badge_class = "position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" %}
+
+            {% if category.new_product_count %}
+              <a class="text-inherit position-relative" data-modal-id="ShopCategoryNewProductsModal"
+                data-url="{{ url_for('.category_products', shop_id=shop.shop_id, category_id=category.other_category_id, changes='new_product') }}">
+                Товары <span class="{{ badge_class }}">{{ category.new_product_count }}+</span>
+              </a>
+            {% endif %}
+
+            {% if category.new_price_count %}
+              <a class="text-inherit position-relative" data-modal-id="ShopCategoryNewPricesModal"
+                data-url="{{ url_for('.category_products', shop_id=shop.shop_id, category_id=category.other_category_id, changes='new_price') }}">
+                Цены <span class="{{ badge_class }}">{{ category.new_price_count }}+</span>
+              </a>
+            {% endif %}
+          </td>
+
+          {# Последний парсинг #}
+          <td>{{ category.last_parsing|how_long_ago if category.last_parsing }}</td>
+
+          {# Меню #}
+          <td class="align-middle text-end">
+            <div class="dropdown">
+	            <a class="text-muted text-primary-hover" href="#" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+              </a>
+              <ul class="dropdown-menu">
+                <button class="dropdown-item" type="button" data-modal-id="ShopCategoryProductsModal"
+                  data-url="{{ url_for('.category_products', shop_id=shop.shop_id, category_id=category.other_category_id) }}">Товары</option>
+                <button class="dropdown-item" type="button" data-modal-id="ShopCategorySettingsModal"
+                  data-url="{{ url_for('.category_settings', shop_id=shop.shop_id, category_id=category.other_category_id) }}">Настройки</option>
+              </ul>
+            </div>
+          </td>
+        </tr>
+      {% endmacro %}
+
+      {# Проход по категориям #}
+      {% for category in shop.categories|sort(attribute='sort') if not category.parent_id %}
+        {{ tr(category) }}
+        {% for subcategory in category.child_categories|sort(attribute='sort') %}
+          {{ tr(subcategory, '--') }}
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  {% endset %}
+  {{ m.table(table) }}
+
+  {# Кнопки действий таблицы #}
+  {% set table_btns %}
+    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="delete"
+      data-title="Удалить категории?" data-text="Будут удалены выбранные категории" data-after="update">Удалить</button>
+    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="delete_only_products"
+      data-title="Удалить товары?" data-text="Будут удалены только товары категорий" data-after="update">Удалить товары</button>
+    <button class="btn btn-sm btn-transparent" type="submit" data-action="start_parsing" data-after="update">Старт прасинга</button>
+    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="accept_changes"
+      data-title="Принять изменения?" data-text="" data-after="update">Принять изменения</button>
+  {% endset %}
+  {{ m.table_actions(table_btns) }}
+
+</form>
+{% endblock %}

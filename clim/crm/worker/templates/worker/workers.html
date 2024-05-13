@@ -1,92 +1,56 @@
-{% if not request.args.get('only_content') %}
-  {% extends "base.html" %}
-  {% block title %}Работники{% endblock %}
-{% endif %}
-
+{% extends "base.html" %}
+{% set page_settings = {"title": "Работники", "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
 
 {% block content %}
+<form id="WorkersForm" class="d-grid gap-3">
 
-<form id="ClientsForm" method="post">
-  <div class="d-grid gap-3">
+  {# Блок названия и кнопок #}
+  {% set heading_btns %}
+    <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
+    <a class="btn btn-primary" data-modal-id="WorkerInfoModal" data-url="{{ url_for('.worker_info') }}">Создать</a>
+  {% endset %}
+  {{ m.heading("Работники", heading_btns) }}
 
-    <div class="row">
-      <div class="col-lg-12 col-md-12 col-12">
-        <div>
-          <div class="d-flex align-items-center mb-2">
-            <div class="col-3 me-5 mb-lg-0">
-              <h3 class="mb-0">Работники</h3>
-            </div>
+  {# Блок таблицы #}
+  {% set table %}
+    <thead class="">
+      <tr>
+        <th class="checkbox"><input class="form-check-input check-all" type="checkbox"></th>
+        <th>ФИО</th>
+        <th>Рабочий день</th>
+        <th>Занятость</th>
+      </tr>
+    </thead>
 
-            <div class="col-md-3 mb-lg-0 d-flex align-items-center ms-5">
-              <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
-            </div>
+    <tbody>
+      {% for worker in workers %}
+        <tr>
+          {# Чекбокс #}
+          <td class="checkbox"><input class="form-check-input to-check" type="checkbox" value="{{ worker.worker_id }}"></td>
 
-            <div class="ms-auto d-flex gap-2">
-              <a class="btn btn-primary open-modal" data-modal-id="WorkerInfoModal"
-                data-url="{{ url_for('.worker_info') }}">Создать</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          {# Ссылка на работника #}
+          <td>
+            <a class="text-inherit" data-modal-id="WorkerInfoModal"
+              data-url="{{ url_for('.worker_info', worker_id=worker.worker_id) }}">{{ worker.name }}
+            </a>
+          </td>
 
-    <div class="row">
-      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+          <td>{{ worker.start_day }} - {{ worker.end_day }}</td>
+          <td>{{ worker.employments|length or '' }}</td>
 
-        <div class="card h-100">
+        </tr>
+      {% endfor %}
+    </tbody>
+  {% endset %}
+  {{ m.table(table) }}
 
-          <div class="table-responsive">
-            <table id="Clients" class="table text-nowrap">
-              <thead class="">
-                <tr>
-                  <th class="main-tab-checkbox">
-                    <input class="form-check-input check-all" type="checkbox">
-                  </th>
-                  <th scope="col">ФИО</th>
-                  <th scope="col">Рабочий день</th>
-                  <th scope="col">Занятость</th>
-                </tr>
-              </thead>
-
-              <tbody>
-
-                {% for worker in workers %}
-                  <tr>
-                    <td class="main-tab-checkbox">
-                      <input class="form-check-input to-check" type="checkbox" value="{{ worker.worker_id }}">
-                    </td>
-                    <td>
-                      <a class="open-modal text-inherit" data-modal-id="WorkerInfoModal"
-                        data-url="{{ url_for('.worker_info', worker_id=worker.worker_id) }}">{{ worker.name }}
-                      </a>
-                    </td>
-                    <td>{{ worker.start_day }} - {{ worker.end_day }}</td>
-                    <td>{{ worker.employments|length or '' }}</td>
-
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-  </div>
-
-  <!-- Actions buttons -->
-  <div class="sticky-bottom-buttons">
-    <button class="btn btn-sm rounded-3 open-modal-confirmation" type="button"
-      data-action="delete" data-title="Удалить работников?">
-      <i data-feather="trash" class="icon-xs"></i>
-      Удалить
-    </button>
-  </div>
+  {# Кнопки действий таблицы #}
+  {% set table_btns %}
+    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="delete"
+      data-title="Удалить работников?" data-text="" data-after="update">Удалить</button>
+  {% endset %}
+  {{ m.table_actions(table_btns) }}
 
 </form>
-
-{% include 'flash_messages.html' %}
-
 {% endblock %}

@@ -1,20 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Остатки{% endblock %}
+{% set page_settings = {"title": "Остатки", "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
 
 {% block content %}
-
-
 {% include 'stock/header.html' %}
+<form id="ProductsList" class="d-grid gap-3" action="">
 
-<div class="row">
-  <div class="d-flex align-items-center">
-    <h3 class="mb-0">Остатки</h3>
+  {# Блок названия и кнопок #}
+  {{ m.heading("Остатки") }}
+
+  <div class="row">
+    <div id="productsList" class="col-12 d-flex flex-column gap-3"></div>
   </div>
-</div>
-
-<div class="row">
-  <div id="productsList" class="col-12 d-flex flex-column gap-3"></div>
-</div>
 
 
 <script>
@@ -25,10 +22,6 @@
 
   $('#productsList').on("click", 'a.open-category', function () {
     Load(`&category_id=${$(this).data('category-id')}`)
-  })
-
-  $('#productsList').on("click", 'a.page-link', function () {
-    Load(`&page=${$(this).data('page')}`)
   })
 
   Load();

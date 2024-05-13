@@ -10,13 +10,13 @@
     <thead>
       <tr>
         {% if not deal.posted %}
-          <th scope="col">
+          <th>
             <input class="form-check-input check-all" type="checkbox">
           </th>
         {% endif %}
-        <th scope="col">Название</th>
-        <th scope="col">Стоимость</th>
-        <th scope="col"></th>
+        <th>Название</th>
+        <th>Стоимость</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -27,7 +27,7 @@
 
       <tr class="product">
         {% if not deal.posted %}
-          <td class="main-tab-checkbox">
+          <td class="pe-0">
             <input class="form-check-input to-check" type="checkbox" value="">
           </td>
         {% endif %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+{% set settings = option.settings.text|to_json if option and option.settings else {} %}
+<form id="OptionSettings" class="d-grid gap-3" action="{{ url_for('.option_settings', option_id=option.option_id if option) }}">
+
+  {# Блок названия и кнопок #}
+  {{ m.heading(option.description.name if option else 'Новая опция') }}
+
+  <div class="row">
+    <div class="col-12 d-grid gap-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <div>
+            <div class="mb-3 row">
+
+              <div class="col-sm-4 mb-3 mb-lg-0">
+                <label for="name" class="form-label">Название</label>
+                <input type="text" class="form-control" name="name" value="{{ option.name if option }}" required>
+              </div>
+
+              <div class="col-sm-4">
+                <label for="sort" class="form-label">Порядок сортировки</label>
+                <input type="number" class="form-control" name="sort" value="{{ option.sort_order if option }}">
+              </div>
+
+              <div class="col-sm-4">
+                <label class="form-label">Тип</label>
+                <select class="general-select" name="type" data-width="100%">
+                  <option>checkbox</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3 row">
+
+              <div class="col-sm-4">
+                <label for="quantity" class="form-label">Количество</label>
+                <input type="number" class="form-control" name="quantity" value="{{ settings.quantity or 10 }}">
+              </div>
+
+              <div class="col-sm-4">
+                <label class="form-label">Вычетать со склада</label>
+                <select class="general-select" name="subtract" data-width="100%">
+                  <option value="0" {{ 'selected' if settings.subtract == 0 }}>Нет</option>
+                  <option value="1" {{ 'selected' if settings.subtract == 1 }}>Да</option>
+                </select>
+              </div>
+
+              <div class="col-sm-4">
+                <label class="form-label">Price prefix</label>
+                <select class="general-select" name="price-prefix" data-width="100%">
+                  <option {{ 'selected' if settings.price_prefix == '+' }}>+</option>
+                  <option {{ 'selected' if settings.price_prefix == '=' }}>=</option>
+                  <option {{ 'selected' if settings.price_prefix == '-' }}>-</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  {# Кнопки действий формы #}
+  {{ m.form_actions() }}
+
+</form>
+{% endblock %}

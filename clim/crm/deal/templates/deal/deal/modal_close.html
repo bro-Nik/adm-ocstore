@@ -1,8 +1,5 @@
-{% if not request.args.get('only_content') %}
-  {% extends "modal_base.html" %}
-  {% set modal_fullscreen = False %}
-  {% set modal_title = 'Какой результат?' %}
-{% endif %}
+{% extends "base.html" %}
+{% set page_settings = {"title": "Какой результат?", "modal": True, "fullscreen": False} %}
 
 {% block content %}
 <div class="d-flex gap-2 justify-content-center">

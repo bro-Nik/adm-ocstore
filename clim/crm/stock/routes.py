@@ -2,10 +2,11 @@ import json
 from flask import abort, render_template, redirect, url_for, request
 from flask_login import login_required
 
+from clim.utils import actions_in
+
 from ..models import db, Category, Product, ProductDescription, \
-    ProductToCategory, WeightClass, OptionValueSetting, OptionValue, Option, \
-    Attribute
-from ..utils import actions_in, get_main_category, smart_int
+    ProductToCategory, WeightClass, OptionValueSetting, OptionValue, Option
+from ..utils import smart_int
 from . import bp
 from .models import Stock, StockMovement
 from .utils import StockSettings, get_category, get_movement, get_product, \
@@ -23,8 +24,11 @@ def products():
 def products_load():
     category_id = request.args.get('category_id', 0, type=int)
 
-    categories = (Category.query.where(Category.parent_id == category_id)
-                  .join(Category.products).where(Product.stocks != None)).all()
+    categories = db.session.execute(db.select(Category)
+                                    .filter_by(parent_id=category_id)
+                                    .join(Category.products)
+                                    .filter(Product.stocks != None)
+                                    .group_by(Category.category_id)).scalars()
 
     products = Product.query.where(Product.stocks != None)
     if category_id:
@@ -55,6 +59,7 @@ def movements(movement_type):
                  .order_by(StockMovement.movement_id.desc())
                  .paginate(page=request.args.get('page', 1, type=int),
                            per_page=10, error_out=False))
+
     return render_template('stock/movements.html',
                            not_movements=not list(movements),
                            movements=movements, movement_type=movement_type)
@@ -80,27 +85,26 @@ def movement_info(movement_type):
             db.session.add(movement)
 
         data = json.loads(request.data) if request.data else {}
+        print(data)
         action = data.get('action', '')
 
+        # Сохранить
+        if not action:
+            movement.save(data)
+            db.session.commit()
         # Отменить проведение
-        if action == 'unposting':
+        elif action == 'unposting':
             movement.unposting()
             if not movement.posted:
                 db.session.commit()
-        else:
-            # Сохранить
-            if 'save' in action:
-                movement.save(data)
+        # Провести
+        elif 'posting' in action:
+            movement.posting()
+            if movement.posted:
                 db.session.commit()
-
-            # Провести
-            if 'posting' in action:
-                movement.posting()
-                if movement.posted:
-                    db.session.commit()
-        return {'redirect': str(url_for('.movement_info',
-                                        movement_type=movement_type,
-                                        movement_id=movement.movement_id))}
+        return {'redirect': url_for('.movement_info',
+                                    movement_type=movement_type,
+                                    movement_id=movement.movement_id)}
 
     return render_template('stock/movement/main.html',
                            movement=movement, movement_type=movement_type)
@@ -133,9 +137,10 @@ def stock_settings():
             stock = Stock()
             db.session.add(stock)
 
-        stock.edit(request.form)
+        data = json.loads(request.data) if request.data else {}
+        stock.edit(data)
         db.session.commit()
-        return redirect(url_for('.stocks'))
+        return {'redirect': url_for('.stock_settings', stock_id=stock.stock_id)}
 
     return render_template('stock/stock_settings.html', stock=stock)
 
@@ -143,8 +148,7 @@ def stock_settings():
 @bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
-    menu = [{'name': 'Расходные материалы',
-             'url': url_for('.settings_consumables')}]
+    menu = {'Расходные материалы': url_for('.settings_consumables')}
     return render_template('stock/settings/settings.html', menu=menu)
 
 
@@ -153,12 +157,16 @@ def settings():
 def settings_consumables():
     key = 'consumables_categories_ids'
     if request.method == 'POST':
-        StockSettings.set({key: request.form.getlist(key)})
+        data = json.loads(request.data) if request.data else {}
+        info = data.get('info', {})
+        StockSettings.set({key: info.get(key)})
         return ''
 
+    # Категории расходных материалов
     ids = StockSettings.get_item(key)
     categories = db.session.execute(
         db.select(Category).filter(Category.category_id.in_(ids))).scalars()
+
     options = db.session.execute(db.select(Option)).scalars()
     return render_template('stock/settings/consumables.html', options=options,
                            categories=categories)
@@ -180,47 +188,11 @@ def consumables_in_option():
         db.session.commit()
         return ''
 
-    settings = attribute = None
-    if value.settings and value.settings.settings:
-        settings = json.loads(value.settings.settings)
-        attribute = db.session.execute(
-            db.select(Attribute)
-            .filter_by(attribute_id=settings.get('attribute_id'))).scalar()
-
     consumables = None
     if value.settings and value.settings.consumables:
         consumables = json.loads(value.settings.consumables)
-        for consumable in consumables:
-            product = get_product(consumable['product_id'])
-            consumable['cost'] = product.cost or 0
-            consumable['name'] = product.description.name
     return render_template('stock/settings/consumables_option.html',
-                           option_id=request.args.get('option_id'),
-                           value=value,
-                           settings=settings,
-                           option_value_consumables=consumables,
-                           attribute=attribute)
-
-
-# Не нашел где применяется
-# @bp.route('/json/products_in_stocks', methods=['GET'])
-# @login_required
-# def json_products_in_stocks(product_id=None):
-#     products = {}
-#     products_in_stocks = tuple(db.session.execute(db.select(StockProduct)).scalars())
-#     for product in products_in_stocks:
-#         if not products.get(product.product_id):
-#             products[product.product_id] = []
-#
-#         products[product.product_id].append(
-#             {'stock_id': product.stock_id,
-#              'stock_name': product.stock.name,
-#              # 'cost': product.main_product.cost,
-#              # 'unit': product.main_product.unit_class.description.unit,
-#              'quantity': product.quantity}
-#         )
-#
-#     return json.dumps(products)
+                           value=value, consumables=consumables)
 
 
 @bp.route('/json/consumables_in_option', methods=['GET'])
@@ -243,38 +215,13 @@ def json_consumables_in_option(option_value_id=None):
     return []
 
 
-# не нашел где применяется/
-# @bp.route('/json/consumables', methods=['GET'])
-# @login_required
-# def json_consumables():
-#     result = []
-#     for c in get_consumables():
-#         result.append({'name': c.description.name, 'id': c.product_id})
-#
-#     return json.dumps(result)
-
-
-# не нашел где применяется/
-# @bp.route('/json/all_products', methods=['GET'])
-# @login_required
-# def json_all_products():
-#     result = []
-#     for product in get_products():
-#         result.append({'id': product.product_id,
-#                        'name': product.description.name,
-#                        'cost': product.cost,
-#                        'unit': product.unit})
-#
-#     return json.dumps(result)
-
-
 @bp.route('/product/', methods=['GET'])
 @bp.route('/product/<int:product_id>', methods=['GET'])
 @login_required
 def product_info(product_id=None):
     product = get_product(product_id)
     unit_classes = db.session.execute(db.select(WeightClass)).scalars()
-    main_category = get_main_category(product_id)
+    main_category = product.main_category
 
     return render_template('stock/product_info.html',
                            product=product,
@@ -364,7 +311,7 @@ def ajax_products():
 
     for product in products:
         result['results'].append({'id': str(product.product_id),
-                                  'text': product.description.name,
+                                  'text': product.name,
                                   'price': product.cost,
                                   'unit': product.unit})
 
@@ -499,6 +446,7 @@ def set_products():
     category = db.session.execute(db.select(Category)
                                   .filter_by(category_id=category_id)).scalar()
 
+    print(products.pages)
     return render_template('stock/set_products.html',
                            categories=categories,
                            products=products,

@@ -1,43 +1,29 @@
 {% extends "base.html" %}
-{% block title %}  {% endblock %}
-{% block head %}
-    {{ super() }}
-{% endblock %}
+{% set page_settings = {"title": page_name, "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
 
 {% block content %}
+<div class="d-grid gap-3">
 
-<!-- Container fluid -->
-<div class="container-fluid px-6 d-grid gap-3 mt-3">
+  {# Блок названия и кнопок #}
+  {% set heading_btns %}
+    <a class="btn btn-primary" data-form="#Manufs" data-action="save">Сохранить</a>
+    <a class="btn btn-danger" data-form="#Manufs" data-action="clean">Очистить</a>
+  {% endset %}
+  {{ m.heading("План работ", heading_btns) }}
 
-  <div class="row">
-    <div class="col-lg-12 col-md-12 col-12">
-      <!-- Page header -->
-      <div>
-        <div class="d-flex align-items-center">
-          <div class="mb-2 mb-lg-0">
-            <h3 class="mb-0">План работ</h3>
-          </div>
-          <div class="ms-auto d-flex gap-2">
-            <button class="btn btn-primary action" type="button" data-form="#Manufs" data-action="save">Сохранить</button>
-            <button class="btn btn-danger action" type="button" data-form="#Manufs" data-action="clean">Очистить</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Filter -->
+  {# Блок фильтра #}
   <div class="col-xl-12 col-lg-12 col-md-12 col-12">
     <div class="card h-100">
 
       <div class="card-body">
-        <form id="Filter" class="update-after-change" method="post" action="{{ url_for('work_plan') }}">
+        <form id="Filter" class="update-after-change" method="post" action="{{ url_for('main.work_plan') }}">
           <div class="row g-2">
 
             <div class="col-md-2">
               <label for="category_id" class="form-label h7">Категория</label>
               <select class="general-select" data-width="100%" id="category_id" name="category_id"
-                data-url="{{ url_for('get_list_all_categories') }}" data-class="bg-light" data-placeholder="Все">
+                data-url="{{ url_for('main.get_list_all_categories') }}" data-class="bg-light" data-placeholder="Все">
                 <option selected value="{{ category.category_id }}">{{ category.description.name }}</option>
               </select>
             </div>
@@ -61,59 +47,48 @@
     </div>
   </div>
 
-  <!-- row  -->
-  <div class="row mt-6 mb-6">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <div class="card h-100">
-
-        <form id="Manufs"  method="post" action="{{ url_for('work_plan_update', category_id=category.category_id) }}">
-          <div class="table-responsive">
-            <table class="table text-nowrap">
-              <thead>
-                <tr>
-                  <th scope="col">Название</th>
-                  {% for field in fields %}
-                    <th>{{ field['name'] }}</td>
-                  {% endfor %}
-                  <th class="align-middle text-end">
-	                  <div class="dropdown dropstart">
-	                    <a class="text-muted text-primary-hover" href="#" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i data-feather="more-vertical" class="icon-xxs" ></i>
-                      </a>
-                      <div class="dropdown-menu" aria-labelledby="dropdownAction">
-                        <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#FieldsSettings">Поля</a>
-                      </div>
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-
-                {% for manufacturer in manufacturers if not manufacturers_ids or manufacturer.manufacturer_id|string in manufacturers_ids %}
-                  <tr>
-                    <td class="">{{ manufacturer.name }}</td>
-
-                    {% for field in fields %}
-                      <td>
-                        <input class="form-check-input to-check" type="checkbox"
-                                                                 value="{{ manufacturer.manufacturer_id }}--{{ field['id'] }}"
-                          {{ 'checked' if work_plan.get(manufacturer.manufacturer_id|string) and field['id']|string in work_plan[manufacturer.manufacturer_id|string] }}>
-                      </td>
-                    {% endfor %}
-                    <td></td>
-                  </tr>
-                {% endfor %}
-
-              </tbody>
-            </table>
+  {# Блок таблицы #}
+  {% set table %}
+    <thead>
+      <tr>
+        <th>Название</th>
+        {% for _, name in fields.items() %}
+          <th>{{ name }}</td>
+        {% endfor %}
+        <th class="align-middle text-end">
+	        <div class="dropdown dropstart">
+	          <a class="text-muted text-primary-hover" href="#" role="button" id="dropdownAction" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i data-feather="more-vertical" class="icon-xxs" ></i>
+            </a>
+            <div class="dropdown-menu" aria-labelledby="dropdownAction">
+              <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#FieldsSettings">Поля</a>
+            </div>
           </div>
-        </form>
-      </div>
-    </div>
-  </div>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for manufacturer in manufacturers if not manufacturers_ids or manufacturer.manufacturer_id|string in manufacturers_ids %}
+        <tr>
+          <td>{{ manufacturer.name }}</td>
+
+          {% for field in fields %}
+            <td>
+              <input class="form-check-input to-check" type="checkbox"
+                value="{{ manufacturer.manufacturer_id }}--{{ field['id'] }}"
+                {{ 'checked' if work_plan.get(manufacturer.manufacturer_id|string) and field['id']|string in work_plan[manufacturer.manufacturer_id|string] }}>
+            </td>
+          {% endfor %}
+          <td></td>
+        </tr>
+      {% endfor %}
+
+    </tbody>
+  {% endset %}
+  {{ m.table(table) }}
 </div>
 
-<!-- Modal Fields -->
 <div class="modal fade" id="FieldsSettings" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -123,7 +98,7 @@
         </button>
       </div>
       <div class="modal-body justify-content-center">
-        <form id="Fields" method="post" action="{{ url_for('work_plan_fields') }}" class="mb-3">
+        <form id="Fields" method="post" action="{{ url_for('main.work_plan_fields') }}" class="mb-3">
           {% for field in fields %}
           <div class="col-12 d-flex mb-2">
             <div class="col-11">

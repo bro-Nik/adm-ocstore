@@ -1,36 +1,27 @@
-{% if not request.args.get('only_content') %}
-  {% extends "base.html" %}
-  {% block title %}Настройки{% endblock %}
-{% endif %}
+{% extends "base.html" %}
+{% set page_settings = {"title": "Настройки", "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
 
 {% block content %}
-
 {% include 'stock/header.html' %}
-<div class="row">
-  <div class="d-flex align-items-center">
-    <h3 class="mb-0">Настройки</h3>
-  </div>
-</div>
+<form id="Stocks" class="d-grid gap-3" action="{{ url_for('.stocks_action') }}">
 
-<div class="row">
-  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-    <div class="card h-100">
-      <div class="table-responsive">
-        <table id="SettingsTable" class="table text-nowrap">
-          <tbody>
-            {% for item in menu %}
-              <tr>
-                <td>
-                  <span class="text-inherit open-modal" data-modal-id="SettingsModal" 
-                    data-url="{{ item['url'] }}">{{ item['name'] }}</span>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
+  {# Блок названия и кнопок #}
+  {{ m.heading("Настройки", heading_btns) }}
 
+  {# Блок таблицы #}
+  {% set table %}
+    <tbody>
+      {% for name, url in menu.items() %}
+        <tr>
+          <td>
+            <span class="text-inherit" data-modal-id="SettingsModal" data-url="{{ url }}">{{ name }}</span>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  {% endset %}
+  {{ m.table(table) }}
+
+</form>
 {% endblock %}

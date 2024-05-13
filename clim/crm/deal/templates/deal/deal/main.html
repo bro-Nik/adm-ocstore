@@ -1,12 +1,11 @@
-{% if not request.args.get('only_content') %}
-  {% extends "modal_base.html" %}
-  {% set modal_fullscreen = True %}
-{% endif %}
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
 
 {% block content %}
 {% set details = deal.get('details', {}) %}
 
-<form id="DealInfo" class="d-grid gap-3" data-url="{{ url_for('.deal_info', deal_id=deal.deal_id) }}">
+<form id="DealInfo" class="d-grid gap-3" action="{{ url_for('.deal_info', deal_id=deal.deal_id) }}">
   {% include 'deal/deal/header.html' %}
 
   <div class="row">
@@ -39,17 +38,10 @@
 
       </div>
     </div>
-    {#}
-  </div>
-    {#}
-
-  <div class="sticky-bottom-box">
-    <div class="sticky-bottom bg-white py-2 change">
-      <button type="button" class="btn btn-salato btn-to-submit" data-this-need-update="true">Сохранить</button>
-      <button class="btn btn-transparent rounded-3" type="reset">Отмена</button>
-    </div>
   </div>
 
+  {# Кнопки действий формы #}
+  {{ m.form_actions() }}
 </form>
 
 <script>
@@ -91,8 +83,6 @@
   });
 </script>
 {% endif %}
-
-{% include 'flash_messages.html' %}
 
 {% endblock %}
 

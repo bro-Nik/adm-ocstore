@@ -1,3 +1,10 @@
+{% set page_content %}
+  {% block content %}{% endblock %}
+  {% include 'flash_messages.html' %}
+{% endset %}
+
+{# Блок загрузки основного шаблона страницы #}
+{% if not request.args.get('only_content') and not page_settings.modal %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -5,13 +12,9 @@
     {% include 'head.html' %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
-
-    <!-- Scripts -->
     {% include 'scripts.html' %}
-
-    <title>{% block title %}{% endblock %}</title>
+    <title>{{ page_settings.title }}</title>
   {% endblock %}
 </head>
 
@@ -21,9 +24,8 @@
     {% include 'navbar-vertical.html' %}
 
     <div id="page-content" class="d-flex flex-column pb-80">
-        {% include 'header.html' %}
-
-        <div id="content" class="container-fluid px-5 py-3 d-flex flex-column gap-3">{% block content %}{% endblock %}</div>
+      {% include 'header.html' %}
+      <div id="content" class="container-fluid px-5 py-3 d-flex flex-column gap-3">{{ page_content }}</div>
     </div>
 
     <div id="Modals">
@@ -33,19 +35,16 @@
           <div class="modal-content">
             <div class="modal-header d-flex">
               <h5 class="modal-title d-flex justify-content-center w-100"></h5>
-              <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close">
-              </button>
+              <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-text px-5 text-center text-muted small-text"></div>
             <div class="modal-body d-flex gap-2 justify-content-center">
-              <button class="btn btn-danger rounded-3 action" type="button"
-                data-bs-dismiss="modal"><strong>Да</strong></button>
+              <button class="btn btn-danger rounded-3" type="submit" data-bs-dismiss="modal"><strong>Да</strong></button>
               <button class="btn rounded-3" type="button" data-bs-dismiss="modal" aria-label="Close">Отмена</button>
             </div>
           </div>
         </div>
       </div>
-
     </div>
 
   </div>
@@ -53,8 +52,8 @@
 
 </body>
 <script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
-<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 <script src="{{ url_for('static', filename='js/select.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 <script src="{{ url_for('static', filename='js/checkboxes.js') }}"></script>
 <script src="{{ url_for('static', filename='js/products.js') }}"></script>
 <script>
@@ -62,8 +61,29 @@
   const url_stock_first = "{{ url_for('crm.deal.ajax_stocks_first') }}";
   const url_contact_info = "{{ url_for('crm.contact.contact_info') }}";
 </script>
-
-{#
-{% include 'scripts_code.html' %}
-#}
 </html>
+
+{# Блок загрузки основного шаблона модульного #}
+{% elif not request.args.get('only_content') and page_settings.modal %}
+<div class="modal-dialog modal-{{ 'fullscreen' if page_settings.fullscreen else 'dialog-centered' }}" role="document">
+  <div class="modal-content bg-light">
+    {% if page_settings.fullscreen %}
+      <div class="modal-close-label">
+        <span class="btn-close" data-bs-dismiss="modal" aria-label="Close"></span>
+      </div>
+    {% else %}
+      <div class="modal-header">
+        <h1 class="modal-title fs-3">{{ page_settings.title }}</h1>
+        <span class="btn-close" data-bs-dismiss="modal" aria-label="Close"></span>
+      </div>
+    {% endif %}
+    <div class="modal-body {{ 'd-flex flex-column p-5 pb-80' if page_settings.fullscreen }}">
+      {{ page_content }}
+    </div>
+  </div>
+</div>
+
+{# Блок загрузки только контента #}
+{% else %}
+  {{ page_content }}
+{% endif %}

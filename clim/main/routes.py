@@ -3,16 +3,16 @@ import pickle
 from flask import redirect, render_template, request, url_for
 from flask_login import login_required
 
-from clim.utils import get_categories
-from clim.models import Attribute, AttributeDescription, Category, Manufacturer, Module, OtherShops, Product
+from clim.utils import get_module
+from clim.models import Attribute, AttributeDescription, Category, Manufacturer, Module, Product
 
 from ..app import db, redis
 from . import bp
 
 
-@bp.route('/', methods=['GET'])
-def main_redirect():
-    return redirect(url_for('crm.stock.products'))
+# @bp.route('/', methods=['GET'])
+# def main_redirect():
+#     return redirect(url_for('crm.stock.products'))
 
 
 @bp.route('/ajax/list_all_categories', methods=['GET'])
@@ -92,91 +92,27 @@ def get_list_all_attributes():
     per_page = 20
     search = request.args.get('search')
     result = {'results': []}
+    result['results'].append({'id': '0',
+                              'text': 'Нет'})
 
     request_base = Attribute.query.where(Attribute.description)
 
     if search:
         request_base = (request_base.join(Attribute.description)
-                   .where(AttributeDescription.name.contains(search)))
+                        .where(AttributeDescription.name.contains(search)))
 
     attributes = request_base.paginate(page=request.args.get('page', 1, type=int),
                                        per_page=per_page,
                                        error_out=False)
 
     for attribute in attributes:
-        result['results'].append(
-            {
-                'id': str(attribute.attribute_id),
-                'text': attribute.description.name
-            }
-        )
+        result['results'].append({'id': str(attribute.attribute_id),
+                                  'text': attribute.description.name})
 
     more = len(result['results']) >= per_page
     result['pagination'] = {'more': more}
 
     return json.dumps(result)
-
-
-# from routes
-
-def product_price_request(product):
-    return product.price == 100001
-
-
-def product_not_in_stock(product):
-    return product.quantity < 1
-
-
-def product_on_order(product):
-    return product.quantity == 1
-
-
-def product_in_stock(product):
-    return product.quantity > 1
-
-
-@bp.route('/categories', methods=['GET', 'POST'])
-@login_required
-def categories():
-    categories = tuple(get_categories())
-
-    result = {}
-    # not_in_stock = {}
-    # price_request = {}
-
-    for category in tuple(categories):
-        if not category.products:
-            continue
-
-        result[category.category_id] = {'in_stock': 0,
-                                        'on_order': 0,
-                                        'price_request': 0,
-                                        'not_in_stock': 0}
-
-        for product in category.products:
-
-            if product_in_stock(product):
-                result[category.category_id]['in_stock'] += 1
-            if product_on_order(product):
-                result[category.category_id]['on_order'] += 1
-            if product_price_request(product):
-                result[category.category_id]['price_request'] += 1
-            if product_not_in_stock(product):
-                result[category.category_id]['not_in_stock'] += 1
-
-    return render_template('categories.html',
-                           categories=categories,
-                           result=result
-                           )
-
-
-@bp.route('/category_<int:category_id>/settings', methods=['GET', 'POST'])
-@login_required
-def category_settings(category_id):
-    category = db.session.execute(
-        db.select(Category).filter(Category.category_id == category_id)).scalar()
-
-    return render_template('category_settings.html', category=category)
 
 
 def get_consumables():
@@ -225,34 +161,6 @@ def get_manufacturers(filter={}):
     return request_base.all()
 
 
-@bp.route('/products/prices/settings_apply', methods=['POST'])
-@login_required
-def products_prices_settings_apply():
-    settings_in_base, settings = get_products_prices_settings()
-
-    fields = ['special_offer_id',
-              'stiker_text',
-              'price_delta']
-    for field in fields:
-        if request.form.get(field):
-            settings[field] = request.form.get(field)
-
-    if request.form.getlist('options_ids'):
-        settings['options_ids'] = request.form.getlist('options_ids')
-
-    if settings:
-        if settings_in_base:
-            settings_in_base.value = json.dumps(settings)
-        else:
-            products_prices_settings = Module(
-                name='products_prices',
-                value=json.dumps(settings)
-            )
-            db.session.add(products_prices_settings)
-
-        db.session.commit()
-
-    return redirect(url_for('products_prices_settings'))
 
 
 @bp.route('/del_not_confirm_products', methods=['GET', 'POST'])
@@ -323,11 +231,11 @@ def work_plan_fields():
                     break
 
     module_data['fields'] = fields
-    module.value = json_dumps_or_other(module_data)
+    module.value = json.dumps(module_data)
     db.session.commit()
     return redirect(url_for('work_plan'))
 
-@bp.route('/work_plan', methods=['GET', 'POST'])
+@bp.route('/site/work_plan', methods=['GET', 'POST'])
 @login_required
 def work_plan():
     manufacturers_ids = request.form.getlist('manufacturers_ids')
@@ -339,14 +247,41 @@ def work_plan():
     category = db.session.execute(category).scalar()
 
     module = get_module('work_plan')
-    module_data = json_loads_or_other(module.value, {}) if module else {}
+    module_data = json.loads(module.value) if module and module.value else {}
     fields = module_data.get('fields', {})
-    work_plan = module_data.get(str(category.category_id), {})
+    if not module_data.get(category_id):
+        module_data[category_id] = {}
 
     request_base = (Manufacturer.query.join(Manufacturer.products)
         .join(Product.categories)
         .where(Category.category_id == category.category_id))
     manufacturers = request_base.order_by(Manufacturer.name).all()
+
+    if request.method == 'POST':
+        if not module:
+            module = Module(name='work_plan')
+            db.session.add(module)
+
+        data = json.loads(request.data) if request.data else {}
+        action = data.get('action')
+        if action == 'save':
+            fields = data.get('ids')
+            for field_list in fields:
+                field_list = field_list.split('--')
+                manufacturer = field_list[0]
+                field = field_list[1]
+
+                if not module_data[category_id].get(manufacturer):
+                    module_data[category_id][manufacturer] = []
+
+                module_data[category_id][manufacturer].append(field)
+
+        elif action == 'clean':
+            module_data.pop(category_id, None)
+
+        module.value = json.dumps(module_data)
+        db.session.commit()
+        return ''
 
     return render_template('work_plan.html',
                            work_plan=work_plan,
@@ -354,43 +289,6 @@ def work_plan():
                            manufacturers_ids=manufacturers_ids,
                            manufacturers=tuple(manufacturers),
                            fields=fields)
-
-
-@bp.route('/work_plan_<string:category_id>_update', methods=['POST'])
-@login_required
-def work_plan_update(category_id):
-    module = get_module('work_plan')
-    if not module:
-        module = Module(name='work_plan')
-        db.session.add(module)
-
-    module_data = json_loads_or_other(module.value, {})
-
-    if not module_data.get(category_id):
-        module_data[category_id] = {}
-
-    data = json_loads_or_other(request.data, {})
-    action = data.get('action')
-
-    if action == 'save':
-        fields = data.get('ids')
-        for field_list in fields:
-            field_list = field_list.split('--')
-            manufacturer = field_list[0]
-            field = field_list[1]
-
-            if not module_data[category_id].get(manufacturer):
-                module_data[category_id][manufacturer] = []
-
-            module_data[category_id][manufacturer].append(field)
-
-    elif action == 'clean':
-        module_data.pop(category_id, None)
-
-    module.value = json_dumps_or_other(module_data)
-    db.session.commit()
-
-    return redirect(url_for('work_plan'))
 
 
 @bp.route('/stock_statuses', methods=['GET'])
@@ -450,16 +348,16 @@ def stock_statuses_action():
     return redirect(url_for('stock_statuses'))
 
 
-@bp.route('/new_products', methods=['GET'])
-@login_required
-def new_products():
-    other_shops = tuple(db.session.execute(db.select(OtherShops)).scalars())
-
-    products = db.session.execute(
-        db.select(Product).filter_by(date_added=0)).scalars()
-
-    return render_template('products/new.html', products=products,
-                           other_shops=other_shops)
+# @bp.route('/new_products', methods=['GET'])
+# @login_required
+# def new_products():
+#     other_shops = tuple(db.session.execute(db.select(OtherShops)).scalars())
+#
+#     products = db.session.execute(
+#         db.select(Product).filter_by(date_added=0)).scalars()
+#
+#     return render_template('products/new.html', products=products,
+#                            other_shops=other_shops)
 
 
 @bp.route('/new_products_comp', methods=['GET'])
@@ -519,17 +417,3 @@ def new_products_post():
 
 
 
-@bp.route('/reports/viewed_products', methods=['GET'])
-@login_required
-def viewed_products(action=None):
-    products = (Product.query.order_by(Product.viewed.desc())
-                .paginate(page=request.args.get('page', 1, type=int),
-                          per_page=20, error_out=False))
-
-    if request.args.get('action') == 'clean':
-        for product in products:
-            product.viewed = 0
-        db.session.commit()
-        return redirect(url_for('viewed_products'))
-
-    return render_template('reports/viewed_products.html', products=products)

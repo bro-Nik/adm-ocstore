@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<form id="PricesSettings" class="d-grid gap-3" action="{{ url_for('.products_prices_settings') }}">
+
+  {# Блок названия и кнопок #}
+  {{ m.heading("Цены товаров | Настройки") }}
+
+  <div class="row mb-8">
+    <div class="col-xl-3 col-lg-4 col-md-12 col-12">
+      <div class="mb-4 mb-lg-0">
+        <h4 class="mb-1">Настройки</h4>
+        <p class="mb-0 fs-5 text-muted">Настройки категории </p>
+      </div>
+    </div>
+
+    <div class="col-xl-9 col-lg-8 col-md-12 col-12">
+      <div class="card">
+        <div class="card-body">
+          <div>
+            <div class="mb-6">
+              <h4 class="mb-1">Основная информация</h4>
+            </div>
+          
+            <div class="mb-3 row">
+              <div class="col-sm-3">
+                <label for="url" class="form-label">Акция для специальных цен</label>
+                <select class="general-select" data-width="100%" name="special_offer_id" data-class="bg-light">
+                  <option></option>
+                  {% for special_offer in special_offers %}
+                    {% set id = special_offer.special_offer_id %}
+                    <option {{ 'selected' if id|string == settings.get('special_offer_id') }} value="{{ id }}">
+                      {{ special_offer.description.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3 row">
+              <div class="col-sm-12">
+                <label for="options_ids" class="form-label h7">Опции с установкой</label>
+                <select class="general-select" data-width="100%" multiple data-class="bg-light" id="options_ids" name="options_ids">
+                  {% for option in options %}
+                    {% set id = option.option_id %}
+                    <option {{ 'selected' if settings.get('options_ids') and id|string in settings.get('options_ids') }} value="{{ id }}">
+                      {{ option.description.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="col-sm-3 mb-3 mb-lg-0">
+                <label class="form-label">Текст стикера (price-переменная)</label>
+                <input type="text" class="form-control"
+                    name="stiker_text" value="{{ settings.get('stiker_text') if settings.get('stiker_text') }}">
+              </div>
+
+              <div class="col-sm-3 mb-3 mb-lg-0">
+                <label class="form-label">Допустимое отклонение цены (%)</label>
+                <input type="number" class="form-control"
+                  name="price_delta" value="{{ settings.get('price_delta') if settings.get('price_delta') }}">
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Кнопки действий формы #}
+  {{ m.form_actions() }}
+
+</form>
+{% endblock %}

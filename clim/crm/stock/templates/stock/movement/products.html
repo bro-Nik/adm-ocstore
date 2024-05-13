@@ -1,165 +1,147 @@
 {# Jinja #}
 
-<div id="tabProducts" class="card h-100">
-  <div class="table-responsive">
-    <table class="table text-nowrap" data-to-server="products">
-      <thead class="">
-        <tr>
-          {% if not movement.posted %}
-            <th scope="col">
-              <input class="form-check-input check-all" type="checkbox">
-            </th>
-          {% endif %}
-
-          <th>Товар</th>
-          <th class="{{ 'visually-hidden' if not movement_type=='coming' }}">Закупочная цена</th>
-          <th>Количество</th>
-          <th>Склад</th>
-          {% if not movement.posted %}
-            <th>На складе</th>
-          {% endif %}
-          {% if movement_type == 'moving' %}
-            <th>Получатель</th>
-            {% if not movement.posted %}
-              <th>У получателя</th>
-            {% endif %}
-          {% endif %}
-          <th>Сумма</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% set products = movement.get('products') or [] %}
-        {% if not movement.posted and not products %}
-          {% set products = [{}] %}
-        {% endif %}
-
-        {% for product in products %}
-          <tr class="align-middle product">
-
-            {% if not movement.posted %}
-              <td class="main-tab-checkbox">
-                <input class="form-check-input to-check" type="checkbox" value="{{ product.product_id }}">
-              </td>
-            {% endif %}
-
-            <td>
-              <span class="line-count">{{ loop.index }}.</span>
-
-              {% if movement.posted %}
-                <span>{{ product.name }}</span>
-              {% else %}
-                <select class="product-select" data-placeholder="-- Выбрать товар --"
-                    data-url="{{ url_for('.ajax_products') }}" data-class="bg-light"
-                    data-width="300px" name="id" data-required="true">
-                  <option value="{{ product.id }}" selected>{{ product.name }}</option>
-                </select>
-                <input type="hidden" value="{{ product.name }}" name="name">
-                <input type="hidden" value="{{ product.unit }}" name="unit">
-              {% endif %}
-            </td>
-
-            <td class="{{ 'visually-hidden' if not movement_type == 'coming' }}">
-              {% if movement.posted %}
-                <span>{{ product.price|smart_int }} ₽</span>
-              {% else %}
-                <div class="input-group">
-                  <input type="number" step="any" class="form-control" name="price"
-                    value="{{ product.price|smart_int or "" }}" placeholder="0" data-new-line-value="">
-                  <span class="input-group-text">₽</span>
-                </div>
-              {% endif %}
-            </td>
-
-            <td>
-              {% if movement.posted %}
-                <span>{{ product.quantity|smart_int }} {{ product.unit }}</span>
-              {% else %}
-                <div class="input-group">
-                  <input type="number" step="any" class="form-control" name="quantity"
-                    value="{{ product.quantity|smart_int or "" }}" placeholder="0" data-new-line-value="">
-                  <span class="input-group-text quantity" data-new-line-text="шт">{{ product.unit or 'шт'}}</span>
-                </div>
-              {% endif %}
-            </td>
-
-            <td>
-              {% if movement.posted %}
-                <span>{{ product.stock_name }}</span>
-              {% else %}
-                <select class="stock-select" data-placeholder="-- Выбрать склад --"
-                  data-url="{{ url_for('.ajax_stocks') }}" data-class="bg-light"
-                  data-width="200px" name="stock_id" data-new-line-value="previous"
-                  data-url-one="{{ url_for('.ajax_stocks_first') }}"
-                  data-text-to-input-name="stock_name">
-                  <option value="{{ product.stock_id }}" selected>{{ product.stock_name }}</option>
-                </select>
-                <input type="hidden" value="{{ product.stock_name }}" name="stock_name">
-              {% endif %}
-            </td>
-
-            {% if not movement.posted %}
-              <td><span data-stock-available="stock_id" data-new-line-text=""></span></td>
-            {% endif %}
-
-            {% if movement_type == 'moving' %}
-              <td>
-                {% if movement.posted %}
-                  <span>{{ product.stock2_name }}</span>
-                {% else %}
-                  <select class="stock-select" data-placeholder="-- Выбрать склад --"
-                    data-url="{{ url_for('.ajax_stocks') }}" data-class="bg-light"
-                    data-width="200px" name="stock2_id" data-new-line-value="previous"
-                    data-url-one="{{ url_for('.ajax_stocks_first') }}"
-                    data-text-to-input-name="stock2_name">
-                    <option value="{{ product.stock2_id }}" selected>{{ product.stock2_name }}</option>
-                  </select>
-                  <input type="hidden" value="{{ product.stock2_name }}" name="stock2_name">
-                {% endif %}
-              </td>
-
-              {% if not movement.posted %}
-                <td><span data-stock-available="stock2_id" data-new-line-text=""></span></td>
-              {% endif %}
-            {% endif %}
-
-            <td>
-              <span class="sum" data-new-line-text="0">
-                {{ product.price|smart_int * product.quantity|smart_int }}
-              </span>₽
-            </td>
-          </tr>
-        {% endfor %}
-
-      </tbody>
-    </table>
-  </div>
-
-  {% if not movement.posted %}
-  <div class="d-flex">
-    <div class="form-actions">
-      <div class="m-3 gap-2 justify-content-start">
-        Отмеченно: <span class="checks-count"></span>
-      </div>
-      <div class="m-3 gap-2 d-flex justify-content-start">
-        <button class="btn rounded-3 delete-product" type="button">Удалить</button>
-      </div>
-    </div>
-    <div class="m-3 ms-auto buttons">
+{# Блок таблицы #}
+{% set table %}
+  <thead>
+    <tr>
       {% if not movement.posted %}
-        <button class="btn rounded-3 btn-primary create-new-line" type="button">Добавить строку</button>
-        <button class="btn rounded-3 btn-outline-secondary open-modal" type="button" data-modal-id="SelectProductsModal"
-          data-url="{{ url_for('.set_products_page') }}">Выбрать товары</button>
-
-        {% if movement_type == 'coming' %}
-          <button class="btn rounded-3 btn-outline-secondary open-modal" type="button" data-modal-id="AddProductsModal"
-            data-url="{{ url_for('.product_info') }}">Создать товар</button>
+        <th class="checkbox"><input class="form-check-input check-all" type="checkbox"></th>
+      {% endif %}
+      <th>Товар</th>
+      <th class="{{ 'visually-hidden' if movement_type!='coming' }}">Закупочная цена</th>
+      <th>Количество</th>
+      <th>Склад</th>
+      {% if not movement.posted %}
+        <th>На складе</th>
+      {% endif %}
+      {% if movement_type == 'moving' %}
+        <th>Получатель</th>
+        {% if not movement.posted %}
+          <th>У получателя</th>
         {% endif %}
       {% endif %}
-    </div>
-  </div>
-  {% endif %}
+      <th>Сумма</th>
+    </tr>
+  </thead>
 
-</div>
+  <tbody>
+    {% set products = movement.get('products') or [] %}
+    {% if not movement.posted and not products %}
+      {% set products = [{}] %}
+    {% endif %}
+
+    {% for product in products %}
+      <tr class="align-middle product">
+
+        {# Чекбокс #}
+        {% if not movement.posted %}
+          <td class="checkbox">{{ m.checkbox(product.product_id) }}</td>
+        {% endif %}
+
+        <td>
+          <span class="line-count">{{ loop.index }}.</span>
+
+          {% if movement.posted %}
+            <span>{{ product.name }}</span>
+          {% else %}
+            <select class="product-select" data-placeholder="-- Выбрать товар --"
+                data-url="{{ url_for('.ajax_products') }}" data-class="bg-light"
+                data-width="300px" name="id" data-required="true">
+              <option value="{{ product.id }}" selected>{{ product.name }}</option>
+            </select>
+            <input type="hidden" value="{{ product.name }}" name="name">
+            <input type="hidden" value="{{ product.unit }}" name="unit">
+          {% endif %}
+        </td>
+
+        <td class="{{ 'visually-hidden' if not movement_type == 'coming' }}">
+          {% if movement.posted %}
+            <span>{{ product.price|smart_int }} ₽</span>
+          {% else %}
+            <div class="input-group">
+              <input type="number" step="any" class="form-control" name="price"
+                value="{{ product.price|smart_int or "" }}" placeholder="0" data-new-line-value="">
+              <span class="input-group-text">₽</span>
+            </div>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if movement.posted %}
+            <span>{{ product.quantity|smart_int }} {{ product.unit }}</span>
+          {% else %}
+            <div class="input-group">
+              <input type="number" step="any" class="form-control" name="quantity"
+                value="{{ product.quantity|smart_int or "" }}" placeholder="0" data-new-line-value="">
+              <span class="input-group-text quantity" data-new-line-text="шт">{{ product.unit or 'шт'}}</span>
+            </div>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if movement.posted %}
+            <span>{{ product.stock_name }}</span>
+          {% else %}
+            <select class="stock-select" data-placeholder="-- Выбрать склад --"
+              data-url="{{ url_for('.ajax_stocks') }}" data-class="bg-light"
+              data-width="200px" name="stock_id" data-new-line-value="previous"
+              data-url-one="{{ url_for('.ajax_stocks_first') }}"
+              data-text-to-input-name="stock_name">
+              <option value="{{ product.stock_id }}" selected>{{ product.stock_name }}</option>
+            </select>
+            <input type="hidden" value="{{ product.stock_name }}" name="stock_name">
+          {% endif %}
+        </td>
+
+        {% if not movement.posted %}
+          <td><span data-stock-available="stock_id" data-new-line-text=""></span></td>
+        {% endif %}
+
+        {% if movement_type == 'moving' %}
+          <td>
+            {% if movement.posted %}
+              <span>{{ product.stock2_name }}</span>
+            {% else %}
+              <select class="stock-select" data-placeholder="-- Выбрать склад --"
+                data-url="{{ url_for('.ajax_stocks') }}" data-class="bg-light"
+                data-width="200px" name="stock2_id" data-new-line-value="previous"
+                data-url-one="{{ url_for('.ajax_stocks_first') }}"
+                data-text-to-input-name="stock2_name">
+                <option value="{{ product.stock2_id }}" selected>{{ product.stock2_name }}</option>
+              </select>
+              <input type="hidden" value="{{ product.stock2_name }}" name="stock2_name">
+            {% endif %}
+          </td>
+
+          {% if not movement.posted %}
+            <td><span data-stock-available="stock2_id" data-new-line-text=""></span></td>
+          {% endif %}
+        {% endif %}
+
+        <td>
+          <span class="sum" data-new-line-text="0">
+            {{ product.price|smart_int * product.quantity|smart_int }}
+          </span>₽
+        </td>
+      </tr>
+    {% endfor %}
+
+  </tbody>
+{% endset %}
+
+{% if not movement.posted %}
+  {% set table_btns %}
+      <button class="btn rounded-3 btn-primary create-new-line" type="button">Добавить строку</button>
+      <button class="btn rounded-3 btn-outline-secondary" type="button" data-modal-id="SelectProductsModal"
+        data-url="{{ url_for('.set_products_page') }}">Выбрать товары</button>
+
+      {% if movement_type == 'coming' %}
+        <button class="btn rounded-3 btn-outline-secondary" type="button" data-modal-id="AddProductsModal"
+          data-url="{{ url_for('.product_info') }}">Создать товар</button>
+      {% endif %}
+  {% endset %}
+{% endif %}
+{{ m.table(table, table_btns, attrs="id=tabProducts data-to-server=products") }}
 
 <div class="card h-100">
   <div class="d-flex justify-content-end align-items-center m-3">

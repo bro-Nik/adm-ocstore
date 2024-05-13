@@ -1,84 +1,43 @@
-<table class="table text-nowrap">
+{% import 'base_macro.html' as m with context %}
+
+{# Блок таблицы #}
+{% set table %}
   <thead>
     <tr>
-      <th scope="col">Название</th>
+      <th>Название</th>
     </tr>
   </thead>
   <tbody>
     {% if category %}
-    <tr>
-      <td class="">
-        <a href="#" class="text-inherit open-category" data-category-id="{{ category.parent_id }}">
-          ... Назад
-        </a>
-      </td>
-    </tr>
+      <tr>
+        <td>
+          <a class="text-inherit open-category" data-category-id="{{ category.parent_id }}">... Назад</a>
+        </td>
+      </tr>
     {% endif %}
 
     {% for category in categories %}
-    <tr>
-      <td class="">
-        <a href="#" class="text-inherit open-category" data-category-id="{{ category.category_id }}">
-          <i data-feather="folder" class="icon-xs"></i>
-          {{ category.description.name }}
-        </a>
-      </td>
-    </tr>
+      <tr>
+        <td>
+          <a class="text-inherit open-category" data-category-id="{{ category.category_id }}">
+            <i data-feather="folder" class="icon-xs"></i>
+            {{ category.description.name }}
+          </a>
+        </td>
+      </tr>
     {% endfor %}
 
     {% for product in products %}
-    <tr>
-      <td>
-        <input class="form-check-input" type="checkbox" value="{{ product.product_id }}">
-        <a href="#" class="text-inherit">{{ product.description.name }}</a>
-      </td>
-    </tr>
+      <tr>
+        <td>
+          <input class="form-check-input" type="checkbox" value="{{ product.product_id }}" />
+          <a class="text-inherit">{{ product.description.name }}</a>
+        </td>
+      </tr>
     {% endfor %}
   </tbody>
-</table>
-
-{% if products.pages > 1 %}
-
-<div class="row align-items-center justify-content-center mt-3 mb-6">
-  <div class="col-auto">
-    <nav aria-label="">
-      <ul class="pagination">
-
-        {% if products.has_prev %}
-        <li class="page-item">
-          <a class="page-link" href="#" aria-label="Previous" data-page="{{ products.prev_num }}">
-            <span aria-hidden="true">&laquo;</span>
-          </a>
-        </li>
-        {% endif %}
-
-        {% for number in products.iter_pages() %}
-        {% if not number %}
-        <li class="page-item" aria-current="page">
-          <span class="page-link">...</span>
-        </li>
-        {% elif products.page != number %}
-        <li class="page-item">
-          <a class="page-link" href="#" data-page="{{number}}">{{ number }}</a>
-        </li>
-        {% else %}
-        <li class="page-item active" aria-current="page">
-          <span class="page-link">{{ number }}</span>
-        </li>
-        {% endif %}
-        {% endfor %}
-        {% if products.has_next %}
-        <li class="page-item">
-          <a class="page-link" href="#" data-page="{{ products.next_num }}" aria-label="Next">
-            <span aria-hidden="true">&raquo;</span>
-          </a>
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
-  </div>
-</div>
-{% endif %}
+{% endset %}
+{{ m.table(table) }}
 
 <script>
   var category_id = {{category.category_id if category else 0 }}
@@ -87,6 +46,4 @@
     var status = checked.includes($(this).val());
     $(this).prop('checked', status)
   });
-
-  feather.replace();
 </script>

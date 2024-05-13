@@ -1,156 +1,132 @@
-{% if not request.args.get('only_content') %}
-  {% extends "modal_base.html" %}
-  {% set modal_fullscreen = True %}
-{% endif %}
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
 
 {% block content %}
+<form id="WorkerInfo" class="d-grid gap-3" action="{{ url_for('.worker_info', worker_id=worker.worker_id) }}">
 
-<form id="WorkerInfo" data-url="{{ url_for('.worker_info', worker_id=worker.worker_id) }}">
-  <div class="d-grid gap-3">
-    <div class="row">
-      <div class="col-lg-12 col-md-12 col-12">
-        <div>
-          <div class="d-flex align-items-center">
-            <div class="mb-2 mb-lg-0">
-              <h3 class="mb-0">{{ worker.name or 'Новый работник' }}</h3>
-            </div>
-          </div>
-        </div>
-      </div>
+  {# Блок названия и кнопок #}
+  {{ m.heading(worker.name or 'Новый работник') }}
+
+  <div class="row align-items-center">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail" role="tab"
+            aria-controls="pills-detail" aria-selected="true">Общие</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="pills-employments-tab" data-bs-toggle="pill" data-bs-target="#pills-product" role="tab"
+            aria-controls="pills-product" aria-selected="false">Занятость</a>
+        </li>
+
+      </ul>
     </div>
+  </div>
 
-    <div class="row align-items-center">
-      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-        <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
-          <li class="nav-item" role="presentation">
-            <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail" role="tab"
-              aria-controls="pills-detail" aria-selected="true">Общие</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="pills-employments-tab" data-bs-toggle="pill" data-bs-target="#pills-product" role="tab"
-              aria-controls="pills-product" aria-selected="false">Занятость</a>
-          </li>
+  <div class="row">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="tab-content" id="pills-tabContent">
+        <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
+          <div class="row">
+            <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-grid gap-3">
 
-        </ul>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-        <div class="tab-content" id="pills-tabContent">
-          <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
-            <div class="row">
-              <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-grid gap-3">
-
-                <div class="crm-editor-section">
-                  <div class="crm-editor-section-header">
-                    <span class="crm-editor-section-header-text">Контакты</span>
-                  </div>
-
-                  <div class="crm-editor-section-body">
-                    <div class="d-grid gap-2">
-
-                      <div class="d-grid">
-                        <label class="deal-info-block-title">ФИО</label>
-                        {% if worker.name %}
-                          <span class="deal-info-edit-link">{{ worker.name }}</span>
-                        {% elif worker.worker_id %}
-                          <span class="deal-info-edit-link">Нет</span>
-                        {% endif %}
-                        <input type="text" class="form-control border
-                          {{ 'visually-hidden' if worker.name or worker.worker_id }} to-show" name="name" value="{{ worker.name or '' }}">
-                      </div>
-
-                      <div class="d-grid">
-                        <label class="deal-info-block-title">Начало дня</label>
-                        {% if worker.start_day %}
-                          <span class="deal-info-edit-link">{{ worker.start_day }}</span>
-                        {% elif worker.worker_id %}
-                          <span class="deal-info-edit-link">Нет</span>
-                        {% endif %}
-                        <input type="text" class="form-control border
-                          {{ 'visually-hidden' if worker.start_day or worker.worker_id }} to-show" name="start_day" value="{{ worker.start_day or '09:00:00' }}">
-                      </div>
-
-                      <div class="d-grid">
-                        <label class="deal-info-block-title">Конец дня</label>
-                        {% if worker.end_day %}
-                          <span class="deal-info-edit-link">{{ worker.end_day }}</span>
-                        {% elif worker.worker_id %}
-                          <span class="deal-info-edit-link">Нет</span>
-                        {% endif %}
-                        <input type="text" class="form-control border
-                          {{ 'visually-hidden' if worker.end_day or worker.worker_id }} to-show" name="end_day" value="{{ worker.end_day or '17:00:00' }}">
-                      </div>
-
-                    </div>
-                  </div>
+              <div class="crm-editor-section">
+                <div class="crm-editor-section-header">
+                  <span class="crm-editor-section-header-text">Контакты</span>
                 </div>
 
-                <div class="crm-editor-section">
+                <div class="crm-editor-section-body">
+                  <div class="d-grid gap-2">
 
-                  <div class="crm-editor-section-header">
-                    <span class="crm-editor-section-header-text">Детали</span>
-                  </div>
-
-                  <div class="crm-editor-section-body">
-                    <div class="d-grid gap-2">
-
-                      {#}
-                      <div class="d-grid">
-                        <label class="deal-info-block-title">Роль</label>
-                        <div class="to-show">
-                          <select class="general-select" multiple data-placeholder="-- Выбрать --" name="services" data-class="border">
-                            {% for service in services %}
-                              <option></option>
-                              <option value="{{ service.service_id }}">{{ service.name }}</option>
-                            {% endfor %}
-                          </select>
-                          <select class="contact-select" data-placeholder="-- Выбрать --" name="services"
-                            data-url="{{ url_for('crm.contact.ajax_contacts') }}" data-width="100%" data-class="border">
-                            {% if deal.contact %}
-                              <option selected value="{{ deal.contact.contact_id }}">{{ deal.contact.name }}</option>
-                            {% endif %}
-                          </select>
-                        </div>
-                      </div>
-                      {#}
-
+                    <div class="d-grid">
+                      <label class="deal-info-block-title">ФИО</label>
+                      {% if worker.name %}
+                        <span class="deal-info-edit-link">{{ worker.name }}</span>
+                      {% elif worker.worker_id %}
+                        <span class="deal-info-edit-link">Нет</span>
+                      {% endif %}
+                      <input type="text" class="form-control border
+                        {{ 'visually-hidden' if worker.name or worker.worker_id }} to-show" name="name" value="{{ worker.name or '' }}" required>
                     </div>
+
+                    <div class="d-grid">
+                      <label class="deal-info-block-title">Начало дня</label>
+                      {% if worker.start_day %}
+                        <span class="deal-info-edit-link">{{ worker.start_day }}</span>
+                      {% elif worker.worker_id %}
+                        <span class="deal-info-edit-link">Нет</span>
+                      {% endif %}
+                      <input type="text" class="form-control border
+                        {{ 'visually-hidden' if worker.start_day or worker.worker_id }} to-show" name="start_day" value="{{ worker.start_day or '09:00:00' }}">
+                    </div>
+
+                    <div class="d-grid">
+                      <label class="deal-info-block-title">Конец дня</label>
+                      {% if worker.end_day %}
+                        <span class="deal-info-edit-link">{{ worker.end_day }}</span>
+                      {% elif worker.worker_id %}
+                        <span class="deal-info-edit-link">Нет</span>
+                      {% endif %}
+                      <input type="text" class="form-control border
+                        {{ 'visually-hidden' if worker.end_day or worker.worker_id }} to-show" name="end_day" value="{{ worker.end_day or '17:00:00' }}">
+                    </div>
+
                   </div>
                 </div>
+              </div>
 
+              <div class="crm-editor-section">
+
+                <div class="crm-editor-section-header">
+                  <span class="crm-editor-section-header-text">Детали</span>
+                </div>
+
+                <div class="crm-editor-section-body">
+                  <div class="d-grid gap-2">
+
+                    {#}
+                    <div class="d-grid">
+                      <label class="deal-info-block-title">Роль</label>
+                      <div class="to-show">
+                        <select class="general-select" multiple data-placeholder="-- Выбрать --" name="services" data-class="border">
+                          {% for service in services %}
+                            <option></option>
+                            <option value="{{ service.service_id }}">{{ service.name }}</option>
+                          {% endfor %}
+                        </select>
+                        <select class="contact-select" data-placeholder="-- Выбрать --" name="services"
+                          data-url="{{ url_for('crm.contact.ajax_contacts') }}" data-width="100%" data-class="border">
+                          {% if deal.contact %}
+                            <option selected value="{{ deal.contact.contact_id }}">{{ deal.contact.name }}</option>
+                          {% endif %}
+                        </select>
+                      </div>
+                    </div>
+                    {#}
+
+                  </div>
+                </div>
               </div>
-              <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-grid gap-3">
-              </div>
+
             </div>
+            <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-grid gap-3"></div>
           </div>
-
-          <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-employments-tab" tabindex="0">
-            <div class="col-12 d-grid gap-3">{% include 'worker/worker/employments.html' %}</div>
-          </div>
-
         </div>
+
+        <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-employments-tab" tabindex="0">
+          <div class="col-12 d-grid gap-3">{% include 'worker/worker/employments.html' %}</div>
+        </div>
+
       </div>
     </div>
+  </div>
     {#}
   </div>
     {#}
 
-  <div class="sticky-bottom-box">
-    <div class="sticky-bottom actions bg-white py-2">
-      <button type="submit" class="btn btn-salato" data-this-need-update="true">Сохранить</button>
-      <button class="btn btn-transparent rounded-3" type="reset">Отмена</button>
-    </div>
-  </div>
+  {# Кнопки действий формы #}
+  {{ m.form_actions() }}
 
 </form>
-
-{% include 'flash_messages.html' %}
-
-<script>
-  // Показать панель действий при изменениях
-  $(document).on("change", function () {$(document).find(".sticky-bottom").addClass("active");});
-</script>
 {% endblock %}
-

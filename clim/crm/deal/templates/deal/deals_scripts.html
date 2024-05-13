@@ -48,7 +48,7 @@
 
   // Delete Data To Server
   $("#deleteModal").find("form").submit(function (e) {
-      var url = "{{ url_for('.deals_action') }}";
+      var url = "{{ url_for('.deals') }}";
       var form_data = $(this).serialize();
       var action = $(this).find("[name=what_delete]").val();
       $.ajax({
