@@ -1,5 +1,5 @@
 import json
-from flask import abort, render_template, redirect, url_for, request
+from flask import abort, render_template, url_for, request
 from flask_login import login_required
 
 from clim.utils import actions_in
@@ -9,138 +9,96 @@ from ..models import db, Category, Product, ProductDescription, \
 from ..utils import smart_int
 from . import bp
 from .models import Stock, StockMovement
-from .utils import StockSettings, get_category, get_movement, get_product, \
-    get_stock, get_stocks, json_dumps
+from .utils import StockSettings
 
 
 @bp.route('/products', methods=['GET'])
 @login_required
 def products():
-    return render_template('stock/products.html')
-
-
-@bp.route('/products_load', methods=['GET'])
-@login_required
-def products_load():
     category_id = request.args.get('category_id', 0, type=int)
-
     categories = db.session.execute(db.select(Category)
                                     .filter_by(parent_id=category_id)
                                     .join(Category.products)
                                     .filter(Product.stocks != None)
                                     .group_by(Category.category_id)).scalars()
 
-    products = Product.query.where(Product.stocks != None)
+    products = db.select(Product).where(Product.stocks != None)
     if category_id:
         products = (products.join(Product.categories)
                     .where(Category.category_id == category_id))
 
     products_cost = 0
-    for product in products.all():
+    for product in db.session.execute(products).scalars():
         for stock in product.stocks:
             products_cost += product.cost * stock.quantity
 
-    products = products.paginate(page=request.args.get('page', 1, type=int),
-                                 per_page=20, error_out=False)
+    products = db.paginate(products,
+                           page=request.args.get('page', 1, type=int),
+                           per_page=20, error_out=False)
 
-    return render_template('stock/products_load.html',
+    return render_template('stock/products.html',
                            categories=categories,
                            products=products,
-                           category=get_category(category_id),
-                           stocks=tuple(get_stocks()),
+                           category=Category.get(category_id),
+                           stocks=tuple(Stock.get_all()),
                            products_cost=products_cost)
 
 
-@bp.route('/movements/<string:movement_type>', methods=['GET'])
+@bp.route('/movements/<string:movement_type>', methods=['GET', 'POST'])
 @login_required
 def movements(movement_type):
-    movements = (StockMovement.query.filter_by(movement_type=movement_type)
-                 # .order_by(StockMovement.date.desc())
-                 .order_by(StockMovement.movement_id.desc())
-                 .paginate(page=request.args.get('page', 1, type=int),
-                           per_page=10, error_out=False))
+    if request.method == 'POST':
+        return actions_in(StockMovement.get)
+
+    movements = (db.select(StockMovement)
+                 .filter_by(movement_type=movement_type)
+                 .order_by(StockMovement.movement_id.desc()))
+    movements = db.paginate(movements,
+                            page=request.args.get('page', 1, type=int),
+                            per_page=10, error_out=False)
 
     return render_template('stock/movements.html',
                            not_movements=not list(movements),
-                           movements=movements, movement_type=movement_type)
+                           movements=movements, movement_type=movement_type,
+                           child_obj=StockMovement(movement_id=0,
+                                                   movement_type=movement_type))
 
 
-@bp.route('/movements/action', methods=['POST'])
+@bp.route('/movements/info', methods=['GET', 'POST'])
 @login_required
-def movements_action():
-    actions_in(request.data, get_movement)
-    db.session.commit()
-    return ''
-
-
-@bp.route('/movements/<string:movement_type>/info', methods=['GET', 'POST'])
-@login_required
-def movement_info(movement_type):
-    movement = get_movement(request.args.get('movement_id'))
+def movement_info():
+    movement = StockMovement.get(request.args.get('movement_id'))
+    print(movement.name)
     if not movement:
+        movement_type = request.args.get('movement_type') or abort(404)
         movement = StockMovement(movement_type=movement_type)
 
     if request.method == 'POST':
-        if not movement.movement_id:
-            db.session.add(movement)
+        return actions_in(movement)
 
-        data = json.loads(request.data) if request.data else {}
-        print(data)
-        action = data.get('action', '')
-
-        # Сохранить
-        if not action:
-            movement.save(data)
-            db.session.commit()
-        # Отменить проведение
-        elif action == 'unposting':
-            movement.unposting()
-            if not movement.posted:
-                db.session.commit()
-        # Провести
-        elif 'posting' in action:
-            movement.posting()
-            if movement.posted:
-                db.session.commit()
-        return {'redirect': url_for('.movement_info',
-                                    movement_type=movement_type,
-                                    movement_id=movement.movement_id)}
-
-    return render_template('stock/movement/main.html',
-                           movement=movement, movement_type=movement_type)
+    return render_template('stock/movement/main.html', movement=movement)
 
 
-@bp.route('/stocks', methods=['GET'])
+@bp.route('/stocks', methods=['GET', 'POST'])
 @login_required
 def stocks():
-    stocks = (Stock.query.order_by(Stock.sort.asc())
-              .paginate(page=request.args.get('page', 1, type=int),
-                        per_page=10, error_out=False))
-    return render_template('stock/stocks.html', stocks=stocks)
+    if request.method == 'POST':
+        return actions_in(Stock.get)
+
+    stocks = db.select(Stock).order_by(Stock.sort.asc())
+    stocks = db.paginate(stocks, page=request.args.get('page', 1, type=int),
+                         per_page=10, error_out=False)
+    return render_template('stock/stocks.html', stocks=stocks,
+                           child_obj=Stock(stock_id=0))
 
 
-@bp.route('/stocks_action', methods=['POST'])
+@bp.route('/stocks/stock_info', methods=['GET', 'POST'])
 @login_required
-def stocks_action():
-    actions_in(request.data, get_stock)
-    db.session.commit()
-    return ''
-
-
-@bp.route('/stocks/stock_settings', methods=['GET', 'POST'])
-@login_required
-def stock_settings():
-    stock = get_stock(request.args.get('stock_id'))
+def stock_info():
+    stock = Stock.get(request.args.get('stock_id')) or Stock()
 
     if request.method == 'POST':
-        if not stock:
-            stock = Stock()
-            db.session.add(stock)
-
-        data = json.loads(request.data) if request.data else {}
-        stock.edit(data)
-        db.session.commit()
-        return {'redirect': url_for('.stock_settings', stock_id=stock.stock_id)}
+        return actions_in(stock)
 
     return render_template('stock/stock_settings.html', stock=stock)
 
@@ -184,7 +142,8 @@ def consumables_in_option():
             value.settings = OptionValueSetting()
 
         data = json.loads(request.data) if request.data else {}
-        value.settings.consumables = json_dumps(data.get('products'))
+        products = data.get('products')
+        value.settings.consumables = json.dumps(products) if data else None
         db.session.commit()
         return ''
 
@@ -206,7 +165,7 @@ def json_consumables_in_option(option_value_id=None):
     if option_value and option_value.consumables:
         consumables = json.loads(option_value.consumables)
         for consumable in consumables:
-            product = get_product(consumable['product_id'])
+            product = Product.get(consumable['product_id'])
             consumable['price'] = product.cost or 0
             consumable['name'] = product.description.name
             consumable['unit'] = product.unit
@@ -219,7 +178,7 @@ def json_consumables_in_option(option_value_id=None):
 @bp.route('/product/<int:product_id>', methods=['GET'])
 @login_required
 def product_info(product_id=None):
-    product = get_product(product_id)
+    product = Product.get(product_id)
     unit_classes = db.session.execute(db.select(WeightClass)).scalars()
     main_category = product.main_category
 
@@ -233,7 +192,7 @@ def product_info(product_id=None):
 @bp.route('/product/<int:product_id>/update', methods=['POST'])
 @login_required
 def product_info_update(product_id=None):
-    product = get_product(product_id)
+    product = Product.get(product_id)
     if not product:
         product = Product()
         db.session.add(product)
@@ -324,7 +283,7 @@ def ajax_products():
 @bp.route('/ajax_products_one', methods=['GET'])
 @login_required
 def ajax_products_one():
-    product = get_product(request.args.get('product_id'))
+    product = Product.get(request.args.get('product_id'))
 
     return json.dumps({'id': str(product.product_id),
                        'text': product.description.name,
@@ -352,7 +311,7 @@ def ajax_stocks_first():
             quantity = smart_int(product.quantity)
             unit = product.main_product.unit
             break
-    unit = unit or get_product(product_id).unit
+    unit = unit or Product.get(product_id).unit
 
     return json.dumps({'id': stock.stock_id,
                        'text': stock.name,
@@ -385,7 +344,7 @@ def ajax_stocks():
                     quantity = smart_int(product.quantity)
                     unit = product.main_product.unit
                     break
-            unit = unit or get_product(product_id).unit
+            unit = unit or Product.get(product_id).unit
             quantity = f'{quantity} {unit}'
         result['results'].append({'id': str(stock.stock_id),
                                   'text': stock.name,

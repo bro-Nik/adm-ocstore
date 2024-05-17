@@ -12,22 +12,14 @@
 
         <div class="d-grid">
           <label class="deal-info-block-title">Название</label>
-          {% if details.name %}
-            <span class="deal-info-edit-link">{{ details.name }}</span>
-          {% elif deal.deal_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
-          <input type="text" class="form-control border {{ 'visually-hidden' if details.sum or deal.deal_id }} to-show"
+          {{ cm.edit_link(details.name, deal.deal_id) }}
+          <input type="text" class="form-control border {{ 'visually-hidden' if details.sum or deal.deal_id else 'focus' }} to-show"
             name="name" value="{{ details.name or '' }}">
         </div>
 
         <div class="d-grid">
           <label class="deal-info-block-title">Сумма</label>
-          {% if details.sum %}
-            <span class="deal-info-edit-link">{{ details.sum|money }} ₽</span>
-          {% elif deal.deal_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
+          {{ cm.edit_link(details.sum, deal.deal_id) }}
           <input type="number" step="any" class="form-control border {{ 'visually-hidden' if details.sum or deal.deal_id }} to-show"
             name="sum" value="{{ details.sum or '' }}">
         </div>
@@ -71,11 +63,7 @@
 
         <div class="d-grid">
           <label class="deal-info-block-title">Что интересует</label>
-          {% if details.what_need %}
-            <span class="deal-info-edit-link">{{ details.what_need }}</span>
-          {% elif deal.deal_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
+          {{ cm.edit_link(details.what_need, deal.deal_id) }}
           <div class="{{ 'visually-hidden' if details.what_need or deal.deal_id }} to-show">
             <select class="general-select" data-placeholder="-- Выбрать --" name="what_need" data-class="border" data-width="100%">
               <option></option>
@@ -89,22 +77,14 @@
 
         <div class="d-grid">
           <label class="deal-info-block-title">Адрес</label>
-          {% if details.adress %}
-            <span class="deal-info-edit-link">{{ details.adress }}</span>
-          {% elif deal.deal_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
+          {{ cm.edit_link(details.adress, deal.deal_id) }}
           <input type="text" class="form-control border {{ 'visually-hidden' if details.adress or deal.deal_id }} to-show"
             name="adress" value="{{ details.adress if details.adress }}">
         </div>
 
         <div class="d-grid">
           <label class="deal-info-block-title">Комментарий</label>
-          {% if details.comment %}
-            <span class="deal-info-edit-link">{{ details.comment }}</span>
-          {% elif deal.deal_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
+          {{ cm.edit_link(details.comment, deal.deal_id) }}
           <textarea class="form-control border {{ 'visually-hidden' if details.comment or deal.deal_id }} to-show"
             name="comment">{{ details.comment if details.comment }}</textarea>
         </div>

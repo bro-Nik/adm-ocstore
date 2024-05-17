@@ -16,7 +16,7 @@ redis = redis.StrictRedis('127.0.0.1', 6379)
 login_manager = LoginManager()
 login_manager.login_view = 'user.login'
 login_manager.login_message = 'Пожалуйста, войдите, чтобы получить доступ к этой странице'
-login_manager.login_message_category = 'danger'
+login_manager.login_message_category = 'warning'
 
 
 def create_app():

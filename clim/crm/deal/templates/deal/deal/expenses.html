@@ -1,36 +1,25 @@
-{# Jinja2 #}
-{% set expenses = deal.get('expenses', []) %}
-{% if deal.posted and not expenses %}
-  {% include 'nothing.html' %}
-{% else %}
-
-<!-- Expenses  -->
-<div id="tabExpenses" class="card h-100">
-  <table class="table text-nowrap table" data-to-server="expenses">
-    <thead>
-      <tr>
-        {% if not deal.posted %}
-          <th>
-            <input class="form-check-input check-all" type="checkbox">
-          </th>
-        {% endif %}
-        <th>Название</th>
-        <th>Стоимость</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% if not deal.posted and not expenses %}
-        {% set expenses = [{}] %}
+{# Блок таблицы #}
+{% set table %}
+  <thead>
+    <tr>
+      {% if not deal.posted %}
+        <th><input class="form-check-input check-all" type="checkbox"></th>
       {% endif %}
-      {% for expense in expenses %}
+      <th>Название</th>
+      <th>Стоимость</th>
+      <th></th>
+    </tr>
+  </thead>
 
+  <tbody>
+    {% for expense in expenses %}
       <tr class="product">
+        {# Чекбокс #}
         {% if not deal.posted %}
-          <td class="pe-0">
-            <input class="form-check-input to-check" type="checkbox" value="">
-          </td>
+          <td class="checkbox">{{ m.checkbox("") }}</td>
         {% endif %}
+
+        {# Наименование #}
         <td class="col-4">
           <span class="line-count">{{ loop.index }}.</span>
           {% if deal.posted %}
@@ -43,7 +32,8 @@
           {% endif %}
         </td>
 
-        <td class="align-middle">
+        {# Стоимость #}
+        <td class="col-3 align-middle">
           {% if deal.posted %}
             <span class="sum">{{ expense.price|smart_int }}</span> ₽
           {% else %}
@@ -59,40 +49,17 @@
 
         <td class="col-auto"></td>
       </tr>
-      {% endfor %}
+    {% endfor %}
 
-    </tbody>
-  </table>
+  </tbody>
+{% endset %}
 
-  {% if not deal.posted %}
-    <div class="d-flex">
-      <div class="form-actions">
-        <div class="m-3 gap-2 justify-content-start">
-          Отмеченно: <span class="checks-count"></span>
-        </div>
-        <div class="m-3 gap-2 d-flex justify-content-start">
-          <button class="btn rounded-3 delete-product" type="button">Удалить</button>
-        </div>
-      </div>
-      <div class="m-3 ms-auto gap-2">
-        {% if not deal.posted %}
-          <button class="btn rounded-3 btn-primary create-new-line" type="button">Добавить строку</button>
-        {% endif %}
-      </div>
-    </div>
-  {% endif %}
-</div>
-
-<div class="card h-100">
-  <div class="d-flex justify-content-end align-items-center m-3">
-    <table class="col-3">
-      <tbody>
-        <tr>
-          <td class="fs-4 fw-bolder">Общая сумма:</td>
-          <td class="fs-4 fw-bolder d-flex gap-1"><span class="all-sum"></span> ₽</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+{% if not deal.posted %}
+  {% set table_btns %}
+    <button class="btn rounded-3 btn-primary create-new-line" type="button">Добавить строку</button>
+  {% endset %}
 {% endif %}
+{{ m.table(table, btns=table_btns, attrs="id=tabExpenses data-to-server=expenses") }}
+
+{# Блок общая сумма #}
+{{ m.sum() }}

@@ -2,11 +2,10 @@ import json
 from flask import render_template, url_for, request, flash
 from flask_login import login_required
 
-from clim.site.other_shops.utils import get_other_shops
-from clim.utils import get_categories, get_product
-from clim.models import Option, SpecialOffer, db
+from clim.site.other_shops.models import OtherShops
+from clim.models import Category, Option, SpecialOffer, db, Product
 from .tasks import change_prices, comparison_products
-from .utils import get_stock_statuses, get_products, get_filter, \
+from .utils import get_stock_statuses, get_filter, \
     manual_confirm_prices, products_prices_module, manual_comparison
 from . import bp
 
@@ -16,8 +15,8 @@ from . import bp
 def products():
     path = request.args.get('path') or 'products'
 
-    other_shops = get_other_shops()
-    products = get_products(filter=get_filter(request.method, path))
+    other_shops = OtherShops.get_all()
+    products = Product.all_by_filter(filter=get_filter(request.method, path))
 
     # attributes_in_products = []
     # for product in products:
@@ -40,9 +39,10 @@ def products_action():
     action = data.get('action', '')
     other = data.get('other', '')
     ids_list = []
+    print(data)
 
     for product_id in data.get('ids', []):
-        product = get_product(product_id)
+        product = Product.get(product_id)
         if not product:
             continue
 
@@ -149,4 +149,4 @@ def products_prices_settings():
                            # settings=json.loads(module.value),
                            special_offers=special_offers,
                            options=options,
-                           categories=get_categories())
+                           categories=Category.get_all())

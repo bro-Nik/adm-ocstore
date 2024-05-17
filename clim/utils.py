@@ -1,37 +1,11 @@
 import json
 from typing import Callable
 
+from flask import request, session
+
+from clim.site.other_shops.models import OtherProduct
+
 from .app import db
-from .models import AttributeDescription, Category, Module, \
-    Product, ProductAttribute
-
-
-def json_dumps(data, default=None):
-    return json.dumps(data, ensure_ascii=False) if data else default
-
-
-def json_loads(data, default=None):
-    return json.loads(data) if data else default
-
-
-def get_module(name):
-    return db.session.execute(
-        db.select(Module).filter_by(name=name)).scalar()
-
-
-def get_category(category_id):
-    return db.session.execute(
-        db.select(Category).filter_by(category_id=category_id)).scalar()
-
-
-def get_categories():
-    return db.session.execute(
-        db.select(Category).order_by(Category.sort_order)).scalars()
-
-
-def get_product(product_id: int):
-    return db.session.execute(
-        db.select(Product).filter_by(product_id=product_id)).scalar()
 
 
 class DiscountProducts:
@@ -39,6 +13,7 @@ class DiscountProducts:
         self.attributes = None
 
     def load(self):
+        from .models import AttributeDescription, ProductAttribute
         if not self.attributes:
             # Получем метки
             label = db.session.execute(
@@ -74,30 +49,171 @@ def smart_int(num, default=0):
         return default
 
 
-def actions_in(data_str: bytes, function: Callable, **kwargs) -> None:
+def json_loads(data_str: bytes):
     try:
-        data = json.loads(data_str)
+        return json.loads(data_str)
     except json.JSONDecodeError:
-        data = {}
+        return None
+
+
+def actions_in(function_or_obj: Callable, **kwargs):
+
+    def try_action_and_save(obj):
+        if obj:
+            # Вызов метода, если есть изменения - записываем
+            if obj.try_action(action) is not False:
+                db.session.commit()
+
+    data = json_loads(request.data)
 
     if isinstance(data, dict):
-        ids = data.get('ids', [])
         action = data.get('action', '')
 
-        for item_id in ids:
-            item = function(item_id, **kwargs)
-            if item and hasattr(item, action):
-                getattr(item, action)()
+        if isinstance(function_or_obj, Callable):
+            # Несколько объектов
+            get_obj = function_or_obj
+            for obj_id in data.get('ids', []):
+                # Получение объекта
+                obj = get_obj(obj_id, **kwargs)
+                try_action_and_save(obj)
+        else:
+            # Один объект
+            # Добавление объекта в сессию
+            obj = function_or_obj
+            obj.save_data = data
+            new_obj = not obj.get_id
+            if not obj.get_id:
+                db.session.add(obj)
+            try_action_and_save(obj)
+            # если это новый объект - отправляем url
+            if new_obj and obj.get_id:
+                return {'url': obj.urls(key_type='new')[0][2]}
+            # если объект удален - отправляем close
+            if not obj.get_id:
+                return {'close': 'true'}
+    return ''
 
 
-class JsonMixin:
-    def get(self, attr, default):
-        attr_name = f'{attr}_'
-        if not hasattr(self, attr_name):
-            value = getattr(self, attr, '')
-            setattr(self, attr_name, json.loads(value) if value else default)
-        return getattr(self, attr_name)
+class OptionUtils:
 
     @property
-    def info(self):
-        return self.get('details', {})
+    def price(self):
+        return self.settings.price if self.settings else 0
+
+
+class ProductUtils:
+
+    @classmethod
+    def all_by_filter(cls, pagination=True, filter=None):
+        from .models import Category, Product, ProductAttribute, ProductOptionValue
+        filter = filter or {}
+        products = db.select(Product)
+
+        if filter.get('group_attribute'):
+            ga = filter.get('group_attribute')
+            products = (products.join(Product.attributes)
+                        .where(ProductAttribute.attribute_id == ga)
+                        .order_by(ProductAttribute.text))
+
+        if filter.get('stock'):
+            stock = filter.get('stock')
+            if stock == 'not not in stock':
+                products = products.filter(Product.quantity > 0)
+            elif stock == 'in stock':
+                products = products.filter(Product.quantity == 10,
+                                           Product.price != 100001)
+            elif stock == 'on order':
+                products = products.filter(Product.quantity == 1)
+            elif stock == 'not in stock':
+                products = products.filter(Product.quantity == 0)
+            elif stock == 'price request':
+                products = products.filter(Product.price == 100001)
+
+        if filter.get('field'):
+            field = filter.get('field')
+            if field == 'ean':
+                products = products.filter(Product.ean != '')
+            elif field == 'jan':
+                products = products.filter(Product.jan != '')
+            elif field == 'isbn':
+                products = products.filter(Product.isbn != '')
+
+        if filter.get('manufacturers_ids'):
+            ids = filter.get('manufacturers_ids')
+            products = products.where(Product.manufacturer_id.in_(ids))
+
+        if filter.get('categories_ids'):
+            categories_ids = filter.get('categories_ids')
+            products = (products.join(Product.categories)
+                        .filter(Category.category_id.in_(categories_ids)))
+
+        if filter.get('attribute_id'):
+            attribute_id = filter.get('attribute_id')
+            attribute_values = filter.get('attribute_values')
+            products = (products.join(Product.attributes)
+                        .where(ProductAttribute.attribute_id == attribute_id,
+                               ProductAttribute.text.in_(attribute_values))
+                        .order_by(ProductAttribute.text))
+
+        if filter.get('option_value_id'):
+            ov = filter.get('option_value_id')
+            products = (products.join(Product.options)
+                        .filter(ProductOptionValue.option_value_id == ov))
+
+        if filter.get('options') == 'whith options':
+            products = products.filter(Product.options is not None)
+        elif filter.get('options') == 'whithout options':
+            products = products.filter(Product.options is None)
+
+        if filter.get('other_filter') == 'not_confirmed':
+            products = (products.join(Product.other_shop)
+                        .filter(OtherProduct.product_id is not None,
+                                OtherProduct.link_confirmed is None))
+
+        if filter.get('other_filter') == 'not_matched':
+            products = products.filter(Product.other_shop is None)
+
+        elif filter.get('other_filter') == 'different_price':
+            products = (products.join(Product.other_shop)
+                        .filter(OtherProduct.price != Product.price,
+                                OtherProduct.link_confirmed is not None,
+                                OtherProduct.price is not None))
+
+        elif filter.get('other_filter') == 'no_options':
+            products = products.filter(Product.options is None)
+
+        if filter.get('products_ids'):
+            ids = filter.get('products_ids')
+            products = products.filter(Product.product_id.in_(ids))
+
+        if filter.get('new_products'):
+            products = products.filter(Product.date_added == 0)
+
+        if filter.get('sort') == 'viewed':
+            products = products.order_by(Product.viewed.desc())
+        else:
+            products = products.order_by(Product.mpn)
+
+        if pagination:
+            return db.paginate(products,
+                               page=request.args.get('page', 1, type=int),
+                               per_page=float(session.get('results_per_page', 20)),
+                               error_out=False)
+
+        return db.session.execute(products).scalars()
+
+    @property
+    def price_request(self):
+        return self.price == 100001
+
+    @property
+    def on_order(self):
+        return self.quantity == 1
+
+    @property
+    def in_stock(self):
+        return self.quantity > 1
+
+    @property
+    def unit(self):
+        return self.unit_class.description.unit

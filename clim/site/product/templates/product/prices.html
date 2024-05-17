@@ -19,7 +19,7 @@
     </div>
     <a class="btn btn-primary" data-modal-id="PricesSettingsModal" data-url="{{ url_for('.products_prices_settings') }}">Настройки</a>
   {% endset %}
-  {{ m.heading("Цены", heading_btns) }}
+  {{ m.heading("Цены", btns=heading_btns) }}
 
   {# Блок фильтра #}
   {% include 'filter.html' %}
@@ -110,7 +110,7 @@
 
     <button class="btn btn-sm rounded-3" type="submit" data-after="update">Применить</button>
   {% endset %}
-  {{ m.table_actions(table_btns) }}
+  {{ m.table_actions(btns=table_btns) }}
 
 </form>
 {% endblock %}

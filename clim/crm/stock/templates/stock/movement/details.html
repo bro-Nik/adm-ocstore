@@ -9,23 +9,16 @@
     <div class="crm-editor-section-body">
       <div class="d-grid gap-2">
 
+
         <div class="d-grid">
           <label class="deal-info-block-title">Название</label>
-          {% if details.name %}
-            <span class="deal-info-edit-link">{{ details.name }}</span>
-          {% elif movement.movement_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
-          <input type="text" class="form-control border {{ 'visually-hidden' if details.name or movement.movement_id }}" name="name" value="{{ details.name if details.name }}">
+          {{ cm.edit_link(details.name, movement.movement_id) }}
+          <input type="text" class="form-control border {{ 'visually-hidden' if details.name or movement.movement_id else 'focus' }}" name="name" value="{{ details.name if details.name }}">
         </div>
 
         <div class="d-grid">
           <label class="deal-info-block-title">Сумма</label>
-          {% if details.sum %}
-            <span class="deal-info-edit-link">{{ details.sum|money }} ₽</span>
-          {% elif movement.movement_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
+          {{ cm.edit_link(details.sum, movement.movement_id) }}
           <input type="number" step="any" class="form-control border {{ 'visually-hidden' if details.sum or movement.movement_id }} to-show"
             name="deal_sum" value="{{ details.sum or '' }}">
         </div>
@@ -77,27 +70,18 @@
 
         <div class="d-grid">
           <label class="deal-info-block-title">Комментарий</label>
-          {% if details.comment %}
-            <span class="deal-info-edit-link">{{ details.comment }}</span>
-          {% elif movement.movement_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
+          {{ cm.edit_link(details.comment, movement.movement_id) }}
           <textarea class="form-control border {{ 'visually-hidden' if details.comment or movement.movement_id }} to-show"
             name="comment">{{ details.comment if details.comment }}</textarea>
         </div>
 
         <div class="d-grid">
           <label class="deal-info-block-title">Дата</label>
-          {% if details.date %}
-            <span class="deal-info-edit-link">{{ details.date }}</span>
-          {% elif movement.movement_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
+          {{ cm.edit_link(details.date, movement.movement_id) }}
           <input type="text"
             class="form-control border {{ 'visually-hidden' if details.date or movement.movement_id }} to-show datepicker"
             name="date" value="{{ details.date }}" data-value="{{ details.date|datetime_from_str }}">
         </div>
-
 
       </div>
     </div>

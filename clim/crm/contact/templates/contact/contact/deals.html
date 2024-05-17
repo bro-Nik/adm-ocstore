@@ -1,43 +1,43 @@
-{# Jinja2 #}
+{# Блок таблицы #}
+{% set table %}
+  <thead>
+    <tr>
+      <th class="checkbox"><input class="form-check-input check-all" type="checkbox"></th>
+      <th>Название</th>
+      <th>Адрес</th>
+      <th>Стадия</th>
+      <th></th>
+    </tr>
+  </thead>
 
-{% if not contact.deals %}
-  {% include 'nothing.html' %}
-{% else %}
+  <tbody>
 
-  {# Блок таблицы #}
-  {% set table %}
-    <thead>
+    {% for deal in contact.deals %}
+    {% set details = deal.get_json('details') or {} %}
       <tr>
-        <th class="checkbox"><input class="form-check-input check-all" type="checkbox"></th>
-        <th>Название</th>
-        <th>Стадия</th>
-        <th>Дата</th>
+        {# Чекбокс #}
+        <td class="checkbox">{{ m.checkbox(deal.deal_id) }}</td>
+
+        {# Ссылка #}
+        <td>
+          <a class="text-inherit" data-modal-id="DealInfoModal"
+            data-url="{{ url_for('crm.deal.deal_info', deal_id=deal.deal_id) }}">{{ details.name }}
+          </a>
+        </td>
+
+        <td>{{ details.adress }}</td>
+
+        {# Стадия и дата #}
+        <td>
+          <span style="{{ 'color: ' + deal.stage.color or '' + ';' }}">{{ deal.stage.name }}</span>
+          <br>{{ details.date_end|smart_date if details.date_end }}
+        </td>
+
+        {# Меню #}
+        <td class="align-middle text-end">{{ m.table_btns_more(deal) }}</td>
+
       </tr>
-    </thead>
-
-    <tbody>
-
-      {% for deal in contact.deals %}
-        <tr>
-          <td class="checkbox">
-            <input class="form-check-input to-check" type="checkbox" value="{{ deal.deal_id }}">
-          </td>
-
-          <td>
-            <a class="text-inherit" data-modal-id="ContactInfoModal"
-              data-url="{{ url_for('crm.deal.deal_info', deal_id=deal.deal_id) }}">{{ deal.name }}
-            </a>
-          </td>
-
-          <td style="{{ 'color: ' + deal.stage.color + ';' if deal.stage.color }}">
-            {{ deal.stage.name }}
-          </td>
-
-          <td>{{ deal.info.date_end|smart_date if deal.info.date_end }}</td>
-
-        </tr>
-      {% endfor %}
-    </tbody>
-  {% endset %}
-  {{ m.table(table) }}
-{% endif %}
+    {% endfor %}
+  </tbody>
+{% endset %}
+{{ m.table(table, contact.deals) }}

@@ -1,143 +1,110 @@
-{# Jinja2 #}
-{% set deal_consumables = deal.get('consumables', []) %}
-{% if deal.posted and not deal_consumables %}
-  {% include 'nothing.html' %}
-{% else %}
+{# Блок таблицы #}
+{% set table %}
+  <thead>
+    <tr>
+      {% if not deal.posted %}
+        <th><input class="form-check-input check-all" type="checkbox"></th>
+      {% endif %}
+      <th>Название</th>
+      <th>Стоимость</th>
+      <th>Количество</th>
+      <th>Склад</th>
+      {% if not deal.posted %}
+        <th>Доступно</th>
+      {% endif %}
+      <th>Сумма</th>
+    </tr>
+  </thead>
 
-<!-- Consumables  -->
-<div id="tabConsumables" class="card h-100">
-  <div class="table-responsive">
-    <table class="table text-nowrap table" data-to-server="consumables">
-      <thead>
-        <tr>
-          {% if not deal.posted %}
-            <th>
-              <input class="form-check-input check-all" type="checkbox" />
-            </th>
-          {% endif %}
-          <th>Название</th>
-          <th>Стоимость</th>
-          <th>Количество</th>
-          <th>Склад</th>
-          {% if not deal.posted %}
-            <th>Доступно</th>
-          {% endif %}
-          <th>Сумма</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% if not deal.posted and not deal_consumables %}
-          {% set deal_consumables = [{'product_id': '', 'quantity': 0, 'price': 0, 'unit': 'шт'}] %}
+  <tbody>
+    {% for product in consumables %}
+      <tr class="product">
+        {# Чекбокс #}
+        {% if not deal.posted %}
+          <td class="checkbox">{{ m.checkbox(product.product_id) }}</td>
         {% endif %}
 
-        {% for product in deal_consumables %}
-        <tr class="product">
-          {% if not deal.posted %}
-            <td class="pe-0">
-              <input class="form-check-input to-check" type="checkbox" value="{{ product.product_id }}" />
-            </td>
-          {% endif %}
-          <td>
-            <span class="line-count">{{ loop.index }}.</span>
-              {% if deal.posted %}
-                <span>{{ product.name }}</span>
-              {% else %}
-                <select class="product-select" data-placeholder="-- Выбрать товар --"
-                  data-url="{{ url_for('.ajax_consumables') }}" data-class="bg-light"
-                  data-width="300px" name="id" data-required="true">
-                  <option value="{{ product.id }}" selected>{{ product.name }}</option>
-                </select>
-                <input type="hidden" value="{{ product.name }}" name="name">
-                <input type="hidden" value="{{ product.unit }}" name="unit">
-              {% endif %}
-          </td>
-
-          <td>
+        {# Выбор товара #}
+        <td>
+          <span class="line-count">{{ loop.index }}.</span>
             {% if deal.posted %}
-              <span>{{ product.price|smart_int }} ₽</span>
+              <span>{{ product.name }}</span>
             {% else %}
-              <div class="input-group">
-                <input type="number" step="any" class="form-control" name="price"
-                  value="{{ product.price|smart_int or "" }}" placeholder="0" data-new-line-value="" disabled>
-                <span class="input-group-text">₽</span>
-              </div>
-            {% endif %}
-          </td>
-
-          <td>
-            {% if deal.posted %}
-              <span>{{ product.quantity|smart_int }} {{ product.unit or 'шт'}}</span>
-            {% else %}
-              <div class="input-group">
-                <input type="number" step="any" class="form-control" name="quantity"
-                  value="{{ product.quantity|smart_int or "" }}" placeholder="0" data-new-line-value="">
-                <span class="input-group-text quantity" data-new-line-text="шт">{{ product.unit or 'шт' }}</span>
-              </div>
-            {% endif %}
-          </td>
-
-          <td>
-            {% if deal.posted %}
-              <span>{{ product.stock_name }}</span>
-            {% else %}
-              <select class="stock-select" 
-                data-url="{{ url_for('.ajax_stocks') }}" data-class="bg-light"
-                data-width="200px" name="stock_id" data-new-line-value="previous"
-                data-url-one="{{ url_for('crm.stock.ajax_stocks_first') }}"
-                data-text-to-input-name="stock_name">
-                <option value="{{ product.stock_id }}" selected>{{ product.stock_name }}</option>
+              <select class="product-select" data-placeholder="-- Выбрать товар --"
+                data-url="{{ url_for('.ajax_consumables') }}" data-class="bg-light"
+                data-width="300px" name="id" data-required="true">
+                <option value="{{ product.id }}" selected>{{ product.name }}</option>
               </select>
-              <input type="hidden" value="{{ product.stock_name }}" name="stock_name">
+              <input type="hidden" value="{{ product.name }}" name="name">
+              <input type="hidden" value="{{ product.unit }}" name="unit">
             {% endif %}
-          </td>
+        </td>
 
-          {% if not deal.posted %}
-            <td class="align-middle">
-              <span data-stock-available="stock_id" data-new-line-text=""></span>
-            </td>
+        {# Цена товара #}
+        <td>
+          {% if deal.posted %}
+            <span>{{ product.price|smart_int }} ₽</span>
+          {% else %}
+            <div class="input-group">
+              <input type="number" step="any" class="form-control" name="price"
+                value="{{ product.price|smart_int or "" }}" placeholder="0" data-new-line-value="" disabled>
+              <span class="input-group-text">₽</span>
+            </div>
           {% endif %}
+        </td>
 
+        {# Количество товара #}
+        <td>
+          {% if deal.posted %}
+            <span>{{ product.quantity|smart_int }} {{ product.unit or 'шт'}}</span>
+          {% else %}
+            <div class="input-group">
+              <input type="number" step="any" class="form-control" name="quantity"
+                value="{{ product.quantity|smart_int or "" }}" placeholder="0" data-new-line-value="">
+              <span class="input-group-text quantity" data-new-line-text="шт">{{ product.unit or 'шт' }}</span>
+            </div>
+          {% endif %}
+        </td>
+
+        {# Выбор Склада #}
+        <td>
+          {% if deal.posted %}
+            <span>{{ product.stock_name }}</span>
+          {% else %}
+            <select class="stock-select" 
+              data-url="{{ url_for('.ajax_stocks') }}" data-class="bg-light"
+              data-width="200px" name="stock_id" data-new-line-value="previous"
+              data-url-one="{{ url_for('crm.stock.ajax_stocks_first') }}"
+              data-text-to-input-name="stock_name">
+              <option value="{{ product.stock_id }}" selected>{{ product.stock_name }}</option>
+            </select>
+            <input type="hidden" value="{{ product.stock_name }}" name="stock_name">
+          {% endif %}
+        </td>
+
+        {# Доступно на складе #}
+        {% if not deal.posted %}
           <td class="align-middle">
-            <span class="sum" data-new-line-text="0">{{ product.price|smart_int * product.quantity|smart_int }}</span> ₽
+            <span data-stock-available="stock_id" data-new-line-text=""></span>
           </td>
-        </tr>
-        {% endfor %}
+        {% endif %}
 
-      </tbody>
-    </table>
-  </div>
+        {# Сумма #}
+        <td class="align-middle">
+          <span class="sum" data-new-line-text="0">{{ product.price|smart_int * product.quantity|smart_int }}</span> ₽
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+{% endset %}
 
-  {% if not deal.posted %}
-  <div class="d-flex">
-    <div class="form-actions">
-      <div class="m-3 gap-2 justify-content-start">
-        Отмеченно: <span class="checks-count"></span>
-      </div>
-      <div class="m-3 gap-2 d-flex justify-content-start">
-        <button class="btn rounded-3 delete-product" type="button">Удалить</button>
-      </div>
-    </div>
-
-    <div class="m-3 ms-auto gap-2">
-      {% if not deal.posted %}
-        <button class="btn rounded-3 btn-primary" type="button" onclick="DealConsumablesFill()">Заполнить</button>
-        <button class="btn rounded-3 btn-primary create-new-line" type="button">Добавить строку</button>
-      {% endif %}
-    </div>
-  </div>
-  {% endif %}
-</div>
-
-<div class="card h-100">
-  <div class="d-flex justify-content-end align-items-center m-3">
-    <table class="col-3">
-      <tbody>
-        <tr>
-          <td class="fs-4 fw-bolder">Общая сумма:</td>
-          <td class="fs-4 fw-bolder"><span class="all-sum"></span> ₽</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+{% if not deal.posted %}
+  {% set table_btns %}
+    <button class="btn rounded-3 btn-primary" type="button" onclick="DealConsumablesFill()">Заполнить</button>
+    <button class="btn rounded-3 btn-primary create-new-line" type="button">Добавить строку</button>
+  {% endset %}
 {% endif %}
+{{ m.table(table, btns=table_btns, attrs="id=tabConsumables data-to-server=consumables") }}
+
+{# Блок общая сумма #}
+{{ m.sum() }}

@@ -2,10 +2,9 @@ from datetime import datetime
 import json
 from flask import current_app, flash, request, session
 from clim.models import Category, Module, Product, ProductAttribute, \
-    ProductOptionValue, ProductSpecial, ProductVariant, RedirectManager, StockStatus, db
+    ProductSpecial, ProductVariant, RedirectManager, StockStatus, db
 from clim.site.other_shops.models import OtherProduct
-from clim.site.other_shops.utils import get_other_product
-from clim.utils import DiscountProducts, get_product, smart_int
+from clim.utils import DiscountProducts, smart_int
 
 
 def get_filter(method=None, path=None):
@@ -36,108 +35,6 @@ def get_filter(method=None, path=None):
     return filter
 
 
-def get_products(pagination=True, filter={}):
-    """ Получить с фильром """
-
-    request_base = Product.query
-
-    if filter.get('group_attribute'):
-        group_attribute = int(filter.get('group_attribute'))
-        request_base = (request_base.join(Product.attributes)
-            .where(ProductAttribute.attribute_id == group_attribute)
-            .order_by(ProductAttribute.text))
-
-    if filter.get('stock'):
-        stock = filter.get('stock')
-        if stock == 'not not in stock':
-            request_base = request_base.filter(Product.quantity > 0)
-        elif stock == 'in stock':
-            request_base = request_base.filter((Product.quantity == 10)
-                                               & (Product.price != 100001))
-        elif stock == 'on order':
-            request_base = request_base.filter(Product.quantity == 1)
-        elif stock == 'not in stock':
-            request_base = request_base.filter(Product.quantity == 0)
-        elif stock == 'price request':
-            request_base = request_base.filter(Product.price == 100001)
-
-    if filter.get('field'):
-        field = filter.get('field')
-        if field == 'ean':
-            request_base = request_base.filter(Product.ean != '')
-        elif field == 'jan':
-            request_base = request_base.filter(Product.jan != '')
-        elif field == 'isbn':
-            request_base = request_base.filter(Product.isbn != '')
-
-    if filter.get('manufacturers_ids'):
-        manufacturers_ids = filter.get('manufacturers_ids')
-        request_base = request_base.where(Product.manufacturer_id.in_(manufacturers_ids))
-
-    if filter.get('categories_ids'):
-        categories_ids = filter.get('categories_ids')
-        request_base = (request_base.join(Product.categories)
-                   .filter(Category.category_id.in_(categories_ids)))
-
-    if filter.get('attribute_id'):
-        attribute_id = filter.get('attribute_id')
-        attribute_values = filter.get('attribute_values')
-        request_base = (request_base.join(Product.attributes)
-                    .where((ProductAttribute.attribute_id == attribute_id)
-                           & (ProductAttribute.text.in_(attribute_values)))
-                    .order_by(ProductAttribute.text))
-
-    if filter.get('option_value_id'):
-        request_base = (request_base.join(Product.options)
-                   .filter(ProductOptionValue.option_value_id == filter.get('option_value_id')))
-
-    if filter.get('options') == 'whith options':
-        request_base = (request_base.filter(Product.options is not None))
-    elif filter.get('options') == 'whithout options':
-        request_base = (request_base.filter(Product.options is None))
-
-    if filter.get('other_filter') == 'not_confirmed':
-        request_base = (request_base.join(Product.other_shop)
-                        .filter((OtherProduct.product_id is not None)
-                                & (OtherProduct.link_confirmed is None)))
-
-    if filter.get('other_filter') == 'not_matched':
-        request_base = (request_base.filter(Product.other_shop is None))
-
-    elif filter.get('other_filter') == 'different_price':
-        request_base = (request_base.join(Product.other_shop)
-                        .filter((OtherProduct.price != Product.price)
-                                & (OtherProduct.link_confirmed is not None)
-                                & (OtherProduct.price is not None)))
-
-    elif filter.get('other_filter') == 'no_options':
-        request_base = request_base.filter(Product.options is None)
-
-    if filter.get('products_ids'):
-        ids = filter.get('products_ids')
-        request_base = request_base.filter(Product.product_id.in_(ids))
-
-    if filter.get('new_products'):
-        request_base = request_base.filter(Product.date_added == 0)
-
-    if filter.get('sort') == 'viewed':
-        request_base = request_base.order_by(Product.viewed.desc())
-    else:
-        request_base = request_base.order_by(Product.mpn)
-
-    if pagination:
-        results_per_page = session.get('results_per_page')
-        if results_per_page:
-            results_per_page = int(results_per_page)
-        page = request.args.get('page')
-        page = int(page) if page else 1
-        return request_base.paginate(page=page,
-                                     per_page=results_per_page,
-                                     error_out=False)
-
-    return request_base.all()
-
-
 def get_stock_statuses():
     return db.session.execute(
         db.select(StockStatus).filter_by(language_id=1)).scalars()
@@ -150,16 +47,16 @@ class ProductsPricesModule:
 
     # @cached_property
     def load_module(self):
-        # if not self.module:
-        self.module = db.session.execute(
-            db.select(Module).filter_by(name='products_prices')).scalar()
+        if not self.module:
+            self.module = db.session.execute(
+                db.select(Module).filter_by(name='products_prices')).scalar()
         return self.module
 
     # @cached_property
     def get_settings(self):
         self.load_module()
-        # if not self.settings:
-        self.settings = json.loads(self.module.value) if self.module else {}
+        if not self.settings:
+            self.settings = json.loads(self.module.value) if self.module else {}
         return self.settings
 
     def set_settings(self, settings):
@@ -168,8 +65,7 @@ class ProductsPricesModule:
             self.module = Module(name='products_prices')
             db.session.add(self.module)
         self.module.value = json.dumps(settings)
-        print(self.module.value)
-        # module.value = json.dumps(settings)
+        self.module = None
 
 
 products_prices_module = ProductsPricesModule()
@@ -179,14 +75,14 @@ def manual_confirm_prices(ids, price_type):
     """ Ручное применение цен """
     for data in ids:
         product_id, new_price = data.split('-')
-        product = get_product(product_id)
+        product = Product.get(product_id)
         product.new_price(float(new_price), price_type)
 
 
 def manual_comparison(ids, action):
     """ Ручное применение цен """
     for product_id in ids:
-        other_product = get_other_product(product_id)
+        other_product = OtherProduct.get(product_id)
         if not other_product:
             continue
 

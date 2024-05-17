@@ -24,10 +24,21 @@ $(function () {
     $modal.find(".modal-title").text($btn.data("title"));
     $modal.find(".modal-text").text($btn.data("text") || "");
 
-    $modal_btn.data("action", $btn.data("action"));
-    $modal_btn.data("after", $btn.data("after"));
-    $modal_btn.data("modal", $btn.closest(".modal").attr("id"));
+    $modal_btn.data("action", $btn.data("action") || "");
+    $modal_btn.data("after", $btn.data("after") || "");
+    $modal_btn.data("id", $btn.data("id") || "");
+    $modal_btn.data("modal", $btn.closest(".modal").attr("id") || "");
+    if ($btn.attr("formaction")) $modal_btn.attr("formaction", $btn.attr("formaction"));
     $modal.modal({backdrop: false}).modal("show");
+  });
+
+  $("body").on("click", "[data-content-id]", function () {
+    var url = $(this).data("url"),
+      $modal = $(this).closest(".modal-body");
+
+    $.get(OnlyContentUrl(url)).done(function (data) {
+      LoadTo($modal, data);
+    });
   });
 
   $("body").on("click", "[data-modal-id]", function () {
@@ -170,6 +181,7 @@ $(function () {
       btn_data[$btn.attr("name")] = $btn.attr("value");
       $.extend(data, btn_data);
     }
+    console.log(data)
 
     // Если нужно собрать ID
     var ids = [];
@@ -202,12 +214,8 @@ $(function () {
 })
 
 // Load to Page
-function LoadToPage(url) {
-  if (!url) {
-    url = $(location).attr('href');
-  }
-  url += `${url.indexOf("?") > 0 ? "&" : "?"}only_content=true`;
-  $('#content').load(url, function () {
+function LoadToPage(url=$(location).attr('href')) {
+  $('#content').load(OnlyContentUrl(url), function () {
     UpdateScripts($('#content'));
     UpdateFocus($('#content'));
   });
@@ -252,6 +260,7 @@ function LoadToModal(modal_id, url, pre_need_update, pre_modal_id) {
     if (!$modal.hasClass("show")) {
       $modal.modal("show");
     } else {
+      $modal.trigger("show.bs.modal");
       UpdateFocus($modal);
     }
   });
@@ -279,11 +288,8 @@ function PageUpdate($modal) {
 
 // Focus
 function UpdateFocus($element=$("body")) {
-  if ($element.find('.focus').length) {
-    $element.find('.focus').focus();
-  } else {
-    $element.find(".search-input").focus();
-  }
+  if ($element.find('.focus').length) $element.find('.focus').focus();
+  else $element.find(".search-input").focus();
 }
 
 // Update Page
@@ -344,23 +350,29 @@ function SendingData(url, data, $btn) {
 }
 
 function UpdateAfterLoad(response, $btn) {
-  var url,
-    $modal = $(`#${$btn.data("modal")}`),
-    do_after = $btn.data('after');
+  var url = "",
+    $modal;
 
-  if (!$modal.length && $btn.closest(".modal").attr("id") !== "ModalConfirmation") $modal = $btn.closest(".modal");
+  // Поиск модульного, если передано через кнопку
+  if ($btn.data("modal")) $modal = $(`#${$btn.data("modal")}`);
 
-  if (response.redirect) url = response.redirect;
-  if (!url && $modal.length) url = $modal.data("url");
+  // Поиск модульного, в котором нажата кнопка
+  if ($modal === undefined && $btn.closest(".modal") !== undefined) {
+    if ($btn.closest(".modal").attr("id") !== "ModalConfirmation") $modal = $btn.closest(".modal");
+  }
 
-  if (do_after === 'update') {
-    if ($modal.length) LoadToModal($modal.attr('id'), url, true);
+  if (response.url) url = response.url;
+  else if (response.close) url = "";
+  else if ($modal !== undefined) url = $modal.data("url");
+  console.log(url)
+  console.log(response)
+
+
+  if ($btn.data('after') === 'update' && url) {
+    if ($modal !== undefined && $modal.length) LoadToModal($modal.attr('id'), url, true);
     else LoadToPage(url);
-  } else if (do_after === 'close') $modal.modal("hide");
-
-  // if ($btn && $btn.data('after-update')) {
-  // } else if ($btn && $btn.data('after-close')) $modal.modal("hide");
-  // else setTimeout(PageUpdate, 500, $modal);
+  } else if ($modal !== undefined && $modal.length) $modal.modal("hide");
+  else LoadToPage();
 }
 
 function GetFlashedMessages($element=$('body')) {
@@ -483,7 +495,7 @@ $("body").on("click", ".pagination a", function (e) {
 });
 
 function OnlyContentUrl(url) {
-  url += `${url.indexOf("?") > 0 ? "&" : "?"}only_content=true`;
+  if (url.indexOf("only_content=true") === -1) url += `${url.indexOf("?") > 0 ? "&" : "?"}only_content=true`;
   return url;
 }
 

@@ -1,8 +1,8 @@
-from flask import flash
 from ..models import db
+from .utils import WorkerUtils
 
 
-class Worker(db.Model):
+class Worker(WorkerUtils, db.Model):
     __tablename__ = 'adm_worker'
 
     worker_id = db.Column(db.Integer, primary_key=True)
@@ -11,9 +11,3 @@ class Worker(db.Model):
     end_day = db.Column(db.Time)
     employments = db.relationship('Employment',
                                   backref=db.backref('worker', lazy=True))
-
-    def delete(self):
-        if self.employments:
-            flash(f'У работника {self.name} есть запланированные задачи', 'warning')
-            return
-        db.session.delete(self)

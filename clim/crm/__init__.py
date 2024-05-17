@@ -17,8 +17,6 @@ bp.register_blueprint(booking.bp, url_prefix='/booking')
 # Jinja фильтры
 bp.add_app_template_filter(utils.money)
 bp.add_app_template_filter(utils.smart_int)
-bp.add_app_template_filter(utils.to_json)
 bp.add_app_template_filter(utils.smart_date)
-bp.add_app_template_filter(utils.how_long_ago)
 bp.add_app_template_filter(utils.smart_phone)
 bp.add_app_template_filter(utils.datetime_from_str)

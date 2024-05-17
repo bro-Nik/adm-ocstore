@@ -1,9 +1,17 @@
 {% extends "base.html" %}
 {% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
 {% import 'base_macro.html' as m with context %}
+{% import 'crm/macro.html' as cm with context %}
 
 {% block content %}
-{% set details = deal.get('details', {}) %}
+{% set details = deal.get_json('details') or {} %}
+{% set products = deal.get_json('products') or ([] if deal.posted else [{}]) %}
+{% set consumables = deal.get_json('consumables') or ([] if deal.posted else [{}]) %}
+{% set expenses = deal.get_json('expenses') or ([] if deal.posted else [{}]) %}
+{% set analytics = deal.get_json('analytics') or [] %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='select2/css/select2.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='select2/css/select2-bootstrap-5-theme.css') }}" />
 
 <form id="DealInfo" class="d-grid gap-3" action="{{ url_for('.deal_info', deal_id=deal.deal_id) }}">
   {% include 'deal/deal/header.html' %}
@@ -21,19 +29,35 @@
         </div>
 
         <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-product-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">{% include 'deal/deal/products.html' %}</div>
+          <div class="col-12 d-grid gap-3">
+            {% if not products %}{% include 'nothing.html' %}
+            {% else %}{% include 'deal/deal/products.html' %}
+            {% endif %}
+          </div>
         </div>
 
         <div class="tab-pane fade" id="pills-consumables" role="tabpanel" aria-labelledby="pills-consumables-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">{% include 'deal/deal/consumables.html' %}</div>
+          <div class="col-12 d-grid gap-3">
+            {% if not consumables %}{% include 'nothing.html' %}
+            {% else %}{% include 'deal/deal/consumables.html' %}
+            {% endif %}
+          </div>
         </div>
 
         <div class="tab-pane fade" id="pills-expenses" role="tabpanel" aria-labelledby="pills-expenses-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">{% include 'deal/deal/expenses.html' %}</div>
+          <div class="col-12 d-grid gap-3">
+            {% if not expenses %}{% include 'nothing.html' %}
+            {% else %}{% include 'deal/deal/expenses.html' %}
+            {% endif %}
+          </div>
         </div>
 
         <div class="tab-pane fade" id="pills-analytics" role="tabpanel" aria-labelledby="pills-analytics-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">{% include 'deal/deal/analytics.html' %}</div>
+          <div class="col-12 d-grid gap-3">
+            {% if not analytics %}{% include 'nothing.html' %}
+            {% else %}{% include 'deal/deal/analytics.html' %}
+            {% endif %}
+          </div>
         </div>
 
       </div>
@@ -41,7 +65,7 @@
   </div>
 
   {# Кнопки действий формы #}
-  {{ m.form_actions() }}
+  {{ m.form_actions(deal) }}
 </form>
 
 <script>

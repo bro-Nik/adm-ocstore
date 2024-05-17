@@ -1,5 +1,3 @@
-{# Jinja #}
-
 {# Блок таблицы #}
 {% set table %}
   <thead>
@@ -8,13 +6,13 @@
         <th class="checkbox"><input class="form-check-input check-all" type="checkbox"></th>
       {% endif %}
       <th>Товар</th>
-      <th class="{{ 'visually-hidden' if movement_type!='coming' }}">Закупочная цена</th>
+      <th class="{{ 'visually-hidden' if movement.movement_type != 'coming' }}">Закупочная цена</th>
       <th>Количество</th>
       <th>Склад</th>
       {% if not movement.posted %}
         <th>На складе</th>
       {% endif %}
-      {% if movement_type == 'moving' %}
+      {% if movement.movement_type == 'moving' %}
         <th>Получатель</th>
         {% if not movement.posted %}
           <th>У получателя</th>
@@ -25,10 +23,7 @@
   </thead>
 
   <tbody>
-    {% set products = movement.get('products') or [] %}
-    {% if not movement.posted and not products %}
-      {% set products = [{}] %}
-    {% endif %}
+    {% set products = movement.get_json('products') or [{}] %}
 
     {% for product in products %}
       <tr class="align-middle product">
@@ -38,6 +33,7 @@
           <td class="checkbox">{{ m.checkbox(product.product_id) }}</td>
         {% endif %}
 
+        {# Выбор товара #}
         <td>
           <span class="line-count">{{ loop.index }}.</span>
 
@@ -54,7 +50,8 @@
           {% endif %}
         </td>
 
-        <td class="{{ 'visually-hidden' if not movement_type == 'coming' }}">
+        {# Цена товара #}
+        <td class="{{ 'visually-hidden' if not movement.movement_type == 'coming' }}">
           {% if movement.posted %}
             <span>{{ product.price|smart_int }} ₽</span>
           {% else %}
@@ -66,6 +63,7 @@
           {% endif %}
         </td>
 
+        {# Количество товара #}
         <td>
           {% if movement.posted %}
             <span>{{ product.quantity|smart_int }} {{ product.unit }}</span>
@@ -78,6 +76,7 @@
           {% endif %}
         </td>
 
+        {# Выбор Склада #}
         <td>
           {% if movement.posted %}
             <span>{{ product.stock_name }}</span>
@@ -93,11 +92,13 @@
           {% endif %}
         </td>
 
+        {# Доступно на складе #}
         {% if not movement.posted %}
           <td><span data-stock-available="stock_id" data-new-line-text=""></span></td>
         {% endif %}
 
-        {% if movement_type == 'moving' %}
+        {# Выбор Склада2 #}
+        {% if movement.movement_type == 'moving' %}
           <td>
             {% if movement.posted %}
               <span>{{ product.stock2_name }}</span>
@@ -113,11 +114,13 @@
             {% endif %}
           </td>
 
+          {# Доступно на складе2 #}
           {% if not movement.posted %}
             <td><span data-stock-available="stock2_id" data-new-line-text=""></span></td>
           {% endif %}
         {% endif %}
 
+        {# Сумма #}
         <td>
           <span class="sum" data-new-line-text="0">
             {{ product.price|smart_int * product.quantity|smart_int }}
@@ -135,23 +138,13 @@
       <button class="btn rounded-3 btn-outline-secondary" type="button" data-modal-id="SelectProductsModal"
         data-url="{{ url_for('.set_products_page') }}">Выбрать товары</button>
 
-      {% if movement_type == 'coming' %}
+      {% if movement.movement_type == 'coming' %}
         <button class="btn rounded-3 btn-outline-secondary" type="button" data-modal-id="AddProductsModal"
           data-url="{{ url_for('.product_info') }}">Создать товар</button>
       {% endif %}
   {% endset %}
 {% endif %}
-{{ m.table(table, table_btns, attrs="id=tabProducts data-to-server=products") }}
+{{ m.table(table, btns=table_btns, attrs="id=tabProducts data-to-server=products") }}
 
-<div class="card h-100">
-  <div class="d-flex justify-content-end align-items-center m-3">
-    <table class="col-3">
-      <tbody>
-        <tr class="fs-4 fw-bolder">
-          <td>Общая сумма:</td>
-          <td><span class="all-sum"></span> ₽</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+{# Блок общая сумма #}
+{{ m.sum() }}

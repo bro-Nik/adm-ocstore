@@ -11,8 +11,7 @@
             <label class="form-label h7">Категория</label>
             <select class="general-select show-count-selected" multiple name="categories_ids"
               data-url="{{ url_for('main.get_list_all_categories') }}" data-placeholder="Все" data-width="100%">
-              {% set categories_ids = session.get('categories_ids') if session.get('categories_ids') else [] %}
-              {% for id in categories_ids %}
+              {% for id in session.get('categories_ids', []) %}
                 <option selected value="{{ id }}">{{ id }}</option>
               {% endfor %}
             </select>
@@ -23,8 +22,7 @@
             <select class="general-select show-count-selected"
               data-url="{{ url_for('main.get_list_all_manufacturers') }}" data-placeholder="Все" multiple
               name="manufacturers_ids" data-width="100%">
-              {% set manufacturers_ids = session.get('manufacturers_ids') if session.get('manufacturers_ids') else [] %}
-              {% for id in manufacturers_ids %}
+              {% for id in session.get('manufacturers_ids', []) %}
                 <option selected value="{{ id }}">{{ id }}</option>
               {% endfor %}
             </select>

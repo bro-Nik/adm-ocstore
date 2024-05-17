@@ -14,6 +14,7 @@ LOGIN_ATTEMPTS = 3
 @login_manager.user_loader
 def find_user(user_id: int | None = None, login: str | None = None
               ) -> User | None:
+# def find_user(login: str | None) -> User | None:
     """Возвращает пользователя."""
     select = db.select(User)
     if user_id:
@@ -53,7 +54,7 @@ def login(form: dict) -> bool:
             flash(f'Вход заблокирован. Осталось {m} мин. {s} сек.', 'warning')
             return False
 
-    user = find_user(login=login)
+    user = find_user(login)
 
     # Пользователь не найден
     if not user:

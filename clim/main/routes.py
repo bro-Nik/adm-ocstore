@@ -1,12 +1,10 @@
 import json
-import pickle
 from flask import redirect, render_template, request, url_for
 from flask_login import login_required
 
-from clim.utils import get_module
 from clim.models import Attribute, AttributeDescription, Category, Manufacturer, Module, Product
 
-from ..app import db, redis
+from ..app import db
 from . import bp
 
 
@@ -15,49 +13,28 @@ def main_redirect():
     return redirect(url_for('crm.stock.products'))
 
 
-@bp.route('/ajax/list_all_categories', methods=['GET'])
+@bp.route('/list_all_categories', methods=['GET'])
 @login_required
 def get_list_all_categories():
-    search = request.args.get('search')
+    search = request.args.get('search', '')
+    results = []
 
-    result = {'results': []}
+    if not search:
+        results.append({'id': '0', 'text': 'Все'})
 
-    query_redis = redis.get('all_categories')
-    if query_redis:
-        result = pickle.loads(query_redis)
-        results = result['results']
+    categories = db.session.execute(
+        db.select(Category).filter_by(parent_id=0)).scalars()
 
-    else:
-        results = []
-        line = -1
+    def uppend(cat, prefix=''):
+        if not search or search.lower() in cat.name.lower():
+            results.append({'id': cat.category_id, 'text': f'{prefix}{cat.name}'})
 
-        def next(parent_id=0, line=0):
-            line += 1
-            categories = db.session.execute(
-                db.select(Category).filter_by(parent_id=int(parent_id))).scalars()
+    for category in categories:
+        uppend(category)
+        for subcategory in category.child_categories:
+            uppend(subcategory, '-- ')
 
-            for category in categories:
-                results.append(
-                    {
-                        'id': str(category.category_id),
-                        'text': ' - ' * line + category.description.name
-                    }
-                )
-                next(parent_id=category.category_id,
-                     line=line)
-
-        next(line=line)
-
-        result['results'] = results
-        redis.set('all_categories', pickle.dumps(result))
-
-    if search:
-        result['results'] = []
-        for category in results:
-            if search.lower() in category['text'].lower():
-                result['results'].append(category)
-
-    return json.dumps(result, ensure_ascii=False)
+    return json.dumps({'results': results}, ensure_ascii=False)
 
 
 @bp.route('/ajax/list_all_manufacturers', methods=['GET'])
@@ -117,7 +94,7 @@ def get_list_all_attributes():
 
 def get_consumables():
     """ Получить с расходные материалы """
-    settings_in_base = get_module('crm_stock')
+    settings_in_base = Module.get('crm_stock')
     settings = {}
     if settings_in_base.value:
         settings = json.loads(settings_in_base.value)
@@ -180,14 +157,14 @@ def del_not_confirm_products():
 @bp.route('/work_plan_fields', methods=['POST'])
 @login_required
 def work_plan_fields():
-    data = json_loads_or_other(request.data, {})
+    data = json.loads(request.data) if request.data else {}
 
-    module = get_module('work_plan')
+    module = Module.get('work_plan')
     if not module:
         module = Module(name='work_plan')
         db.session.add(module)
 
-    module_data = json_loads_or_other(module.value, {})
+    module_data = json.loads(module.value) if module.value else {}
     fields = module_data.get('fields', [])
 
     def new_id():
@@ -246,7 +223,7 @@ def work_plan():
         category = category.filter_by(category_id=category_id)
     category = db.session.execute(category).scalar()
 
-    module = get_module('work_plan')
+    module = Module.get('work_plan')
     module_data = json.loads(module.value) if module and module.value else {}
     fields = module_data.get('fields', {})
     if not module_data.get(category_id):

@@ -6,11 +6,7 @@
 <form id="WorkersForm" class="d-grid gap-3">
 
   {# Блок названия и кнопок #}
-  {% set heading_btns %}
-    <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
-    <a class="btn btn-primary" data-modal-id="WorkerInfoModal" data-url="{{ url_for('.worker_info') }}">Создать</a>
-  {% endset %}
-  {{ m.heading("Работники", heading_btns) }}
+  {{ m.heading("Работники", child_obj=child_obj) }}
 
   {# Блок таблицы #}
   {% set table %}
@@ -20,6 +16,7 @@
         <th>ФИО</th>
         <th>Рабочий день</th>
         <th>Занятость</th>
+        <th></th>
       </tr>
     </thead>
 
@@ -27,30 +24,22 @@
       {% for worker in workers %}
         <tr>
           {# Чекбокс #}
-          <td class="checkbox"><input class="form-check-input to-check" type="checkbox" value="{{ worker.worker_id }}"></td>
+          <td class="checkbox">{{ m.checkbox(worker.worker_id) }}</td>
 
-          {# Ссылка на работника #}
-          <td>
-            <a class="text-inherit" data-modal-id="WorkerInfoModal"
-              data-url="{{ url_for('.worker_info', worker_id=worker.worker_id) }}">{{ worker.name }}
-            </a>
-          </td>
+          {# Ссылка #}
+          <td>{{ m.modal_link(worker, "settings") }}</td>
 
           <td>{{ worker.start_day }} - {{ worker.end_day }}</td>
           <td>{{ worker.employments|length or '' }}</td>
+
+          {# Меню #}
+          <td class="align-middle text-end">{{ m.table_btns_more(worker) }}</td>
 
         </tr>
       {% endfor %}
     </tbody>
   {% endset %}
-  {{ m.table(table) }}
-
-  {# Кнопки действий таблицы #}
-  {% set table_btns %}
-    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="delete"
-      data-title="Удалить работников?" data-text="" data-after="update">Удалить</button>
-  {% endset %}
-  {{ m.table_actions(table_btns) }}
+  {{ m.table(table, workers) }}
 
 </form>
 {% endblock %}

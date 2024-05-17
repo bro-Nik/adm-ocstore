@@ -6,11 +6,7 @@
 <form id="ClientsForm" class="d-grid gap-3">
 
   {# Блок названия и кнопок #}
-  {% set heading_btns %}
-    <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
-    <a class="btn btn-primary" data-modal-id="ContactInfoModal" data-url="{{ url_for('.contact_info') }}">Создать</a>
-  {% endset %}
-  {{ m.heading("Клиенты", heading_btns) }}
+  {{ m.heading("Контакты", child_obj=child_obj) }}
 
   {# Блок таблицы #}
   {% set table %}
@@ -21,6 +17,7 @@
         <th>Email</th>
         <th>Телефон</th>
         <th>Связи</th>
+        <th></th>
       </tr>
     </thead>
 
@@ -28,33 +25,23 @@
       {% for contact in contacts %}
         <tr>
           {# Чекбокс #}
-          <td class="checkbox">
-            <input class="form-check-input to-check" type="checkbox" value="{{ contact.contact_id }}">
-          </td>
+          <td class="checkbox">{{ m.checkbox(contact.contact_id) }}</td>
 
-          {# Ссылка на контакт #}
-          <td>
-            <a class="text-inherit" data-modal-id="ContactInfoModal"
-              data-url="{{ url_for('.contact_info', contact_id=contact.contact_id) }}">{{ contact.name }}
-            </a>
-          </td>
+          {# Ссылка #}
+          <td>{{ m.modal_link(contact, "settings") }}</td>
 
           <td>{{ contact.email }}</td>
           <td>{{ contact.phone }}</td>
           <td>{{ contact.deals|length or '' }}</td>
 
+          {# Меню #}
+          <td class="align-middle text-end">{{ m.table_btns_more(contact) }}</td>
+
         </tr>
       {% endfor %}
     </tbody>
   {% endset %}
-  {{ m.table(table) }}
-
-  {# Кнопки действий таблицы #}
-  {% set table_btns %}
-    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="delete"
-      data-title="Удалить контакты?" data-text="" data-after="update">Удалить</button>
-  {% endset %}
-  {{ m.table_actions(table_btns) }}
+  {{ m.table(table, contacts) }}
 
 </form>
 {% endblock %}

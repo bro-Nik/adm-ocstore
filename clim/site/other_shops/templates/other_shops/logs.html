@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<form id="CategoryLogs" class="d-grid gap-3" action="{{ category.url_actions if category else shop.url_actions }}">
+
+  {# Блок названия и кнопок #}
+  {{ m.heading(shop.name + (' | ' + category.name if category else '') + ' | Логи', obj=category or shop) }}
+
+  <div class="form-control overflow-auto logs-box small-text" style="height: 400px"
+    data-url="{{ url_for('.json_module_logs', shop_id=shop.shop_id, category_id=category.other_category_id if category) }}"></div>
+
+  <button class="btn btn-sm btn-transparent" type="submit" data-action="delete_logs" data-after="update">Удалить логи</button>
+
+
+</form>
+<script>
+// Logs
+var $logs_box = $('.logs-box');
+
+function UpdateLogs(url) {
+  var timestamp = $logs_box.find('.log-item').data('timestamp') || 0,
+    url = `${url}${url.includes('?') ? '&' : '?'}timestamp=${timestamp}`,
+    request = $.get(url);
+
+  request.done(function(logs) {
+    for (let i = 0; i < logs.length; i++) {
+      var datetime = new Date(logs[i].time).toLocaleString("ru");
+      $logs_box.prepend($('<div>', {
+        class: 'd-flex flex-wrap log-item',
+        html: `<span>${logs[i].text}</span><span class="ms-auto">${datetime}</span>`
+      }).data('timestamp', logs[i].timestamp)
+      .data('category', logs[i].category))
+
+      // Количество по типу
+      var log_category_count = $(`.log-category-${logs[i].category}-count`)
+      log_category_count.text(+log_category_count.text() + 1)
+    }
+    $('.log-category input:checked').trigger('change');
+  })
+}
+
+if ($logs_box.length){
+  console.log($logs_box.data('url'))
+  UpdateLogs($logs_box.data('url'));
+  clearTimeout(UpdateLogsTimerId);
+  var UpdateLogsTimerId = setInterval(UpdateLogs, 10000, $logs_box.data('url'));
+}
+</script>
+{% endblock %}

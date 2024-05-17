@@ -1,8 +1,8 @@
-from flask import flash
 from ..models import db
+from .utils import ContactUtils
 
 
-class Contact(db.Model):
+class Contact(ContactUtils, db.Model):
     __tablename__ = 'adm_contact'
 
     contact_id = db.Column(db.Integer, primary_key=True)
@@ -13,9 +13,3 @@ class Contact(db.Model):
     deals = db.relationship('Deal', backref=db.backref('contact', lazy=True))
     movements = db.relationship('StockMovement',
                                 backref=db.backref('contact', lazy=True))
-
-    def delete(self):
-        if self.deals:
-            flash(f'У контакта {self.name} есть сделки', 'warning')
-            return
-        db.session.delete(self)

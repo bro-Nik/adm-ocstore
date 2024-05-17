@@ -1,19 +1,20 @@
 {% extends "base.html" %}
 {% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
 {% import 'base_macro.html' as m with context %}
+{% import 'crm/macro.html' as cm with context %}
 
-{% set details = movement.get('details', {}) %}
+{% set details = movement.get_json('details') or {} %}
 
 {% block content %}
-<form id="movementInfo" class="d-grid gap-3" action="{{ url_for('.movement_info', movement_type=movement_type, movement_id=movement.movement_id) }}">
+<form id="movementInfo" class="d-grid gap-3" action="{{ url_for('.movement_info', movement_type=movement.movement_type, movement_id=movement.movement_id) }}">
 
   {# Блок названия и кнопок #}
   {% set heading %}
     {% if movement.movement_id %} {{ details.name }}
-    {% elif movement_type == 'coming' %} Добавление прихода
-    {% elif movement_type == 'moving' %} Новое перемещение {% endif %}
+    {% elif movement.movement_type == 'coming' %} Добавление прихода
+    {% elif movement.movement_type == 'moving' %} Новое перемещение {% endif %}
   {% endset %}
-  {{ m.heading(heading) }}
+  {{ m.heading(heading, obj=movement) }}
 
   <div class="row align-items-center">
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
@@ -33,7 +34,7 @@
   <div class="row">
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
       <div class="tab-content" id="pills-tabContent">
-        <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
+        <div class="tab-pane fade active show" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
           {% include 'stock/movement/details.html' %}
         </div>
 
@@ -47,14 +48,7 @@
   </div>
 
   {# Кнопки действий формы #}
-  {% set btns %}
-    {% if movement.posted %}
-      <button class="btn btn-outline-secondary" type="submit" data-action="unposting" data-after="update">Отменить проведение</button>
-    {% elif movement.movement_id %}
-      <button class="btn rounded-3 btn-outline-secondary" type="submit" data-action="posting" data-after="update">Провести документ</button>
-    {% endif %}
-  {% endset %}
-  {{ m.form_actions(btns) }}
+  {{ m.form_actions(movement) }}
 
 </form>
 {% endblock %}

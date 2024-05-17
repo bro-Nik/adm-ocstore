@@ -9,21 +9,92 @@
   {# Блок названия и кнопок #}
   {{ m.heading("Остатки") }}
 
-  <div class="row">
-    <div id="productsList" class="col-12 d-flex flex-column gap-3"></div>
+  {# Блок таблицы #}
+  {% set table %}
+    <thead>
+      <tr>
+        <th class="col-4">Название</th>
+        <th class="text-end">Закупочная цена</th>
+        <th class="text-end">Общее количество</th>
+        {% for stock in stocks %}
+          <th class="text-end">{{ stock.name }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+
+    <tbody>
+      {% if category %}
+        <tr>
+          <td colspan="{{ 3 + stocks|length }}">
+            <a class="text-inherit" data-content-id="content" data-url="{{ url_for('.products', category_id=category.parent_id) }}">... Назад</a>
+          </td>
+        </tr>
+      {% endif %}
+
+      {% for category in categories %}
+        <tr>
+          <td colspan="{{ 3 + stocks|length }}" class="">
+            <a class="text-inherit open-category" data-content-id="content" data-url="{{ url_for('.products', category_id=category.category_id) }}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder" viewBox="0 0 16 16"><path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4H2.19zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707z"/></svg>
+              {{ category.description.name }}
+            </a>
+          </td>
+        </tr>
+      {% endfor %}
+
+      {% for product in products %}
+        <tr>
+          {# Ссылка #}
+          <td>
+            <span class="text-inherit" data-modal-id="ProductInfoModal" 
+              data-url="{{ url_for('.product_info', product_id=product.product_id) }}">
+              {{ product.name }}
+            </span>
+          </td>
+
+          <td class="text-end">{{ product.cost|money }} ₽</td>
+
+          {% set quantity = product.stock_quantity %}
+
+          <td class="text-end">
+            {% if quantity != 0 %}
+              {{ quantity|smart_int }} {{ product.unit }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+
+          {% for stock in stocks %}
+            {% for product_in_stock in stock.products if product_in_stock.product_id == product.product_id %}
+              <td class="text-end">
+                {% if product_in_stock.quantity != 0 %}
+                  {{ product_in_stock.quantity|smart_int }} {{ product.unit }}
+                {% else %}
+                  - 
+                {% endif %}
+              </td>
+            {% else %}
+              <td class="text-end">-</td>
+            {% endfor %}
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  {% endset %}
+  {{ m.table(table, products) }}
+
+  <div class="card">
+    <div class="d-flex justify-content-end align-items-center m-3">
+      <table class="col-3">
+        <tbody>
+          <tr class="fs-4 fw-bolder">
+            <td>Общая сумма:</td>
+            <td>{{ products_cost|round|money }} ₽</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
+</form>
 
-
-<script>
-  function Load(args='') {
-    var url = "{{ url_for('.products_load') }}";
-    $('#productsList').load(`${url}?${args}`);
-  }
-
-  $('#productsList').on("click", 'a.open-category', function () {
-    Load(`&category_id=${$(this).data('category-id')}`)
-  })
-
-  Load();
-</script>
 {% endblock %}

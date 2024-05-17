@@ -3,10 +3,10 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="ClientInfo" class="d-grid gap-3" action="{{ url_for('.contact_info', contact_id=contact.contact_id) }}">
+<form id="ClientInfo" class="d-grid gap-3" action="{{ url_for('.contact_settings', contact_id=contact.contact_id) }}">
 
   {# Блок названия и кнопок #}
-  {{ m.heading(contact.name or 'Новый контакт') }}
+  {{ m.heading(contact.name or 'Новый контакт', obj=contact) }}
 
   <div class="row align-items-center">
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
@@ -113,7 +113,11 @@
         </div>
 
         <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-deals-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">{% include 'contact/contact/deals.html' %}</div>
+          <div class="col-12 d-grid gap-3">
+            {% if not contact.deals %}{% include 'nothing.html' %}
+            {% else %}{% include 'contact/contact/deals.html' %}
+            {% endif %}
+          </div>
         </div>
 
       </div>
@@ -121,7 +125,7 @@
   </div>
 
   {# Кнопки действий формы #}
-  {{ m.form_actions() }}
+  {{ m.form_actions(contact) }}
 
 </form>
 {% endblock %}

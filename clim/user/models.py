@@ -9,7 +9,7 @@ from ..app import db
 class User(db.Model, UserMixin):
     __tablename__ = 'adm_user'
     id = db.Column(db.Integer, primary_key=True)
-    login = db.Column(db.String(255), nullable=False, unique=True)
+    login = db.Column(db.String(255), primary_key=True)
     password = db.Column(db.String(255), nullable=False)
 
     def set_password(self, password: str) -> None:

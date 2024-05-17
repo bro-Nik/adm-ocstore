@@ -8,13 +8,10 @@
 
 {% block content %}
 {% include 'stock/header.html' %}
-<form id="MovementsList" class="d-grid gap-3" action="{{ url_for('.movements_action', movement_type=movement_type) }}">
+<form id="MovementsList" class="d-grid gap-3" action="{{ url_for('.movements', movement_type=movement_type) }}">
 
   {# Блок названия и кнопок #}
-  {% set heading_btns %}
-    <a class="btn btn-primary" data-modal-id="MovementInfoModal" data-url="{{ url_for('.movement_info', movement_type=movement_type) }}">Добавить</a>
-  {% endset %}
-  {{ m.heading(title, heading_btns) }}
+  {{ m.heading(title, child_obj=child_obj) }}
 
   {# Блок таблицы #}
   {% set table %}
@@ -24,12 +21,13 @@
         <th>Название</th>
         <th>Статус</th>
         <th>Склады</th>
+        <th></th>
       </tr>
     </thead>
 
     <tbody>
       {% for movement in movements %}
-        {% set details = movement.get('details', {}) %}
+        {% set details = movement.get_json('details') or {} %}
 
         <tr>
           {# Чекбокс #}
@@ -37,21 +35,17 @@
 
           {# Ссылка #}
           <td>
-            <div class="d-grid text-inherit" data-modal-id="MovementInfoModal" 
-              data-url="{{ url_for('.movement_info', movement_type=movement_type, movement_id=movement.movement_id) }}">
-              {{ details.name }}
+            <div class="d-grid">
+              {{ m.modal_link(movement, "info") }}
               <span class="fs-6">от {{ details.date if details.date }}</span>
             </div>
           </td>
 
           {# Статус #}
           <td>
-            {% if movement.posted %}
-              <span class="badge bg-success text-uppercase">Проведен</span> 
-            {% elif movement.posted == False %}
-              <span class="badge bg-warning text-dark text-uppercase">Отменен</span>
-            {% else %}
-              <span class="badge bg-secondary text-uppercase">Черновик</span>
+            {% if movement.posted %}<span class="badge text-uppercase bg-success">Проведен</span> 
+            {% elif movement.posted == False %}<span class="badge text-uppercase bg-warning text-dark">Отменен</span>
+            {% else %}<span class="badge text-uppercase bg-secondary">Черновик</span>
             {% endif %}
           </td>
 
@@ -61,25 +55,15 @@
               {{ stock }}{% if loop.index < details.stocks|length %}, {% endif %}
             {% endfor %}
           </td>
+
+          {# Меню #}
+          <td class="align-middle text-end">{{ m.table_btns_more(movement) }}</td>
+
         </tr>
       {% endfor %}
-
     </tbody>
-    {% set products = movements %}
-    {% include 'pagination.html' %}
   {% endset %}
-  {{ m.table(table) }}
-
-  {# Кнопки действий таблицы #}
-  {% set table_btns %}
-    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="delete"
-      data-title="Удалить документы?" data-text="Будут удалены выбранные документы" data-after="update">Удалить</button>
-    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="posting"
-      data-title="Провести документы?" data-text="Будут проведены выбранные документы" data-after="update">Провести</button>
-    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="unposting"
-      data-title="Отменить проводку документов?" data-text="Будет отменена проводка выбранных документов" data-after="update">Отменить проведение</button>
-  {% endset %}
-  {{ m.table_actions(table_btns) }}
+  {{ m.table(table, movements) }}
 
 </form>
 {% endblock %}

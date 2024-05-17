@@ -18,7 +18,7 @@
       </ul>
     </div>
   {% endset %}
-  {{ m.heading("Сопоставление товаров", heading_btns) }}
+  {{ m.heading("Сопоставление товаров", btns=heading_btns) }}
 
   {# Блок фильтра #}
   {% include 'filter.html' %}
@@ -38,52 +38,52 @@
     <tbody>
       {% set var = namespace(group_name='') %}
 
-        {% for product in products %}
-          {% for attribute in product.attributes if attribute.attribute_id == session.get('group_attribute')|int %}
-            {% if attribute.text != var.group_name %}
-              {% set var.group_name = attribute.text %}
-              <tr>
-                <td><b>{{ attribute.text }}</b></td>
-                {% for shop in other_shops %}
-                  <td>
-                    <input id="shop-{{ shop.shop_id }}-group-{{ loop.index }}" class="form-check-input check-group" type="checkbox">
-                  </td>
-                {% endfor %}
-              </tr>
-            {% endif %}
-          {% endfor %}
-
-          <tr>
-            <td class="sticky-table my-product d-flex gap-3 align-items-center">
-              {{ product.description.name }}  {{ product.price|int }}
-              <a class="d-flex align-items-center" target="_blank" href="https://climkey.ru?product_id={{ product.product_id }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-up-right icon-xxs" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"/><path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"/></svg>
-              </a>
-            </td>
-            {% for shop in other_shops %}
-              <td>
-                {% if product.other_shop %}
-                  {% for other_product in product.other_shop if other_product.shop_id == shop.shop_id %}
-
-                    <input class="form-check-input to-check shop-{{ shop.shop_id }} shop-{{ shop.shop_id }}-group-{{ loop.index }}"
-                      type="checkbox" value="{{ other_product.other_product_id }}">
-
-                    <span class="other-product {{ 'text-primary' if not other_product.link_confirmed }}">
-                      {{ other_product.name }}
-                    </span>
-
-                    {{ other_product.price|int }}
-                    <a target="_blank" href="{{ other_product.link }}">
-                      <i class="icon-xxs" data-feather="external-link"></i>
-                    </a>
-                    <br>
-
-                  {% endfor %}
-                {% endif %}
-              </td>
-            {% endfor %}
-          </tr>
+      {% for product in products %}
+        {% for attribute in product.attributes if attribute.attribute_id == session.get('group_attribute')|int %}
+          {% if attribute.text != var.group_name %}
+            {% set var.group_name = attribute.text %}
+            <tr>
+              <td><b>{{ attribute.text }}</b></td>
+              {% for shop in other_shops %}
+                <td>
+                  <input id="shop-{{ shop.shop_id }}-group-{{ loop.index }}" class="form-check-input check-group" type="checkbox">
+                </td>
+              {% endfor %}
+            </tr>
+          {% endif %}
         {% endfor %}
+
+        <tr>
+          <td class="sticky-table my-product d-flex gap-3 align-items-center">
+            {{ product.description.name }}  {{ product.price|int }}
+            <a class="d-flex align-items-center" target="_blank" href="https://climkey.ru?product_id={{ product.product_id }}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-up-right icon-xxs" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"/><path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"/></svg>
+            </a>
+          </td>
+          {% for shop in other_shops %}
+            <td>
+              {% if product.other_shop %}
+                {% for other_product in product.other_shop if other_product.shop_id == shop.shop_id %}
+
+                  <input class="form-check-input to-check shop-{{ shop.shop_id }} shop-{{ shop.shop_id }}-group-{{ loop.index }}"
+                    type="checkbox" value="{{ other_product.other_product_id }}">
+
+                  <span class="other-product {{ 'text-primary' if not other_product.link_confirmed }}">
+                    {{ other_product.name }}
+                  </span>
+
+                  {{ other_product.price|int }}
+                  <a target="_blank" href="{{ other_product.link }}">
+                    <i class="icon-xxs" data-feather="external-link"></i>
+                  </a>
+                  <br>
+
+                {% endfor %}
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
     </tbody>
   {% endset %}
   {{ m.table(table) }}
@@ -93,7 +93,7 @@
     <button class="btn btn-sm rounded-3" type="submit" name="manual" value="bind" data-after="update">Привязать</button>
     <button class="btn btn-sm rounded-3" type="submit" name="manual" value="unbind" data-after="update">Отвязать</button>
   {% endset %}
-  {{ m.table_actions(table_btns) }}
+  {{ m.table_actions(btns=table_btns) }}
 </form>
 
 <script>

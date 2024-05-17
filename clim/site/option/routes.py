@@ -7,10 +7,8 @@ from clim.models import db, Attribute, AttributeDescription, Manufacturer, \
     Option, OptionDescription, OptionSetting, OptionValueSetting, OptionValue, \
     OptionValueDescription, ProductAttribute, ProductOption, \
     ProductOptionValue, Product, CategoryDescription, Category
-from .utils import float_or_other, get_filter_options, get_option, \
-    get_products, get_value, int_or_other, \
-    other_products_in_option_value
-from clim.utils import DiscountProducts, actions_in, json_dumps
+from clim.utils import DiscountProducts, actions_in
+from .utils import get_filter_options, other_products_in_option_value
 from . import bp
 
 
@@ -20,19 +18,18 @@ def options():
     """ Страница опций """
     if request.method == 'POST':
         # Действия
-        actions_in(request.data, get_option)
+        actions_in(request.data, Option.get)
         db.session.commit()
         return ''
 
-    options = db.session.execute(db.select(Option)).scalars()
-    return render_template('option/options.html', options=options)
+    return render_template('option/options.html', options=Option.get_all())
 
 
 @bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def option_settings():
     """ Добавить или изменить опцию """
-    option = get_option(request.args.get('option_id'))
+    option = Option.get(request.args.get('option_id'))
 
     if request.method == 'POST':
         if not option:
@@ -65,7 +62,7 @@ def option_values(option_id):
     """ Варианты опции """
     if request.method == 'POST':
         # Действия
-        actions_in(request.data, get_value)
+        actions_in(request.data, OptionValue.get)
         db.session.commit()
         return ''
 
@@ -75,7 +72,7 @@ def option_values(option_id):
     count_list = {}
     other_prices = {}
 
-    for item in tuple(products_and_options):
+    for item in products_and_options:
         if not count_list.get(item.product_option_value.option_value_id):
             count_list[item.product_option_value.option_value_id] = 0
 
@@ -94,7 +91,7 @@ def option_values(option_id):
                                           'price': item.product_option_value.price}
 
     return render_template('option/option_values.html',
-                           option=get_option(option_id),
+                           option=Option.get(option_id),
                            count_list=count_list,
                            other_prices=other_prices)
 
@@ -103,7 +100,7 @@ def option_values(option_id):
 @login_required
 def value_settings(option_id):
     """ Добавить или изменить вариант опции """
-    value = get_value(request.args.get('value_id'))
+    value = OptionValue.get(request.args.get('value_id'))
     settings = attribute = {}
 
     if value and value.settings and value.settings.settings:
@@ -130,13 +127,14 @@ def value_settings(option_id):
                     'attribute_values': data.get('attribute_values') or [],
                     'stock': data.get('stock')}
 
-        value.sort_order = int_or_other(data.get('sort'))
+        value.sort_order = data.get('sort')
         value.description.name = data.get('name', '')
-        value.settings.price = float_or_other(data.get('price'))
+        value.settings.price = data.get('price')
         value.settings.settings = json.dumps(settings)
 
         # Consumables
-        value.settings.consumables = json_dumps(data.get('products'))
+        products = data.get('products')
+        value.settings.consumables = json.dumps(products) if data else None
 
         db.session.commit()
         return {'redirect': url_for('.value_settings', option_id=option_id,
@@ -153,9 +151,9 @@ def value_settings(option_id):
 @bp.route('/<int:option_id>/value_products', methods=['GET', 'POST'])
 @login_required
 def value_products(option_id):
-    value = get_value(request.args.get('value_id'))
+    value = OptionValue.get(request.args.get('value_id'))
     filter_by = get_filter_options(value, request)
-    products = get_products(filter=filter_by)
+    products = Product.all_by_filter(filter=filter_by)
 
     attributes = db.session.execute(
         db.select(Attribute)
@@ -189,7 +187,7 @@ def value_products(option_id):
 @login_required
 def products_action(option_id, value_id):
     """ Действия над товараим в опции """
-    value = get_value(value_id)
+    value = OptionValue.get(value_id)
     settings = json.loads(value.option.settings.text)
 
     data = json.loads(request.data) if request.data else {}
@@ -220,7 +218,7 @@ def ajax_attribute_values():
     # Other values
     option_id = request.args.get('option_id')
     value_id = request.args.get('value_id')
-    option = db.session.execute(db.select(Option).filter_by(option_id=option_id)).scalar()
+    option = Option.get(option_id)
     other_list = []
     for value in option.values:
         if value.option_value_id == int(value_id):
@@ -293,7 +291,7 @@ def change_options_value(option_id):
             result[value_id]['sort_order'] = sort_order
         counter += 1
 
-    option = get_option(option_id)
+    option = Option.get(option_id)
 
     for value in option.values:
 

@@ -21,7 +21,7 @@
         <td>
           <a class="text-inherit open-category" data-category-id="{{ category.category_id }}">
             <i data-feather="folder" class="icon-xs"></i>
-            {{ category.description.name }}
+            {{ category.name }}
           </a>
         </td>
       </tr>
@@ -31,13 +31,13 @@
       <tr>
         <td>
           <input class="form-check-input" type="checkbox" value="{{ product.product_id }}" />
-          <a class="text-inherit">{{ product.description.name }}</a>
+          <a class="text-inherit">{{ product.name }}</a>
         </td>
       </tr>
     {% endfor %}
   </tbody>
 {% endset %}
-{{ m.table(table) }}
+{{ m.table(table, products) }}
 
 <script>
   var category_id = {{category.category_id if category else 0 }}

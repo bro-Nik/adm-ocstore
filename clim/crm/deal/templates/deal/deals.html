@@ -46,7 +46,7 @@
       })
     </script>
 
-    <a class="btn btn-primary" data-modal-id="DealInfoModal" data-url="{{ url_for('.deal_info', deal_id=0) }}" >Создать</a>
+    <a class="btn btn-primary" data-modal-id="DealInfoModal" data-url="{{ url_for('.deal_info') }}" >Создать</a>
   {% endset %}
   {{ m.heading("Сделки", heading_btns) }}
 
@@ -75,14 +75,6 @@
   </div>
 
   {% block deals_content %}{% endblock %}
-
-  {# Кнопки действий таблицы #}
-  {% set table_btns %}
-    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="delete"
-      data-title="Удалить сделки?" data-text="Будут удалены выбранные магазины" data-after="update">Удалить</button>
-  {% endset %}
-  {{ m.table_actions(table_btns) }}
-
 </form>
 
 <script src="{{ url_for('.static', filename='js/deal.js') }}"></script>

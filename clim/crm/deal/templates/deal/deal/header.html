@@ -1,5 +1,5 @@
 {# Блок названия и кнопок #}
-{{ m.heading('Добавление сделки' if not deal.deal_id else details.name) }}
+{{ m.heading('Добавление сделки' if not deal.deal_id else details.name, obj=deal) }}
 
 <div class="col-12 d-flex gap-2">
   {% for stage in stages if not 'end_' in stage.type %}

@@ -1,62 +1,60 @@
 import json
-from flask import render_template, request, url_for
+from flask import render_template, request
 from flask_login import login_required
 
 from clim.utils import actions_in
 
-from ..utils import get_services, smart_int
-from ..models import db
+from ..utils import smart_int
+from ..models import Service, db
 from .models import Worker
-from .utils import get_worker
 from . import bp
 
 
-@bp.route('/workers_list', methods=['GET', 'POST'])
+@bp.route('/', methods=['GET', 'POST'])
 @login_required
-def workers_list():
-    if request.method == 'POST':
-        # Действия
-        actions_in(request.data, get_worker)
-        db.session.commit()
-        return ''
-
-    workers = db.session.execute(db.select(Worker)).scalars()
-    return render_template('worker/workers.html', workers=workers)
-
-
-@bp.route('/worker_info', methods=['GET', 'POST'])
-@login_required
-def worker_info():
-    worker = get_worker(request.args.get('worker_id')) or Worker()
+def workers():
+    page = request.args.get('page', 1, type=int)
 
     if request.method == 'POST':
-        if not worker.worker_id:
-            db.session.add(worker)
+        return actions_in(Worker.get)
 
-        data = json.loads(request.data) if request.data else {}
-        worker.name = data.get('name', '')
-        worker.start_day = data.get('start_day', '')
-        worker.end_day = data.get('end_day', '')
-        db.session.commit()
-        return {'redirect': url_for('.worker_info', worker_id=worker.worker_id)}
+    workers = db.paginate(db.select(Worker),
+                          per_page=10, error_out=False, page=page)
+    return render_template('worker/workers.html', workers=workers,
+                           child_obj=Worker(worker_id=0))
 
-    return render_template('worker/worker/main.html', worker=worker,
-                           services=get_services())
+
+@bp.route('/worker_settings', methods=['GET', 'POST'])
+@login_required
+def worker_settings():
+    worker = Worker.get(request.args.get('worker_id')) or Worker()
+
+    if request.method == 'POST':
+        return actions_in(worker)
+
+    return render_template('worker/worker/main.html', worker=worker)
 
 
 @bp.route('/ajax_services', methods=['GET'])
 @login_required
 def ajax_services():
-    services = get_services()
+    services = db.select(Service)
+
     search = request.args.get('search', '').lower()
+    # Разделяем на пробелы и ищем совпадения
+    for word in search.split(' '):
+        if word:
+            services = (services.filter(Service.name.contains(word)))
 
-    result = {'results': [], 'pagination': {'more': False}}
+    per_page = 20
+    page = request.args.get('page', 1, type=int)
+    services = db.paginate(services,
+                           page=page, per_page=per_page, error_out=False)
+
+    result = []
     for service in services:
-        if search and search not in service.name.lower():
-            continue
+        result.append({'id': service.time,
+                       'text': service.name,
+                       'subtext': f'{smart_int(service.time / 60)}ч'})
 
-        result['results'].append({'id': service.time,
-                                  'text': service.name,
-                                  'subtext': f'{smart_int(service.time / 60)}ч'})
-
-    return json.dumps(result)
+    return json.dumps({'results': result, 'pagination': {'more': bool(result)}})

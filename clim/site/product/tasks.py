@@ -1,16 +1,16 @@
 from thefuzz import fuzz as f
 
 from clim.app import celery
-from clim.models import db
+from clim.models import Product, db
 from clim.site.other_shops.models import OtherProduct
 
-from .utils import get_products, products_prices_module
+from .utils import products_prices_module
 
 
 @celery.task()
 def comparison_products(filter_by: dict) -> None:
     """ Подбирает похожие товары """
-    products = get_products(pagination=False, filter=filter_by)
+    products = Product.all_by_filter(pagination=False, filter=filter_by)
 
     other_products = tuple(db.session.execute(
         db.select(OtherProduct)
@@ -75,7 +75,7 @@ def change_prices(filter_by, price_type):
     if delta:
         delta = float(delta) / 100
 
-    products = tuple(get_products(pagination=False, filter=filter_by))
+    products = tuple(Product.all_by_filter(pagination=False, filter=filter_by))
 
     def convert_price(price):
         try:

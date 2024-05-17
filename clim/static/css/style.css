@@ -575,3 +575,7 @@ span.multiple-count {
 .toast-container {
     z-index: 10000;
 }
+
+[data-modal-id] {
+    cursor: pointer;
+}

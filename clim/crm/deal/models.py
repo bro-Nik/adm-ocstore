@@ -1,15 +1,8 @@
-from datetime import datetime
-import json
-
-from flask import flash
-
-from ..booking.utils import get_event_booking
-from ..utils import JsonMixin, dt_to_str
 from ..models import db
-from ..stock.utils import get_product, new_product_in_stock, get_product_in_stock
+from .utils import DealUtils
 
 
-class Deal(db.Model, JsonMixin):
+class Deal(DealUtils, db.Model):
     __tablename__ = 'adm_deal'
 
     deal_id = db.Column(db.Integer, primary_key=True)
@@ -27,130 +20,6 @@ class Deal(db.Model, JsonMixin):
     analytics = db.Column(db.Text)
     profit = db.Column(db.Float(15.4))
     sort_order = db.Column(db.Integer)
-
-    # @property
-    # def name(self):
-    #     return self.info.get('name', '')
-
-    def save(self):
-        details = self.get('details', {})
-        analytics = {}
-        data = self.data
-        info = data.get('info', {})
-
-        # Name
-        details['name'] = info.get('name') or f'Сделка #{Deal.query.count()}'
-        # Contact
-        self.contact_id = info.get('contact_id')
-        # Date
-        details['date_add'] = datetime.strftime(datetime.now(), "%d.%m.%Y %H:%M")
-        details['date_end'] = info.get('date_end')
-
-        details['adress'] = info.get('adress')
-        details['what_need'] = info.get('what_need')
-        details['date_service'] = info.get('date_service')
-        details['comment'] = info.get('comment')
-
-        if not self.posted:
-            # Товары
-            products = data.get('products', [])
-            self.products = json.dumps(products, ensure_ascii=False)
-            details['sum'] = 0 if products else data.get('sum', 0)  # Сумма сделки
-            analytics['cost_products'] = 0  # Затраты
-            for product in products:
-                quantity = float(product['quantity'] or 0)
-                details['sum'] += quantity * float(product['price'] or 0)
-                if product['type'] != 'service':
-                    product_in_base = get_product(product['id'])
-                    analytics['cost_products'] += quantity * product_in_base.cost
-                    product['unit'] = product_in_base.unit
-
-            # Расходные материалы
-            consumables = data.get('consumables', [])
-            self.consumables = json.dumps(consumables, ensure_ascii=False)
-            analytics['cost_consumables'] = 0  # Затраты
-            for product in consumables:
-                quantity = float(product['quantity'] or 0)
-                product_in_base = get_product(product['id'])
-                analytics['cost_consumables'] += quantity * product_in_base.cost
-                product['unit'] = product_in_base.unit
-
-            # Прочие расходы
-            expenses = data.get('expenses', [])
-            self.expenses = json.dumps(expenses, ensure_ascii=False)
-            analytics['cost_expenses'] = 0  # Затраты
-            for expense in expenses:
-                analytics['cost_expenses'] += float(expense['price'] or 0)
-
-            details['profit'] = (details['sum'] - (analytics['cost_products'] +
-                                 analytics['cost_consumables'] + analytics['cost_expenses']))
-
-        self.details = json.dumps(details, ensure_ascii=False)
-        self.analytics = json.dumps(analytics, ensure_ascii=False)
-
-    def posting(self, d=1):
-
-        def change_quantity(products):
-            nonlocal errors
-            for p in products:
-                if p.get('type') == 'service':
-                    continue
-
-                if not p.get('stock_id'):
-                    errors.append(f'Не указан склад для {p["name"]}')
-                    continue
-
-                product_in_stock = get_product_in_stock(p['id'], p['stock_id'])
-                if not product_in_stock:
-                    product_in_stock = new_product_in_stock(p['id'], p['stock_id'])
-                    db.session.flush()
-
-                product_in_stock.quantity -= float(p['quantity'] or 0) * d
-
-                if product_in_stock.quantity < 0:
-                    errors.append(f'Нет достаточного количества на складе '
-                                  f'{p["stock_name"]} - {p["name"]}')
-                    continue
-
-                # Удалить, если нет остатков
-                if product_in_stock.quantity == 0:
-                    db.session.delete(product_in_stock)
-
-        errors = []
-        if self.products:
-            change_quantity(json.loads(self.products))
-        if self.consumables:
-            change_quantity(json.loads(self.consumables))
-
-        # Если есть ошибки - печатаем и выходим
-        if errors:
-            for error in errors:
-                flash(error, 'warning')
-            return
-
-        details = self.get('details', {})
-        # Date
-        details['date_end'] = details['date_end'] or dt_to_str(datetime.now())
-
-        # Employments
-        employments = get_event_booking(f'deal_{self.deal_id}')
-
-        # Парсинг и объединение со старыми записями
-        from .utils import employment_info
-        details.setdefault('employments', {})
-        details['employments'] |= employment_info(employments)
-
-        for e in employments:
-            db.session.delete(e)
-
-        self.details = json.dumps(details)
-        self.posted = d == 1  # True or False
-
-    def unposting(self):
-        self.posting(-1)
-
-    def delete(self):
-        db.session.delete(self)
 
 
 class DealStage(db.Model):

@@ -49,7 +49,7 @@ def smart_date(date_time):
     ''' Возвращает сколько прошло от входящей даты '''
     locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
 
-    if type(date_time) == str:
+    if isinstance(date_time, str):
         if 'T' in date_time:
             date_time = date_time.replace('T', ' ') + ':0.0'
         elif len(date_time) == 16:
@@ -90,7 +90,7 @@ bp.add_app_template_filter(smart_date)
 
 def how_long_ago(event_date):
     ''' Возвращает сколько прошло от входящей даты '''
-    if type(event_date) == str:
+    if isinstance(event_date, str):
         event_date = datetime.strptime(event_date, '%Y-%m-%d')
 
     today = datetime.now().date()

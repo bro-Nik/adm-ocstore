@@ -1,19 +1,185 @@
 from datetime import datetime
+import json
+
+from flask import abort, flash, url_for
+from clim.crm.booking.utils import get_event_booking
+from clim.crm.stock.models import StockProduct
 from clim.crm.utils import dt_to_str
-from .models import db, Deal, DealStage
+from .models import db
 
 
-def get_stage(stage_id: int = 0, stage_type: str = ''):
-    if stage_id:
-        select = db.select(DealStage).filter_by(stage_id=stage_id)
-    elif stage_type:
-        select = db.select(DealStage).filter_by(type=stage_type)
-    else:
-        return
-    return db.session.execute(select).scalar()
+class DealUtils:
+    URL_PREFIX = '.deal_'
+
+    @property
+    def actions(self):
+        return {
+            'save': [True],
+            'posting': [True],
+            'unposting': [True],
+            'delete': [self.deal_id, 'Удадить', 'Удалить сделку?', '']
+        }
+
+    @property
+    def url_id(self):
+        return dict(deal_id=self.deal_id) if self.deal_id else {}
+
+    def pages_settings(self):
+        return {'info': [True, 'Инфо']}
+
+    def save(self):
+        from ..models import Product
+        from .models import DealStage, Deal
+        details = self.get_json('details') or {}
+        analytics = {}
+        data = self.save_data
+        info = data.get('info', {})
+
+        # Name
+        details['name'] = info.get('name') or f'Сделка #{Deal.query.count()}'
+        # Contact
+        self.contact_id = info.get('contact_id')
+        # Date
+        details['date_add'] = datetime.strftime(datetime.now(), "%d.%m.%Y %H:%M")
+        details['date_end'] = info.get('date_end')
+
+        details['adress'] = info.get('adress')
+        details['what_need'] = info.get('what_need')
+        details['date_service'] = info.get('date_service')
+        details['comment'] = info.get('comment')
+
+        if not self.posted:
+            # Товары
+            products = data.get('products', [])
+            self.products = json.dumps(products, ensure_ascii=False)
+            details['sum'] = 0 if products else data.get('sum', 0)  # Сумма сделки
+            analytics['cost_products'] = 0  # Затраты
+            for product in products:
+                quantity = float(product['quantity'] or 0)
+                details['sum'] += quantity * float(product['price'] or 0)
+                if product['type'] != 'service':
+                    product_in_base = Product.get(product['id'])
+                    analytics['cost_products'] += quantity * product_in_base.cost
+                    product['unit'] = product_in_base.unit
+
+            # Расходные материалы
+            consumables = data.get('consumables', [])
+            self.consumables = json.dumps(consumables, ensure_ascii=False)
+            analytics['cost_consumables'] = 0  # Затраты
+            for product in consumables:
+                quantity = float(product['quantity'] or 0)
+                product_in_base = Product.get(product['id'])
+                analytics['cost_consumables'] += quantity * product_in_base.cost
+                product['unit'] = product_in_base.unit
+
+            # Прочие расходы
+            expenses = data.get('expenses', [])
+            self.expenses = json.dumps(expenses, ensure_ascii=False)
+            analytics['cost_expenses'] = 0  # Затраты
+            for expense in expenses:
+                analytics['cost_expenses'] += float(expense['price'] or 0)
+
+            details['profit'] = (details['sum'] - (analytics['cost_products'] +
+                                 analytics['cost_consumables'] + analytics['cost_expenses']))
+
+        self.details = json.dumps(details, ensure_ascii=False)
+        self.analytics = json.dumps(analytics, ensure_ascii=False)
+
+        # ToDo Проверка смены статуса после постинга
+        new_stage = DealStage.get(info['stage_id']) or abort(404)
+        action = None
+        if self.posted and self.stage.type != new_stage.type:
+            action = 'unposting'
+        elif not self.posted and new_stage.type == 'end_good':
+            action = 'posting'
+
+        # Stage
+        if self.stage.stage_id != new_stage.stage_id:
+            self.sort_order = 1
+            sort_stage_deals(new_stage.stage_id, self.deal_id, 0)
+
+        # Если не будет постинга применяем стадию
+        if not action:
+            self.stage = new_stage
+            db.session.flush()
+            return {'url': url_for('.deal_info', deal_id=self.deal_id)}
+
+        # Сохранение перед постингом
+        db.session.commit()
+
+        # Posting or Unposting
+        self.stage = new_stage
+        return self.try_action(action)
+
+    def posting(self, d=1):
+
+        def change_quantity(products):
+            nonlocal errors
+            for p in products:
+                # Пропускаем услуги
+                if p.get('type') == 'service':
+                    continue
+
+                # Пропускаем товары без склада списания
+                if not p.get('stock_id'):
+                    errors.append(f'Не указан склад для {p["name"]}')
+                    continue
+
+                # Пропускаем товары с неверным количеством
+                quantity = p.get('quantity') or 0
+                if quantity <= 0:
+                    errors.append(f'Неверное количество - {p["name"]}')
+                    continue
+
+                # Обновляем количество товара на складе
+                stock = StockProduct.get(p['id'], p['stock_id'], create=True)
+                stock.quantity -= float(quantity) * d
+
+                if stock.quantity < 0:
+                    errors.append(f'Нет достаточного количества на складе '
+                                  f'{p["stock_name"]} - {p["name"]}')
+                    continue
+
+                # Удалить, если нет остатков
+                if stock.quantity == 0:
+                    db.session.delete(stock)
+
+        errors = []
+        if self.products:
+            change_quantity(json.loads(self.products))
+        if self.consumables:
+            change_quantity(json.loads(self.consumables))
+
+        # Если есть ошибки - печатаем и выходим
+        if errors:
+            for error in errors:
+                flash(error, 'warning')
+            return False
+
+        details = self.get_json('details') or {}
+        # Date
+        details['date_end'] = details['date_end'] or dt_to_str(datetime.now())
+
+        # Employments
+        employments = get_event_booking(f'deal_{self.deal_id}')
+
+        # Парсинг и объединение со старыми записями
+        from .utils import employment_info
+        details.setdefault('employments', {})
+        details['employments'] |= employment_info(employments)
+
+        for e in employments:
+            db.session.delete(e)
+
+        self.details = json.dumps(details)
+        self.posted = d == 1  # True or False
+
+    def unposting(self):
+        return self.posting(-1)
 
 
 def get_stages(status=''):
+    from .models import DealStage
     if 'in_work' in status and 'end' in status:
         select = db.select(DealStage)
     elif 'in_work' in status:
@@ -29,12 +195,8 @@ def get_stages(status=''):
     return db.session.execute(select.order_by(DealStage.sort_order)).scalars()
 
 
-def get_deal(deal_id):
-    return db.session.execute(
-        db.select(Deal).filter(Deal.deal_id == deal_id)).scalar()
-
-
 def sort_stage_deals(stage_id, deal_id, previous_deal_sort):
+    from .models import DealStage
     def number(number):
         try:
             return int(number)
@@ -43,7 +205,7 @@ def sort_stage_deals(stage_id, deal_id, previous_deal_sort):
 
     previous_deal_sort = number(previous_deal_sort)
 
-    stage = get_stage(stage_id)
+    stage = DealStage.get(stage_id)
 
     for deal_in_stage in stage.deals:
         deal_in_stage.sort_order = number(deal_in_stage.sort_order)

@@ -3,26 +3,12 @@ import json
 import os
 from flask import current_app, flash
 
+from clim.utils import OptionUtils, ProductUtils
+
 from .app import db
 
 
-def delete(obj, orj_id_attr_name, attrs):
-    # Удаление зависимых данных
-    for attr in attrs:
-        to_del = getattr(obj, attr, None)
-        if to_del:
-            # Приводим к списку
-            to_del = to_del if isinstance(to_del, list) else [to_del]
-            for item in to_del:
-                if hasattr(item, orj_id_attr_name):
-                    setattr(item, orj_id_attr_name, None)
-                if hasattr(item, 'delete'):
-                    item.delete()
-                else:
-                    db.session.delete(item)
-
-
-class Product(db.Model):
+class Product(ProductUtils, db.Model):
     __tablename__ = 'oc_product'
     product_id = db.Column(db.Integer, primary_key=True)
     model = db.Column(db.String(64), default='')
@@ -89,6 +75,7 @@ class Product(db.Model):
     reviews = db.relationship('Review',
                               backref=db.backref('product', lazy=True))
 
+
     @cached_property
     def main_category(self):
         d = db.session.execute(
@@ -102,6 +89,11 @@ class Product(db.Model):
             db.select(SeoUrl)
             .filter_by(query=f'product_id={self.product_id}')).scalar()
 
+    @staticmethod
+    def child_dependencies() -> list:
+        return ['description', 'url', 'related_products', 'attributes',
+                'reviews', 'options', 'images', 'variants', 'downloads']
+
     def delete(self) -> bool:
         """ Удаление товара и все, что с ним связано """
 
@@ -110,35 +102,9 @@ class Product(db.Model):
             flash(f'У товара {self.name} есть остатки на складе', 'warning')
             return True  # error
 
-        # Удаление зависимых данных
-        for attr in ('description', 'url', 'related_products', 'attributes', 'reviews', 'options'):
-            to_del = getattr(self, attr, None)
-            if to_del:
-                # Приводим к списку
-                to_del = to_del if isinstance(to_del, list) else [to_del]
-                for item in to_del:
-                    if hasattr(item, 'product_id'):
-                        setattr(item, 'product_id', None)
-                    if hasattr(item, 'delete'):
-                        item.delete()
-                    else:
-                        db.session.delete(item)
-
         image_path = current_app.config['IMAGE_PATH']
         if self.image and os.path.isfile(image_path + self.image):
             os.remove(image_path + self.image)
-
-        if self.images:
-            for image in self.images:
-                other_images = db.session.execute(
-                    db.select(ProductImage).filter(
-                        (ProductImage.product_id != self.product_id)
-                        & (ProductImage.image == image.image))).scalar()
-                if not other_images and os.path.isfile(image_path + image.image):
-                    os.remove(image_path + image.image)
-
-                image.product_id = None
-                db.session.delete(image)
 
         if self.categories:
             for category in self.categories:
@@ -148,20 +114,6 @@ class Product(db.Model):
             for other_product in self.other_shop:
                 other_product.link_confirmed = None
                 other_product.product_id = 0
-
-        product_variants = (ProductVariant.query
-                            .filter_by(product_id=self.product_id)).all()
-        if product_variants:
-            for variant in product_variants:
-                db.session.delete(variant)
-        variants_in_products = ProductVariant.query.all()
-        if variants_in_products:
-            for variant in variants_in_products:
-                ids = variant.prodvar_product_str_id.split(',')
-                id = str(self.product_id)
-                if id in ids:
-                    ids.remove(id)
-                    variant.prodvar_product_str_id = ','.join(ids)
 
         download_path = current_app.config['DOWNLOAD_PATH']
         if self.downloads:
@@ -178,6 +130,7 @@ class Product(db.Model):
                 else:
                     download.products.remove(self)
 
+        self.delete_dependencies()
         db.session.delete(self)
         return False
 
@@ -188,6 +141,18 @@ class ProductImage(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'),
                            primary_key=True)
     image = db.Column(db.String(255))
+
+    def delete(self):
+        image_path = current_app.config['IMAGE_PATH']
+        other_images = db.session.execute(
+            db.select(ProductImage).filter(
+                (ProductImage.product_id != self.product_id)
+                & (ProductImage.image == self.image))).scalar()
+        if not other_images and os.path.isfile(image_path + self.image):
+            os.remove(image_path + self.image)
+
+        self.product_id = None
+        db.session.delete(self)
 
 
 class ProductRelated(db.Model):
@@ -204,6 +169,19 @@ class ProductVariant(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('oc_product.product_id'))
     prodvar_title = db.Column(db.Text)
     prodvar_product_str_id = db.Column(db.Text)
+
+    def delete(self):
+        variants = db.session.execute(
+            db.select(ProductVariant)
+            .filter(ProductVariant.prodvar_product_str_id.contains(self.product_id))).scalars()
+
+        for variant in variants:
+            ids = variant.prodvar_product_str_id.split(',')
+            if id in ids:
+                ids.remove(str(self.product_id))
+                variant.prodvar_product_str_id = ','.join(ids)
+
+        db.session.delete(self)
 
 
 class ProductSpecial(db.Model):
@@ -300,13 +278,6 @@ class Category(db.Model):
         return db.session.execute(db.select(SeoUrl).filter_by(query=param)).scalar()
 
 
-# class CategoryPath(db.Model):
-#     __tablename__ = 'oc_category_path'
-#     category_id = db.Column(db.Integer, primary_key=True)
-#     path_id = db.Column(db.Integer, primary_key=True)
-#     level = db.Column(db.Integer)
-
-
 class CategoryDescription(db.Model):
     __tablename__ = 'oc_category_description'
     category_id = db.Column(db.Integer,
@@ -338,22 +309,9 @@ class Option(db.Model):
     values = db.relationship('OptionValue',
                                    backref=db.backref('option', lazy=True))
 
-    def delete(self):
-        # Удаление зависимых данных
-        for attr in ('description', 'settings'):
-            to_del = getattr(self, attr, None)
-            if to_del:
-                # Приводим к списку
-                to_del = to_del if isinstance(to_del, list) else [to_del]
-                for item in to_del:
-                    if hasattr(item, 'option_id'):
-                        setattr(item, 'option_id', None)
-                    if hasattr(item, 'delete'):
-                        item.delete()
-                    else:
-                        db.session.delete(item)
-
-        db.session.delete(self)
+    @staticmethod
+    def child_dependencies() -> list:
+        return ['description', 'settings']
 
 
 class OptionDescription(db.Model):
@@ -363,11 +321,8 @@ class OptionDescription(db.Model):
     language_id = db.Column(db.Integer)
     name = db.Column(db.String(128))
 
-    def delete(self):
-        db.session.delete(self)
 
-
-class OptionValue(db.Model):
+class OptionValue(OptionUtils, db.Model):
     __tablename__ = 'oc_option_value'
 
     option_value_id = db.Column(db.Integer, primary_key=True)
@@ -383,22 +338,13 @@ class OptionValue(db.Model):
                                   backref=db.backref('product_option', lazy=True))
 
     @staticmethod
-    def get(value_id):
-        return db.session.execute(
-            db.select(OptionValue)
-            .filter_by(option_value_id=value_id)).scalar()
-
-    def delete(self):
-        delete(self, 'option_value_id', ['settings', 'description'])
-        if self.products_options:
-            for product in self.products_options:
-                product.delete()
-        db.session.delete(self)
+    def child_dependencies() -> list:
+        return ['settings', 'description']
 
     def auto_compare(self):
         settings = json.loads(option_value.option.settings.text)
-        products = get_products(filter=get_filter_options(option_value),
-                                pagination=False)
+        products = Product.all_by_filter(filter=get_filter_options(option_value),
+                                         pagination=False)
 
         products_ids = []
         for product in products:
@@ -427,7 +373,7 @@ class OptionValue(db.Model):
 
     def clean_options(self):
         for product_option in self.products_options:
-            product = get_product(product_option.product_id)
+            product = Product.get(product_option.product_id)
 
             for option in product.options:
                 if option.product_option_value:
@@ -441,9 +387,6 @@ class OptionSetting(db.Model):
                           db.ForeignKey('oc_option.option_id'),
                           primary_key=True)
     text = db.Column(db.Text)
-
-    def delete(self):
-        db.session.delete(self)
 
 
 class OptionValueDescription(db.Model):
@@ -481,11 +424,9 @@ class ProductOption(db.Model):
     product = db.relationship('Product',
                               backref=db.backref('options', lazy=True))
 
-    def delete(self):
-        self.product_id = 0
-        if self.product_option_value:
-            self.product_option_value.delete()
-        db.session.delete(self)
+    @staticmethod
+    def child_dependencies() -> list:
+        return ['product_option_value']
 
 
 class ProductOptionValue(db.Model):
@@ -509,9 +450,6 @@ class ProductOptionValue(db.Model):
     weight_prefix = db.Column(db.String(1))
     model = db.Column(db.String(256))
     optsku = db.Column(db.String(64))
-
-    def delete(self):
-        db.session.delete(self)
 
 
 class Attribute(db.Model):
@@ -576,17 +514,10 @@ class RedirectManager(db.Model):
     times_used = db.Column(db.Integer)
 
 
-# class Setting(db.Model):
-#     __tablename__ = 'adm_setting'
-#     setting_id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(64))
-#     value = db.Column(db.Text)
-
-
 class Module(db.Model):
     __tablename__ = 'adm_modules'
-    module_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64))
+    # module_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), primary_key=True)
     value = db.Column(db.Text)
 
 

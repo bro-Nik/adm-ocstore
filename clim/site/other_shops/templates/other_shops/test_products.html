@@ -6,8 +6,7 @@
 <div id="ShopProducts" class="d-grid gap-3">
 
   {# Блок названия и кнопок #}
-  {% set heading %}<span class="text-primary">{{ category.shop.name }}</span> | {{ category.name }} | Тестовый парсинг{% endset %}
-  {{ m.heading(heading) }}
+  {{ m.heading(category.shop.name + ' | ' + category.name + ' | Тестовый парсинг') }}
 
   {# Блок таблицы #}
   {% set table %}
@@ -18,6 +17,7 @@
         <th>Ссылка</th>
       </tr>
     </thead>
+
     <tbody>
       {% for product in (products or [])|sort(attribute='name') %}
       <tr>

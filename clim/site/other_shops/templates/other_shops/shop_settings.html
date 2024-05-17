@@ -6,10 +6,7 @@
 <form id="ShopSettings" class="d-grid gap-3" action="{{ url_for('.shop_settings', shop_id=shop.shop_id) }}">
 
   {# Блок названия и кнопок #}
-  {% set heading %}
-    <span class="text-primary">{{ shop.name if shop.shop_id }}</span>{{ ' | Настройки' if shop.shop_id else 'Новый магазин' }}
-  {% endset %}
-  {{ m.heading(heading) }}
+  {{ m.heading((shop.name if shop.shop_id else '') + ' | Настройки' if shop.shop_id else 'Новый магазин', obj=shop) }}
 
   {# Блок меню #}
   {{ m.menu_head([{'text': 'Общие', 'key': 'detail', 'class': 'active'}]) }}
@@ -24,7 +21,7 @@
             <div class="mb-3 row">
               <label class="col-sm-3 col-form-label form-label">Название</label>
               <div class="col-md-9 col-12">
-                <input type="text" class="form-control" id="name" name="name" value="{{ shop.name or '' }}" required>
+                <input type="text" class="form-control {{ 'focus' if not shop.name }}" id="name" name="name" value="{{ shop.name or '' }}" required>
               </div>
             </div>
 
@@ -57,7 +54,7 @@
   {{ m.menu_tabs(menu_tabs) }}
 
   {# Кнопки действий формы #}
-  {{ m.form_actions() }}
+  {{ m.form_actions(shop) }}
 
 </form>
 {% endblock %}

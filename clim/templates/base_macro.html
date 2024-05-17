@@ -1,7 +1,7 @@
 {# Jinja2 #}
 
 {# Блок названия и кнопок #}
-{% macro heading(heading, btns='') %}
+{% macro heading(heading, btns='', obj='', child_obj=None) %}
   <div class="row">
     <div class="col-lg-12 col-md-12 col-12">
       <div>
@@ -9,7 +9,15 @@
           <div class="mb-2 mb-lg-0">
             <h3 class="mb-0">{{ heading }}</h3>
           </div>
-          <div class="ms-auto d-flex gap-2">{{ btns }}</div>
+          <div class="ms-auto d-flex gap-2">
+            <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
+            {# Кнопка добывления новго #}
+            {% if child_obj %}{{ form_btns_add(child_obj) }}{% endif %}
+            {# Кнопки переданные #}
+            {% if btns %}{{ btns }}{% endif %}
+            {# Кнопка еще #}
+            {% if obj %}{{ form_btns_more(obj) }}{% endif %}
+          </div>
         </div>
       </div>
     </div>
@@ -17,7 +25,7 @@
 {% endmacro %}
 
 {# Блок таблицы #}
-{% macro table(table, btns='', attrs='') %}
+{% macro table(table, iterable='', btns='', attrs='') %}
   <div class="row">
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
       <div class="card h-100">
@@ -37,11 +45,22 @@
             </div>
           {% endif %}
         </div>
-        {% if products and products.pages %}
-          {% include 'pagination.html' %}
-        {% endif %}
       </div>
     </div>
+    {% if iterable %}
+      {% if iterable.pages %}
+        {# Пагинация #}
+        {% set products = iterable %}
+        {% include 'pagination.html' %}
+      {% endif %}
+
+      {# Кнопки действий таблицы #}
+      {% for p in iterable %}
+        {% if loop.index == 1 %}
+          {{ table_actions(p.actions) }}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
   </div>
 {% endmacro %}
 
@@ -97,33 +116,199 @@
 {% endmacro %}
 
 {# Кнопки действий таблицы #}
-{% macro table_actions(btns) %}
-  <div class="sticky-bottom form-actions">
-    <div class="col-12">
-      <div class="bg-white h-100 d-flex gap-2 align-items-center align-items-center">
-        <span class="ms-5">Отмечено:</span>
-        <span class="checks-count"></span>
-        <a class="ms-3 decheck-all text-secondary">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>
-        </a>
-        <div class="vr my-3"></div>
-        <div class="d-flex gap-3">{{ btns }}</div>
+{% macro table_actions(actions={}, btns=None) %}
+  {% if actions or btns %}
+    <div class="sticky-bottom form-actions">
+      <div class="col-12">
+        <div class="bg-white h-100 d-flex gap-2 align-items-center align-items-center">
+          <span class="ms-5">Отмечено:</span>
+          <span class="checks-count"></span>
+          <a class="ms-3 decheck-all text-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>
+          </a>
+          <div class="vr my-3"></div>
+          <div class="d-flex gap-3">
+            {% for action, settings in actions.items() if settings|length > 1 %}
+              {% set allowed, text, title, description = settings %}
+              {% if title %}
+                <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="{{ action }}"
+                  data-title="Подтвердить массовое действие?" data-text="{{ title }} {{ description }}" data-after="update">{{ text }}</button>
+              {% else %}
+                <button class="btn btn-sm btn-transparent" type="submit" data-action="{{ action }}"
+                   data-after="update">{{ text }}</button>
+              {% endif %}
+            {% endfor %}
+            {{ btns }}
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+  {% endif %}
 {% endmacro %}
 
 {# Кнопки действий формы #}
-{% macro form_actions(active_btns=None) %}
+{% macro form_actions(obj=None, btns=None) %}
   <div class="sticky-bottom-box">
-    {% if active_btns %}
-      <div class="sticky-bottom bg-white py-2 active">{{ active_btns }}</div>
-    {% endif %}
+    {# Кнопки разрешенных действий #}
+    {% set allowed_btns = namespace(box='', need=False) %}
+    {% set allowed_btns.box %}
+      <div class="sticky-bottom bg-white py-2 active">
+        {% if obj %}
+          {% for action, settings in obj.actions.items() if action != 'delete' and settings|length > 1 %}
+            {% set allowed, text, title, description = settings %}
+            {% if allowed %}
+              {% set allowed_btns.need = True %}
+              {% if title %}
+                <button class="btn rounded-3 btn-outline-secondary" type="button" data-modal-confirm data-action="{{ action }}"
+                  data-title="{{ title }}" data-text="{{ description }}" data-after="update">{{ text }}</button>
+              {% else %}
+                <button class="btn rounded-3 btn-outline-secondary" type="submit" data-action="{{ action }}"
+                  data-after="update">{{ text }}</button>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        {% if btns %}
+          {% set allowed_btns.need = True %}
+          {{ btns }}
+        {% endif %}
+      </div>
+    {% endset %}
+    {% if allowed_btns.need %}{{ allowed_btns.box }}{% endif %}
+
+    {# Кнопки стандартных действий #}
     <div class="sticky-bottom change bg-white py-2">
-      <button type="submit" class="btn btn-salato rounded-3" data-after="close">Сохранить</button>
-      <button type="submit" class="btn btn-transparent" data-after="update">Сохранить и остаться</button>
+      <button type="submit" class="btn btn-salato rounded-3" data-action="save">Сохранить</button>
+      <button type="submit" class="btn btn-transparent" data-action="save" data-after="update">Сохранить и остаться</button>
       <button type="reset" class="btn btn-transparent">Отмена</button>
     </div>
   </div>
 {% endmacro %}
 
+
+{# Кнопки еще в таблице #}
+{% macro table_btns_more(obj, btns) %}
+  {% set actions = obj.actions %}
+  {% set urls = obj.urls() %}
+
+  {% if actions or urls or btns %}
+    <div class="dropdown">
+	    <a class="text-muted text-primary-hover" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+	      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="ms-2" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+      </a>
+      <ul class="dropdown-menu">
+        {# Кнопки переданные #}
+        {% if btns %}
+          {{ btns }}
+          <li><hr class="dropdown-divider"></li>
+        {% endif %}
+
+        {# Кнопки переходов #}
+        {% if urls %}
+          {% for key, text, url in urls if request.path != url %}
+            <li><button class="dropdown-item" type="button" {{ modal_attrs(obj, key, url) }}>{{ text }}</button></li>
+          {% endfor %}
+          <li><hr class="dropdown-divider"></li>
+        {% endif %}
+
+        {# Кнопки действий #}
+        {% if actions %}
+          {% for action, settings in actions.items() if settings|length > 1 %}
+            {% set allowed, text, title, description = settings %}
+            {% if allowed %}
+              {% if title %}
+                <li><button class="dropdown-item" type="button" data-modal-confirm data-action="{{ action }}"
+                      data-title="{{ title }}" data-text="{{ description }}" data-id="{{ obj.get_id }}" data-after="update">{{ text }}</button></li>
+              {% else %}
+                <li><button class="dropdown-item" type="submit" data-action="{{ action }}" data-after="update">{{ text }}</button></li>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </ul>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{# Кнопки еще в форме #}
+{% macro form_btns_more(obj) %}
+  {# Кнопки разрешенных действий #}
+  {% set allowed_btns = namespace(box='', need=False) %}
+  {% set allowed_btns.box %}
+    <div class="dropdown">
+	    <a class="btn btn-secondary" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+	      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+	    </a>
+      <ul class="dropdown-menu">
+        {# Кнопки переходов #}
+        {% if obj.get_id %}
+          {% set urls = obj.urls() %}
+
+          {% if urls %}
+            {% for key, text, url in urls %}
+              {% if request.path not in url %}
+                {% set allowed_btns.need = True %}
+                <li><button class="dropdown-item" type="button" {{ modal_attrs(obj, key, url) }}>{{ text }}</button></li>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {% if allowed_btns.need %}<li><hr class="dropdown-divider"></li>{% endif %}
+        {% endif %}
+
+        {# Кнопки действий #}
+        {% for action, settings in obj.actions.items() if settings|length > 1 %}
+          {% set allowed, text, title, description  = settings %}
+          {% if allowed %}
+            {% set allowed_btns.need = True %}
+            {% if title %}
+              <li><button class="dropdown-item" type="button" data-modal-confirm data-action="{{ action }}"
+                    data-title="{{ title }}" data-text="{{ description }}" data-id="{{ obj.get_id }}"
+                    {{ 'formaction=' + obj.url_actions if obj.url_actions }} data-after="update">{{ text }}</button></li>
+            {% else %}
+              <li><button class="dropdown-item" type="submit" data-action="{{ action }}" data-after="update">{{ text }}</button></li>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endset %}
+  {% if allowed_btns.need %}{{ allowed_btns.box }}{% endif %}
+{% endmacro %}
+
+{# Блок общая сумма #}
+{% macro sum() %}
+  <div class="card h-100">
+    <div class="d-flex justify-content-end align-items-center m-3">
+      <table class="col-3">
+        <tbody>
+          <tr class="fs-4 fw-bolder">
+            <td>Общая сумма:</td>
+            <td><span class="all-sum"></span> ₽</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endmacro %}
+
+{# Ссылка на модульное #}
+{% macro modal_link(obj, page) %}
+  {% for key, text, url in obj.urls(key_name=page) %}
+    <a class="text-inherit" {{ modal_attrs(obj, page, url) }}>{{ obj.name }}</a>
+  {% else %}
+    <span class="text-inherit">{{ obj.name }}</span>
+  {% endfor %}
+{% endmacro %}
+
+{# Кнопки добавить форме #}
+{% macro form_btns_add(obj) %}
+  {% for key, text, url in obj.urls(key_type='new') if request.path != url %}
+    <a class="btn btn-primary" {{ modal_attrs(obj, key, url) }}>Добавить</a>
+  {% endfor %}
+{% endmacro %}
+
+{# Атрибут кнопки открытия модульного #}
+{% macro modal_attrs(obj, key, url) %}
+  data-modal-id="{{ obj.__class__.__name__ }}{{ key|title }}Modal" data-url="{{ url }}"
+{% endmacro %}

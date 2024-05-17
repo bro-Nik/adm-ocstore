@@ -4,8 +4,9 @@ from datetime import datetime, timedelta
 from flask import render_template, request
 from flask_login import login_required
 
-from ..utils import get_services
-from ..models import db
+from clim.crm.deal.models import Deal
+
+from ..models import Service, db
 from .models import Employment
 from .utils import get_booking
 from . import bp
@@ -21,13 +22,12 @@ def booking_page():
         start_date = datetime.now().date().strftime('%Y-%m-%d')
 
     return render_template('booking/booking.html', start_date=start_date,
-                           services=get_services(), event_name=event_name)
+                           services=Service.get_all(), event_name=event_name)
 
 
 @bp.route('/booking_post', methods=['POST'])
 @login_required
 def booking_post():
-    from ..deal.utils import get_deal
 
     def str_date(string):
         return datetime.strptime(string, '%Y-%m-%d')
@@ -51,7 +51,7 @@ def booking_post():
             # К чему относится событие
             event = schedule.get('booking_event', '')
             if 'deal' in event:
-                event = get_deal(event.replace('deal_', ''))
+                event = Deal.get(event.replace('deal_', ''))
 
             employment.title = f"{schedule.get('text', '')} ({event.name})"
             employment.worker_id = worker.get('worker_id')

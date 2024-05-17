@@ -3,10 +3,10 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="StockSettings" class="d-grid gap-3" action="{{ url_for('.stock_settings', stock_id=stock.stock_id) }}">
+<form id="StockInfo" class="d-grid gap-3" action="{{ url_for('.stock_info', stock_id=stock.stock_id) }}">
 
   {# Блок названия и кнопок #}
-  {{ m.heading(stock.name if stock else 'Добавить новый') }}
+  {{ m.heading(stock.name if stock.stock_id else 'Добавить новый', obj=stock) }}
 
   <div class="row">
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
@@ -24,14 +24,12 @@
             <div class="mb-3 row">
               <div class="col-sm-4 mb-3 mb-lg-0">
                 <label class="form-label">Название</label>
-                <input type="text" class="form-control focus" name="name"
-                  value="{{ stock.name if stock }}" required>
+                <input type="text" class="form-control focus" name="name" value="{{ stock.name if stock.stock_id }}" required>
               </div>
 
               <div class="col-sm-4">
                 <label class="form-label">Сортировка</label>
-                <input type="number" class="form-control" name="sort"
-                  value="{{ stock.sort if stock else '100' }}">
+                <input type="number" class="form-control" name="sort" value="{{ stock.sort if stock.stock_id else '100' }}">
               </div>
             </div>
           </div>
@@ -41,6 +39,6 @@
   </div>
 
   {# Кнопки действий формы #}
-  {{ m.form_actions() }}
+  {{ m.form_actions(stock) }}
 </form>
 {% endblock %}

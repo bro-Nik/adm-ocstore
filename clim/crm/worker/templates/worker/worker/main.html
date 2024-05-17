@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
 {% import 'base_macro.html' as m with context %}
+{% import 'crm/macro.html' as cm with context %}
 
 {% block content %}
-<form id="WorkerInfo" class="d-grid gap-3" action="{{ url_for('.worker_info', worker_id=worker.worker_id) }}">
+<form id="WorkerInfo" class="d-grid gap-3" action="{{ url_for('.worker_settings', worker_id=worker.worker_id) }}">
 
   {# Блок названия и кнопок #}
-  {{ m.heading(worker.name or 'Новый работник') }}
+  {{ m.heading(worker.name or 'Новый работник', obj=worker) }}
 
   <div class="row align-items-center">
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
@@ -41,33 +42,21 @@
 
                     <div class="d-grid">
                       <label class="deal-info-block-title">ФИО</label>
-                      {% if worker.name %}
-                        <span class="deal-info-edit-link">{{ worker.name }}</span>
-                      {% elif worker.worker_id %}
-                        <span class="deal-info-edit-link">Нет</span>
-                      {% endif %}
+                      {{ cm.edit_link(worker.name, worker.worker_id) }}
                       <input type="text" class="form-control border
                         {{ 'visually-hidden' if worker.name or worker.worker_id }} to-show" name="name" value="{{ worker.name or '' }}" required>
                     </div>
 
                     <div class="d-grid">
                       <label class="deal-info-block-title">Начало дня</label>
-                      {% if worker.start_day %}
-                        <span class="deal-info-edit-link">{{ worker.start_day }}</span>
-                      {% elif worker.worker_id %}
-                        <span class="deal-info-edit-link">Нет</span>
-                      {% endif %}
+                      {{ cm.edit_link(worker.start_day, worker.worker_id) }}
                       <input type="text" class="form-control border
                         {{ 'visually-hidden' if worker.start_day or worker.worker_id }} to-show" name="start_day" value="{{ worker.start_day or '09:00:00' }}">
                     </div>
 
                     <div class="d-grid">
                       <label class="deal-info-block-title">Конец дня</label>
-                      {% if worker.end_day %}
-                        <span class="deal-info-edit-link">{{ worker.end_day }}</span>
-                      {% elif worker.worker_id %}
-                        <span class="deal-info-edit-link">Нет</span>
-                      {% endif %}
+                      {{ cm.edit_link(worker.end_day, worker.worker_id) }}
                       <input type="text" class="form-control border
                         {{ 'visually-hidden' if worker.end_day or worker.worker_id }} to-show" name="end_day" value="{{ worker.end_day or '17:00:00' }}">
                     </div>
@@ -84,27 +73,6 @@
 
                 <div class="crm-editor-section-body">
                   <div class="d-grid gap-2">
-
-                    {#}
-                    <div class="d-grid">
-                      <label class="deal-info-block-title">Роль</label>
-                      <div class="to-show">
-                        <select class="general-select" multiple data-placeholder="-- Выбрать --" name="services" data-class="border">
-                          {% for service in services %}
-                            <option></option>
-                            <option value="{{ service.service_id }}">{{ service.name }}</option>
-                          {% endfor %}
-                        </select>
-                        <select class="contact-select" data-placeholder="-- Выбрать --" name="services"
-                          data-url="{{ url_for('crm.contact.ajax_contacts') }}" data-width="100%" data-class="border">
-                          {% if deal.contact %}
-                            <option selected value="{{ deal.contact.contact_id }}">{{ deal.contact.name }}</option>
-                          {% endif %}
-                        </select>
-                      </div>
-                    </div>
-                    {#}
-
                   </div>
                 </div>
               </div>
@@ -121,12 +89,8 @@
       </div>
     </div>
   </div>
-    {#}
-  </div>
-    {#}
 
   {# Кнопки действий формы #}
-  {{ m.form_actions() }}
-
+  {{ m.form_actions(worker) }}
 </form>
 {% endblock %}

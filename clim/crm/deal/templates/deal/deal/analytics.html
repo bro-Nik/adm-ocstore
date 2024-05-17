@@ -1,57 +1,45 @@
-{# Jinja2 #}
-{% set analytics = deal.get('analytics', {}) %}
-{% if not analytics %}
-  {% include 'nothing.html' %}
-{% else %}
+{# Блок таблицы #}
+{% set table %}
+  <thead>
+    <tr>
+      <th>Название</th>
+      <th>Стоимость</th>
+      <th></th>
+    </tr>
+  </thead>
 
-<!-- Expenses  -->
-<div class="card h-100">
-  <div class="">
-    <table class="table text-nowrap table">
-      <thead class="">
-        <tr>
-          <th>Название</th>
-          <th>Стоимость</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for name, key in {'Товары': 'cost_products', 'Расходные материалы': 'cost_consumables', 'Прочие расходы': 'cost_expenses'}.items() %}
-          <tr>
-            <td class="col-4">
-              <span class="ana_count"></span>
-              <span class="">{{ name }}</span>
-            </td>
+  <tbody>
+    {% for name, key in {'Товары': 'cost_products', 'Расходные материалы': 'cost_consumables', 'Прочие расходы': 'cost_expenses'}.items() %}
+      <tr>
+        <td class="col-4">
+          <span></span>
+          <span>{{ name }}</span>
+        </td>
 
-            <td class="col-2">
-              <span class="">{{ analytics.get(key)|smart_int|money }}</span>
-              <span class="">₽</span>
-            </td>
-            <td class="col-auto"></td>
-          </tr>
-        {% endfor %}
+        <td class="col-2">
+          <span>{{ analytics.get(key)|smart_int|money }}</span>
+          <span>₽</span>
+        </td>
+        <td class="col-auto"></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+{% endset %}
+{{ m.table(table, attrs="id=tabExpenses data-to-server=expenses") }}
 
-        <input id="expenses_count" type="hidden" name="expenses-count" value="" />
-      </tbody>
-    </table>
-  </div>
-</div>
 <div class="card h-100">
   <div class="d-flex justify-content-end align-items-center m-3">
     <table class="col-3">
       <tbody>
-        <tr>
-          <td><span class="fs-4 fw-bolder">Всего расходов:</span></td>
-          <td>
-            <span class="fs-4 fw-bolder">{{ (deal.info.sum|smart_int - deal.info.profit|smart_int)|smart_int|money }} ₽</span>
-          </td>
+        <tr class="fs-4 fw-bolder">
+          <td>Всего расходов:</td>
+          <td>{{ (details.sum|smart_int - details.profit|smart_int)|smart_int|money }} ₽</td>
         </tr>
-        <tr>
-          <td><span class="fs-4 fw-bolder">Чистая прибыль:</span></td>
-          <td><span class="fs-4 fw-bolder">{{ deal.info.profit|smart_int|money }} ₽</span></td>
+        <tr class="fs-4 fw-bolder">
+          <td>Чистая прибыль:</td>
+          <td>{{ details.profit|smart_int|money }} ₽</td>
         </tr>
       </tbody>
     </table>
   </div>
 </div>
-{% endif %}

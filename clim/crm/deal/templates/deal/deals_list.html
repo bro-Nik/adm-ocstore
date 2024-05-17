@@ -14,7 +14,6 @@
   </thead>
 
   <tbody>
-
     {% for stage in stages %}
 
       <tr style="{{ 'background: {};'.format(stage.color) if stage.color }}"
@@ -42,7 +41,7 @@
       </tr>
 
       {% for deal in stage.deals %}
-        {% set details = deal.get('details', {}) %}
+        {% set details = deal.get_json('details') or {} %}
 
         <tr>
           <td class="checkbox">
@@ -69,7 +68,7 @@
     {% endfor %}
   </tbody>
 {% endset %}
-{{ m.table(table) }}
+{{ m.table(table, deals) }}
 
 <script>
   // Check Stage

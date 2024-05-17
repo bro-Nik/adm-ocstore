@@ -4,13 +4,10 @@
 
 {% block content %}
 {% include 'stock/header.html' %}
-<form id="Stocks" class="d-grid gap-3" action="{{ url_for('.stocks_action') }}">
+<form id="Stocks" class="d-grid gap-3" action="{{ url_for('.stocks') }}">
 
   {# Блок названия и кнопок #}
-  {% set heading_btns %}
-    <a class="btn btn-primary" data-modal-id="StockSettingsModal" data-url="{{ url_for('.stock_settings') }}">Добавить</a>
-  {% endset %}
-  {{ m.heading("Склады", heading_btns) }}
+  {{ m.heading("Склады", child_obj=child_obj) }}
 
   {# Блок таблицы #}
   {% set table %}
@@ -20,50 +17,34 @@
         <th>Название</th>
         <th>Товаров на сумму</th>
         <th>Сортировка</th>
+        <th></th>
       </tr>
     </thead>
 
     <tbody>
-      {% set var = namespace(count=0, sum=0) %}
-
       {% for stock in stocks %}
-        {% set var.sum = 0 %}
         <tr>
           {# Чекбокс #}
           <td class="checkbox">{{ m.checkbox(stock.stock_id) }}</td>
 
-          {# Ссылка на склад #}
-          <td>
-            <div class="text-inherit" data-modal-id="StockSettingsModal"
-              data-url="{{ url_for('.stock_settings', stock_id=stock.stock_id) }}">
-              {{ stock.name }}
-            </div>
-          </td>
+          {# Ссылка #}
+          <td>{{ m.modal_link(stock, "info") }}</td>
 
-          <td>
-            {% for product in stock.products %}
-              {% set var.sum = var.sum + product.quantity * product.main_product.cost %}
-            {% endfor %}
-            {{ var.sum|int|money }} ₽
-          </td>
+          {# Стоимость товаров #}
+          <td>{{ stock.products_cost|int|money }} ₽</td>
 
+          {# Сортировка #}
           <td>{{ stock.sort }}</td>
+
+          {# Меню #}
+          <td class="align-middle text-end">{{ m.table_btns_more(stock) }}</td>
 
         </tr>
       {% endfor %}
 
     </tbody>
-    {% set products = stocks %}
-    {% include 'pagination.html' %}
   {% endset %}
-  {{ m.table(table) }}
-
-  {# Кнопки действий таблицы #}
-  {% set table_btns %}
-    <button class="btn btn-sm btn-transparent" type="button" data-modal-confirm data-action="delete"
-      data-title="Удалить склады?" data-text="Будут удалены выбранные склады" data-after="update">Удалить</button>
-  {% endset %}
-  {{ m.table_actions(table_btns) }}
+  {{ m.table(table, stocks) }}
 
 </form>
 {% endblock %}

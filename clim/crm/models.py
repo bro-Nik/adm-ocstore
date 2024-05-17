@@ -19,24 +19,9 @@ def stock_quantity(self):
     return sum(stock.quantity for stock in self.stocks)
 
 
-@property
-def unit(self):
-    return self.unit_class.description.unit
-
-
-@property
-def name(self):
-    return self.description.name if self.description else ''
-
-
 Product.get_stock = get_stock
 Product.stock_quantity = stock_quantity
-Product.unit = unit
-Product.name = name
 
-Category.name = name
-Option.name = name
-OptionValue.name = name
 
 class Service(db.Model):
     __tablename__ = 'adm_deal_service'

@@ -9,14 +9,30 @@ from flask import flash
 from clim.app import celery
 from clim.models import db
 from clim.request import proxy_request
+from clim.site.other_shops.utils import Log
 
-from .models import OtherProduct
-from .utils import get_category
+from .models import OtherCategory, OtherProduct
 
 
 @celery.task()
 def get_other_products_task(category_id, test=None):
-    cat = get_category(category_id)
+    logs = Log(category_id)
+
+    cat = OtherCategory.get(category_id)
+
+    if not cat:
+        logs.set('warning', 'Категория не найдена')
+        return
+
+    # Блокировка модуля
+    # Ожидание завершения уже запущенной задачи
+    while cat.shop.is_working_now():
+        time.sleep(60)
+
+    # Блокировка других задач модуля
+    cat.shop.start_work()
+    logs.set('info', f'{cat.name} - Старт парсинга')
+
     parsing = json.loads(cat.parsing)
     prefix = cat.shop.domain if cat.shop.parsing == 'domain' else cat.url
     page = 1
@@ -32,19 +48,33 @@ def get_other_products_task(category_id, test=None):
     error = ''
     attempts = 3
     while True:
-        if attempts < 0 or not parsing:
-            return
+        if attempts < 0:
+            logs.set('warning', 'Количество попыток превышено')
+            break
+        if not parsing:
+            logs.set('warning', 'Нет настроек парсинга')
+            break
 
         if error:
             if test:
                 flash(error, 'warning')
                 return
-            print(error)
+            logs.set('warning', error)
             attempts -= 1
             error = ''
 
         url = f"{cat.url}{f'?page={page}' if page > 1 else ''}"
-        response = proxy_request(url)
+        logs.set('info', f'Попытка парсинга, url={url}')
+        time.sleep(5)
+        data = proxy_request(url)
+        if data.get('error'):
+            logs.set('warning', data.get('error', ''))
+            continue
+
+        response = data.get('response')
+
+        if response and response.status_code == 404:
+            break
 
         if not response or response.status_code != 200:
             error = f'Ошибка запроса {response.status_code if response else ""}'
@@ -134,10 +164,11 @@ def get_other_products_task(category_id, test=None):
                 db.session.add(product_in_base)
                 db.session.flush()
                 new_product_ids.append(str(product_in_base.other_product_id))
-            print(f'{name} {price}')
 
             try:
                 product_in_base.price = float(product_in_base.price)
+            except ValueError:
+                product_in_base.price = float(0)
             except TypeError:
                 product_in_base.price = float(0)
 
@@ -153,11 +184,12 @@ def get_other_products_task(category_id, test=None):
             return result
 
         page += 1
-        time.sleep(5)
 
     cat.new_price = (',').join(new_price_ids)
     cat.new_product = (',').join(new_product_ids)
 
     cat.last_parsing = str(datetime.now().date())
     db.session.commit()
-    print('End')
+
+    logs.set('info', f'{cat.name} - Старт парсинга')
+    cat.shop.end_work()

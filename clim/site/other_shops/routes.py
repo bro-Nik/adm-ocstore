@@ -1,13 +1,12 @@
 import json
-import re
 
-from flask import abort, render_template, url_for, request
+from flask import abort, render_template, request
 from flask_login import login_required
 
+from clim.site.other_shops.utils import Log
 from clim.utils import actions_in
 
 from .tasks import get_other_products_task
-from .utils import get_category, get_shop, get_other_shops
 from .models import db, OtherCategory, OtherProduct, OtherShops
 from . import bp
 
@@ -16,30 +15,25 @@ from . import bp
 @login_required
 def shops():
     """ Страница магазинов """
-    if request.method == 'POST':
-        # Действия
-        actions_in(request.data, get_shop)
-        db.session.commit()
-        return ''
+    page = request.args.get('page', 1, type=int)
 
-    return render_template('other_shops/shops.html', shops=get_other_shops())
+    if request.method == 'POST':
+        return actions_in(OtherShops.get)
+
+    shops = db.paginate(db.select(OtherShops),
+                        per_page=10, error_out=False, page=page)
+    return render_template('other_shops/shops.html',
+                           shops=shops, child_obj=OtherShops(shop_id=0))
 
 
 @bp.route('/shop_settings', methods=['GET', 'POST'])
 @login_required
 def shop_settings():
     """ Добавить или изменить магазин """
-    shop = get_shop(request.args.get('shop_id')) or OtherShops()
+    shop = OtherShops.get(request.args.get('shop_id')) or OtherShops()
 
     if request.method == 'POST':
-        if not shop.shop_id:
-            db.session.add(shop)
-
-        data = json.loads(request.data) if request.data else {}
-        for key in ['name', 'domain', 'parsing']:
-            setattr(shop, key, data.get(key, ''))
-        db.session.commit()
-        return {'redirect': url_for('.shop_settings', shop_id=shop.shop_id)}
+        return actions_in(shop)
 
     return render_template('other_shops/shop_settings.html', shop=shop)
 
@@ -49,53 +43,39 @@ def shop_settings():
 def shop_categories(shop_id):
     """ Категории магазина """
     if request.method == 'POST':
-        # Действия
-        actions_in(request.data, get_category)
-        db.session.commit()
-        return ''
+        return actions_in(OtherCategory.get)
 
-    shop = get_shop(shop_id)
+    shop = OtherShops.get(shop_id)
     for cat in shop.categories:
         cat.new_price_count = len(cat.new_price.split(',')) if cat.new_price else 0
         cat.new_product_count = len(cat.new_product.split(',')) if cat.new_product else 0
 
-    return render_template('other_shops/shop_categories.html', shop=shop)
+    return render_template('other_shops/shop_categories.html', shop=shop,
+                           child_obj=OtherCategory(other_category_id=0,
+                                                   shop_id=shop_id))
 
 
-@bp.route('/<int:shop_id>/category_settings', methods=['GET', 'POST'])
+@bp.route('/<int:shop_id>/logs', methods=['GET'])
+@login_required
+def shop_logs(shop_id):
+    """ Настройки категории магазина """
+
+    return render_template('other_shops/logs.html',
+                           shop=OtherShops.get(shop_id))
+
+
+@bp.route('/<int:shop_id>/category/settings', methods=['GET', 'POST'])
 @login_required
 def category_settings(shop_id):
     """ Настройки категории магазина """
     category_id = request.args.get('category_id')
-    category = get_category(category_id) or OtherCategory(shop_id=shop_id)
+    category = OtherCategory.get(category_id) or OtherCategory(shop_id=shop_id)
 
     if request.method == 'POST':
-        if not category.other_category_id:
-            db.session.add(category)
-
-        data = json.loads(request.data) if request.data else {}
-
-        # Параметры парсинга
-        keys = ['blocks_type', 'blocks_class', 'block_name_type',
-                'block_name_class', 'block_name_inside', 'block_link_type',
-                'block_link_class', 'block_price_type', 'block_price_class',
-                'block_other_price_type', 'block_other_price_class']
-        parsing = {'minus': re.sub(r'( ,|, )', ',', data.get('minus', ''))}
-        for key in keys:
-            parsing[key] = data.get(key, '')
-
-        category.parsing = json.dumps(parsing)
-        category.name = data.get('name')
-        category.url = data.get('url')
-        category.parent_id = data.get('parent_id') or 0
-        category.sort = data.get('sort') or 0
-
-        db.session.commit()
-        return {'redirect': url_for('.category_settings', shop_id=shop_id,
-                                    category_id=category.other_category_id)}
+        return actions_in(category)
 
     return render_template('other_shops/category_settings.html',
-                           category=category, shop=get_shop(shop_id))
+                           category=category, shop=OtherShops.get(shop_id))
 
 
 @bp.route('/<int:shop_id>/category/products', methods=['GET', 'POST'])
@@ -107,9 +87,9 @@ def category_products(shop_id):
     changes = filter_items.get('changes', '')
     search = filter_items.get('search', '')
 
-    shop = get_shop(shop_id)
-    cat = get_category(category_id)
-    products = OtherProduct.query.filter_by(shop_id=shop_id)
+    shop = OtherShops.get(shop_id)
+    cat = OtherCategory.get(category_id)
+    products = db.select(OtherProduct).filter_by(shop_id=shop_id)
 
     if cat:
         cat.new_price_ids = cat.new_price.split(',') if cat.new_price else []
@@ -123,7 +103,7 @@ def category_products(shop_id):
     if search:
         products = products.where(OtherProduct.name.contains(search))
 
-    products = products.paginate(page=request.args.get('page', 1, type=int),
+    products = db.paginate(products, page=request.args.get('page', 1, type=int),
                                  per_page=20, error_out=False)
 
     return render_template('other_shops/category_products.html', shop=shop,
@@ -131,12 +111,46 @@ def category_products(shop_id):
                            changes=changes, search=search)
 
 
+@bp.route('/<int:shop_id>/category/logs', methods=['GET'])
+@login_required
+def category_logs(shop_id):
+    """ Настройки категории магазина """
+    category = OtherCategory.get(request.args.get('category_id'))
+
+    return render_template('other_shops/logs.html',
+                           category=category, shop=OtherShops.get(shop_id))
+
+
+@bp.route('category/logs', methods=['GET'])
+@login_required
+def json_module_logs():
+    timestamp = request.args.get('timestamp', 0.0, type=float)
+    shop_id = request.args.get('shop_id')
+    category_id = request.args.get('category_id')
+    logs = []
+
+    # Для итерации по модулям
+    if category_id:
+        ids_list = [category_id]
+    else:
+        shop = OtherShops.get(request.args.get('shop_id'))
+        ids_list = [cat.get_id for cat in shop.categories]
+
+    for cat_id in ids_list:
+        module_logs = Log(cat_id)
+        logs += module_logs.get(timestamp)
+
+    if logs:
+        logs = sorted(logs, key=lambda log: log.get('timestamp'))
+    return logs
+
+
 @bp.route('/get_products_test', methods=['GET'])
 @login_required
 def get_products_test():
     category_id = request.args.get('category_id')
     products = get_other_products_task(category_id, True)
-    category = get_category(category_id) or abort(404)
+    category = OtherCategory.get(category_id) or abort(404)
     return render_template('other_shops/test_products.html',
                            products=products, category=category)
 
@@ -169,6 +183,12 @@ def ajax_categories():
     for category in categories:
         uppend(category)
         for subcategory in category.child_categories:
-            uppend(subcategory, '-- ')
+            uppend(subcategory)
 
     return json.dumps({'results': results}, ensure_ascii=False)
+
+
+@bp.route('/logs_delete', methods=['POST'])
+@login_required
+def logs_delete():
+    return ''
