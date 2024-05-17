@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 import json
+import time
 import requests
 
 from flask import current_app
@@ -14,8 +15,10 @@ API_NAME = 'proxy'
 
 
 def get_proxies() -> dict:
+    attempts = 5
     redis_value = redis.hget(API_NAME, DATA_KEY)
-    while True:
+    while attempts >= 0:
+        attempts -= 1
         if redis_value:
             value = json.loads(redis_value.decode())
 
@@ -26,6 +29,7 @@ def get_proxies() -> dict:
             if period > time_left:
                 return value
 
+        time.sleep(30)
         proxy_update()
 
 
