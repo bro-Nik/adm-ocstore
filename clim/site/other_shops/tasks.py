@@ -68,7 +68,7 @@ def get_other_products_task(category_id, test=None):
         time.sleep(5)
         data = proxy_request(url)
         if data.get('error'):
-            logs.set('warning', data.get('error', ''))
+            error = data.get('error', '')
             continue
 
         response = data.get('response')

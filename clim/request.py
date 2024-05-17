@@ -10,8 +10,12 @@ def proxy_request(url) -> dict:
     if not url.startswith('http'):
         return {'error': 'Неверная ссылка'}
 
+    proxies = get_proxies()
+    if not proxies:
+        return {'error': 'Прокси не получены'}
+
     proxies_list = []
-    for _, proxy in get_proxies().items():
+    for _, proxy in proxies.items():
         if isinstance(proxy, dict):
             p = f"{proxy['type']}://{proxy['user']}:{proxy['pass']}@{proxy['host']}:{proxy['port']}"
             proxies_list.append(p)
