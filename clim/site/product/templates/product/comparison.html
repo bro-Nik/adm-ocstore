@@ -3,7 +3,8 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="Products" class="d-grid gap-3" action="{{ url_for('.products_action_comparison', page=request.args.get('page')) }}">
+{% include 'product/header.html' %}
+<form id="Products" class="d-flex flex-column gap-3" action="{{ url_for('.products_action_comparison', page=request.args.get('page')) }}">
 
   {# Блок названия и кнопок #}
   {% set heading_btns %}

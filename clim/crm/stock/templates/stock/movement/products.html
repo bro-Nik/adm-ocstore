@@ -23,7 +23,6 @@
   </thead>
 
   <tbody>
-    {% set products = movement.get_json('products') or [{}] %}
 
     {% for product in products %}
       <tr class="align-middle product">
@@ -144,7 +143,7 @@
       {% endif %}
   {% endset %}
 {% endif %}
-{{ m.table(table, btns=table_btns, attrs="id=tabProducts data-to-server=products") }}
+{{ m.table(table, products, btns=table_btns, attrs="id=tabProducts data-to-server=products") }}
 
 {# Блок общая сумма #}
 {{ m.sum() }}

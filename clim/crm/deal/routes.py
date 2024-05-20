@@ -11,7 +11,7 @@ from ..stock.utils import get_consumables_categories_ids
 from ..stock.models import Stock, StockProduct
 from ..utils import smart_int
 from ..models import Product, db, OptionValueDescription, ProductDescription, \
-    Option, OptionValue, Category
+    OptionValue, Category
 from .models import Deal, DealStage
 from .utils import employment_info, get_stages, sort_stage_deals
 from . import bp
@@ -28,11 +28,7 @@ def update_filter():
 @login_required
 def deals(view=None):
     if request.method == 'POST':
-        # если есть изменения - записываем и отправляем url
-        if actions_in(json_loads(request.data), Deal.get):
-            db.session.commit()
-            return {'url': url_for('.deals', view=session.get('crm_view', 'kanban'))}
-        return ''
+        return actions_in(Deal.get)
 
     if view not in ['kanban', 'list']:
         view = session.get('crm_view', 'kanban')
@@ -54,16 +50,7 @@ def deal_info():
                     stage=DealStage.get(type='start'))
 
     if request.method == 'POST':
-        if not deal.deal_id:
-            db.session.add(deal)
-
-        deal.save_data = json_loads(request.data) or {}
-        # если есть изменения - записываем
-        if deal.try_action(deal.save_data.get('action')):
-            db.session.commit()
-        # если объект существует - отправляем url
-        return {'url': url_for('.deal_info', deal_id=deal.deal_id)
-                } if deal.deal_id else ''
+        return actions_in(deal)
 
     return render_template('deal/deal/main.html', deal=deal,
                            stages=tuple(get_stages()))

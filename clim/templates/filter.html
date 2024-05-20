@@ -96,16 +96,6 @@
             </select>
           </div>
 
-          {% set per_page = session.get('results_per_page') %}
-          <div class="col-md-2">
-            <label class="form-label h7">Результатов</label>
-            <select class="general-select" name="results_per_page" data-width="100%">
-              {% for i in [20, 40, 60, 80, 100] %}
-                <option {{ 'selected' if per_page|int==i }} value="{{ i }}">{{ i }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
           <div class="col-md-1 d-flex align-items-end">
             <button id="resetFilter" class="btn btn-primary" type="button">Сбросить</button>
           </div>

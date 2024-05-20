@@ -2,12 +2,14 @@ from datetime import datetime
 import json
 from typing import Dict
 
-from flask import flash, url_for
+from flask import flash
+
+from clim.mixins import JsonDetailsMixin, PageMixin
 
 from ..models import db, Product, Category, Module
 
 
-class StockUtils:
+class StockUtils(PageMixin):
     URL_PREFIX = '.stock_'
 
     @property
@@ -17,11 +19,6 @@ class StockUtils:
             'delete': [self.stock_id, 'Удадить', 'Удалить склад?', '']
         }
 
-    @property
-    def url_id(self):
-        return dict(stock_id=self.stock_id) if self.stock_id else {}
-
-
     def pages_settings(self):
         return {'info': [True, 'Инфо']}
 
@@ -30,7 +27,6 @@ class StockUtils:
         self.name = data.get('name')
         self.sort = data.get('sort')
         db.session.flush()
-        return {'url': url_for('.stock_info', stock_id=self.stock_id)}
 
     def delete(self):
         if self.products:
@@ -43,15 +39,8 @@ class StockUtils:
         return sum(p.quantity * p.main_product.cost for p in self.products)
 
 
-class MovementUtils:
+class MovementUtils(PageMixin, JsonDetailsMixin):
     URL_PREFIX = '.movement_'
-
-    @property
-    def name(self):
-        print('this')
-        print(self.get_json('details'))
-        print(self.get_json('details').get('name'))
-        return self.get_json('details').get('name')
 
     @property
     def actions(self):
@@ -64,7 +53,6 @@ class MovementUtils:
             'delete': [self.movement_id, 'Удадить', 'Удалить документ?', ''],
         }
 
-    @property
     def url_id(self):
         url_id = dict(movement_type = self.movement_type)
         if self.movement_id:
@@ -76,7 +64,6 @@ class MovementUtils:
 
     def save(self):
         details = self.get_json('details') or {}
-        print('save')
         data = self.save_data
         info = data.get('info', {})
 
@@ -112,7 +99,6 @@ class MovementUtils:
 
         self.details = json.dumps(details, ensure_ascii=False)
         db.session.flush()
-        return {'url': url_for('.movement_info', **self.url_id)}
 
     @property
     def type_ru(self):
@@ -152,7 +138,7 @@ class MovementUtils:
 
         error = False
         for p in products:
-            product = Product.find(p['id'])
+            product = Product.get(p['id'])
             quantity = float(p['quantity'] or 0) * direction
             price = float(p['price'] or 0)
 
@@ -169,8 +155,10 @@ class MovementUtils:
 
                 # Поиск или создание товара на складе
                 stock = product.get_stock(p['stock_id'], create=True)
-                db.session.flush()
-
+                # db.session.flush()
+                if not stock:
+                    flash('Склад не найден')
+                    return False
                 change_quantity(stock, quantity, +1)
 
             # Перемещение
@@ -178,7 +166,9 @@ class MovementUtils:
                 # Поиск или создание товара на складе
                 stock1 = product.get_stock(p['stock_id'], create=True)
                 stock2 = product.get_stock(p['stock2_id'], create=True)
-
+                if not stock1 or not stock2:
+                    flash('Склад не найден')
+                    return False
                 change_quantity(stock1, quantity, -1)
                 change_quantity(stock2, quantity, +1)
 
@@ -192,7 +182,7 @@ class MovementUtils:
         return self.posting(-1)
 
 
-class ProductUtils:
+class ProductUtils(PageMixin):
 
     @classmethod
     def get(cls, product_id, stock_id, create=False):
@@ -247,3 +237,29 @@ class StockSettings:
 
 def get_consumables_categories_ids():
     return StockSettings.get_item('consumables_categories_ids')
+
+
+def get_stock(self, stock_id, create=False):
+    from clim.crm.stock.models import Stock
+    stock = Stock.get(stock_id) if stock_id else None
+    if not stock:
+        return False
+
+    stock_id = int(stock_id)
+    for stock in self.stocks:
+        if stock.stock_id == stock_id:
+            return stock
+    if create:
+        from .stock.models import StockProduct
+        stock = StockProduct(stock_id=stock_id, quantity=0)
+        self.stocks.append(stock)
+        return stock
+
+
+@property
+def stock_quantity(self):
+    return sum(stock.quantity for stock in self.stocks)
+
+
+Product.get_stock = get_stock
+Product.stock_quantity = stock_quantity

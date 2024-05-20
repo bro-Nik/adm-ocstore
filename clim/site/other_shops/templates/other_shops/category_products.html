@@ -3,7 +3,7 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="ShopProducts" class="d-grid gap-3">
+<form id="ShopProducts" class="d-flex flex-column gap-3">
 
   {# Блок названия и кнопок #}
   {{ m.heading(shop.name + (' | ' + category.name if category else '') + ' | Товары', obj=category) }}

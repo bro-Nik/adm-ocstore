@@ -3,7 +3,7 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="ShopSettings" class="d-grid gap-3" action="{{ url_for('.shop_settings', shop_id=shop.shop_id) }}">
+<form id="ShopSettings" class="d-flex flex-column gap-3" action="{{ url_for('.shop_settings', shop_id=shop.shop_id) }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading((shop.name if shop.shop_id else '') + ' | Настройки' if shop.shop_id else 'Новый магазин', obj=shop) }}
@@ -13,7 +13,7 @@
 
   {# Блок вкладок меню #}
   {% set detail_tab %}
-    <div class="col-12 d-grid gap-3">
+    <div class="d-flex flex-column gap-3">
 
       <div class="card h-100">
         <div class="card-body">

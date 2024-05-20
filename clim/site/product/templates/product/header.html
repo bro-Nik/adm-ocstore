@@ -1,0 +1,18 @@
+{# Jinja #}
+
+<div class="row align-items-center">
+  <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+    <div class="bg-white rounded smooth-shadow-sm">
+      <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
+        {% set menu = {'Наличие': url_for('site.product.products', path='products'),
+                       'Цены': url_for('site.product.products', path='prices'),
+                       'Сопоставление': url_for('site.product.products', path='comparison')} %}
+        {% for name, url in menu.items() %}
+          <li class="nav-item">
+            <a class="nav-link {{ 'active' if url == request.full_path }}" href="{{ url }}">{{ name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>

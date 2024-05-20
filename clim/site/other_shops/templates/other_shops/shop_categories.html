@@ -3,7 +3,7 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="ShopCategories" class="d-grid gap-3" action="{{ url_for('.shop_categories', shop_id=shop.shop_id) }}">
+<form id="ShopCategories" class="d-flex flex-column gap-3" action="{{ url_for('.shop_categories', shop_id=shop.shop_id) }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading(shop.name + ' | Категории', obj=shop, child_obj=child_obj) }}

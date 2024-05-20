@@ -3,7 +3,7 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="StocksSettings" class="d-grid gap-3" action="{{ url_for('.settings_consumables') }}">
+<form id="StocksSettings" class="d-flex flex-column gap-3" action="{{ url_for('.settings_consumables') }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading("Настройки") }}
@@ -25,7 +25,7 @@
 
   <div class="tab-content" id="pills-tabContent" data-to-server="info">
     <div class="tab-pane fade active show" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
-      <div class="col-12 d-grid gap-3">
+      <div class="d-flex flex-column gap-3">
         <div class="row mb-8">
           <div class="col-xl-3 col-lg-4 col-md-12 col-12">
             <div class="mb-4 mb-lg-0">
@@ -64,7 +64,7 @@
     <!-- Consumables in options -->
     <div class="tab-pane fade" id="pills-consumables" role="tabpanel" aria-labelledby="pills-consumables-tab"
       tabindex="0">
-      <div class="col-12 d-grid gap-3">
+      <div class="d-flex flex-column gap-3">
 
         {# Блок таблицы #}
         {% set table %}

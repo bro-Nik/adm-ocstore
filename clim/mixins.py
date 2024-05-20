@@ -72,14 +72,6 @@ class ModelMixin(Model):
         db.session.add(obj)
         return obj
 
-    def get_json(self, attr):
-        # Кэштруем
-        attr_name = f'{attr}_'
-        if not hasattr(self, attr_name):
-            value = getattr(self, attr, '')
-            setattr(self, attr_name, json.loads(value) if value else None)
-        return getattr(self, attr_name)
-
     @property
     def primary_attr_name(self):
         """ Получение имени столбца primary key """
@@ -137,3 +129,18 @@ class PageMixin:
         for key, text in urls:
             result.append([key, text, url_for(f'{self.URL_PREFIX}{key}', **url_id)])
         return result
+
+
+class JsonDetailsMixin:
+
+    def get_json(self, attr):
+        # Кэштруем
+        attr_name = f'{attr}_'
+        if not hasattr(self, attr_name):
+            value = getattr(self, attr, '')
+            setattr(self, attr_name, json.loads(value) if value else None)
+        return getattr(self, attr_name)
+
+    @property
+    def name(self):
+        return self.get_json('details').get('name')

@@ -1,157 +1,155 @@
 {# Jinja2 #}
 
-<div class="col-xl-4 col-lg-12 col-md-12 col-12 d-grid gap-3" data-to-server="info">
-  <input type="hidden" value="{{ deal.stage.stage_id }}" name="stage_id">
-  <div class="crm-editor-section">
-    <div class="crm-editor-section-header">
-      <span class="crm-editor-section-header-text">О сделке</span>
-    </div>
-
-    <div class="crm-editor-section-body">
-      <div class="d-grid gap-2">
-
-        <div class="d-grid">
-          <label class="deal-info-block-title">Название</label>
-          {{ cm.edit_link(details.name, deal.deal_id) }}
-          <input type="text" class="form-control border {{ 'visually-hidden' if details.sum or deal.deal_id else 'focus' }} to-show"
-            name="name" value="{{ details.name or '' }}">
-        </div>
-
-        <div class="d-grid">
-          <label class="deal-info-block-title">Сумма</label>
-          {{ cm.edit_link(details.sum, deal.deal_id) }}
-          <input type="number" step="any" class="form-control border {{ 'visually-hidden' if details.sum or deal.deal_id }} to-show"
-            name="sum" value="{{ details.sum or '' }}">
-        </div>
-
-        <div class="d-grid">
-          <label class="deal-info-block-title">Клиент</label>
-          {% if deal.contact %}
-            <div class="deal-info-edit-link">
-              <span>{{ deal.contact.name }}</span>
-              <span class="deal-info-contact">{{ deal.contact.phone|smart_phone }}</span>
-              <span class="deal-info-contact">{{ deal.contact.email }}</span>
-            </div>
-
-          {% elif deal.deal_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
-          <div class="{{ 'visually-hidden' if deal.contact or deal.deal_id }} to-show">
-            <select class="contact-select" data-placeholder="-- Выбрать --" name="contact_id"
-              data-url="{{ url_for('crm.contact.ajax_contacts', role='client') }}" data-width="100%" data-class="border">
-              {% if deal.contact %}
-                <option selected value="{{ deal.contact.contact_id }}">{{ deal.contact.name }}</option>
-              {% endif %}
-            </select>
-
-          </div>
-        </div>
-
-      </div>
-    </div>
+<input type="hidden" value="{{ deal.stage.stage_id }}" name="stage_id">
+<div class="crm-editor-section">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">О сделке</span>
   </div>
 
-  <!-- Details  -->
-  <div class="crm-editor-section">
+  <div class="crm-editor-section-body">
+    <div class="d-flex flex-column gap-2">
 
-    <div class="crm-editor-section-header">
-      <span class="crm-editor-section-header-text">Детали</span>
-    </div>
-
-    <div class="crm-editor-section-body">
-      <div class="d-grid gap-2">
-
-        <div class="d-grid">
-          <label class="deal-info-block-title">Что интересует</label>
-          {{ cm.edit_link(details.what_need, deal.deal_id) }}
-          <div class="{{ 'visually-hidden' if details.what_need or deal.deal_id }} to-show">
-            <select class="general-select" data-placeholder="-- Выбрать --" name="what_need" data-class="border" data-width="100%">
-              <option></option>
-              <option {{ 'selected' if details.what_need=='Кондицонер + установка' }}>Кондицонер + установка</option>
-              <option {{ 'selected' if details.what_need=='Только кондиционер' }}>Только кондиционер</option>
-              <option {{ 'selected' if details.what_need=='Только установка' }}>Только установка</option>
-              <option {{ 'selected' if details.what_need=='Другое' }}>Другое</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="d-grid">
-          <label class="deal-info-block-title">Адрес</label>
-          {{ cm.edit_link(details.adress, deal.deal_id) }}
-          <input type="text" class="form-control border {{ 'visually-hidden' if details.adress or deal.deal_id }} to-show"
-            name="adress" value="{{ details.adress if details.adress }}">
-        </div>
-
-        <div class="d-grid">
-          <label class="deal-info-block-title">Комментарий</label>
-          {{ cm.edit_link(details.comment, deal.deal_id) }}
-          <textarea class="form-control border {{ 'visually-hidden' if details.comment or deal.deal_id }} to-show"
-            name="comment">{{ details.comment if details.comment }}</textarea>
-        </div>
-
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Название</label>
+        {{ cm.edit_link(details.name, deal.deal_id) }}
+        <input type="text" class="form-control border {{ 'visually-hidden' if details.sum or deal.deal_id else 'focus' }} to-show"
+          name="name" value="{{ details.name or '' }}">
       </div>
-    </div>
-  </div>
 
-  <div id="accordionServices" class="accordion crm-editor-section">
-    {% set show_trips = not not ('установка' in details.what_need or details.employments) %}
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Сумма</label>
+        {{ cm.edit_link(details.sum, deal.deal_id) }}
+        <input type="number" step="any" class="form-control border {{ 'visually-hidden' if details.sum or deal.deal_id }} to-show"
+          name="sum" value="{{ details.sum or '' }}">
+      </div>
 
-    <div class="crm-editor-section-header">
-      <span class="crm-editor-section-header-text accordion-button {{ 'collapsed' if not show_trips }}"
-        data-bs-toggle="collapse" data-bs-target="#collapseServices" aria-expanded="true"
-        aria-controls="collapseServices">Выезды</span>
-    </div>
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Клиент</label>
+        {% if deal.contact %}
+          <div class="deal-info-edit-link">
+            <span>{{ deal.contact.name }}</span>
+            <span class="deal-info-contact">{{ deal.contact.phone|smart_phone }}</span>
+            <span class="deal-info-contact">{{ deal.contact.email }}</span>
+          </div>
 
-      <div id="collapseServices" class="crm-editor-section-body accordion-collapse collapse {{ 'show' if show_trips }}" data-bs-parent="">
-      <div class="d-grid gap-2">
-
-        {% if not deal.posted %}
-          <div class="d-grid">
-            <label class="deal-info-block-title">Запланированные выезды</label>
-            {% if not deal.deal_id %}
-              Для выбора сохраните сделку
-            {% else %}
-              <div id="DealEmployments" class="deal-info-edit-link-employments"></div>
+        {% elif deal.deal_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <div class="{{ 'visually-hidden' if deal.contact or deal.deal_id }} to-show">
+          <select class="contact-select" data-placeholder="-- Выбрать --" name="contact_id"
+            data-url="{{ url_for('crm.contact.ajax_contacts', role='client') }}" data-width="100%" data-class="border">
+            {% if deal.contact %}
+              <option selected value="{{ deal.contact.contact_id }}">{{ deal.contact.name }}</option>
             {% endif %}
-          </div>
-        {% endif %}
+          </select>
 
-        {% if details.employments %}
-          <div class="d-grid">
-            <label class="deal-info-block-title">Выполненные выезды</label>
-            <div>
-              {% set employments = details.employments %}
-              {% include 'deal/deal/employment_info.html' %}
-            </div>
-          </div>
-        {% endif %}
-
-      </div>
-    </div>
-  </div>
-
-  <div class="accordion crm-editor-section" id="accordionOther">
-    <div class="crm-editor-section-header">
-      <span class="crm-editor-section-header-text accordion-button {{ 'collapsed' if not deal.posted }}" data-bs-toggle="collapse"
-        data-bs-target="#collapseOther" aria-expanded="true" aria-controls="collapseOther">Другое</span>
-    </div>
-
-    <div id="collapseOther" class="crm-editor-section-body accordion-collapse collapse {{ 'show' if deal.posted }}"
-      data-bs-parent="#accordionExample">
-      <div class="mb-3 row d-grid gap-2">
-        <div class="d-grid">
-          <label class="deal-info-block-title">Дата завершения</label>
-          {% if details.date_end %}
-            <span class="deal-info-edit-link">{{ details.date_end|smart_date }}</span>
-          {% elif deal.deal_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
-          <input type="text"
-            class="form-control border {{ 'visually-hidden' if details.date_end or deal.deal_id }} to-show datepicker"
-            name="date_end" value="{{ details.date_end }}" data-value="{{ details.date|datetime_from_str }}">
         </div>
       </div>
-    </div>
 
+    </div>
   </div>
+</div>
+
+<!-- Details  -->
+<div class="crm-editor-section">
+
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">Детали</span>
+  </div>
+
+  <div class="crm-editor-section-body">
+    <div class="d-flex flex-column gap-2">
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Что интересует</label>
+        {{ cm.edit_link(details.what_need, deal.deal_id) }}
+        <div class="{{ 'visually-hidden' if details.what_need or deal.deal_id }} to-show">
+          <select class="general-select" data-placeholder="-- Выбрать --" name="what_need" data-class="border" data-width="100%">
+            <option></option>
+            <option {{ 'selected' if details.what_need=='Кондицонер + установка' }}>Кондицонер + установка</option>
+            <option {{ 'selected' if details.what_need=='Только кондиционер' }}>Только кондиционер</option>
+            <option {{ 'selected' if details.what_need=='Только установка' }}>Только установка</option>
+            <option {{ 'selected' if details.what_need=='Другое' }}>Другое</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Адрес</label>
+        {{ cm.edit_link(details.adress, deal.deal_id) }}
+        <input type="text" class="form-control border {{ 'visually-hidden' if details.adress or deal.deal_id }} to-show"
+          name="adress" value="{{ details.adress if details.adress }}">
+      </div>
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Комментарий</label>
+        {{ cm.edit_link(details.comment, deal.deal_id) }}
+        <textarea class="form-control border {{ 'visually-hidden' if details.comment or deal.deal_id }} to-show"
+          name="comment">{{ details.comment if details.comment }}</textarea>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="accordionServices" class="accordion crm-editor-section">
+  {% set show_trips = not not ('установка' in details.what_need or details.employments) %}
+
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text accordion-button {{ 'collapsed' if not show_trips }}"
+      data-bs-toggle="collapse" data-bs-target="#collapseServices" aria-expanded="true"
+      aria-controls="collapseServices">Выезды</span>
+  </div>
+
+    <div id="collapseServices" class="crm-editor-section-body accordion-collapse collapse {{ 'show' if show_trips }}" data-bs-parent="">
+    <div class="d-flex flex-column gap-2">
+
+      {% if not deal.posted %}
+        <div class="d-flex flex-column">
+          <label class="deal-info-block-title">Запланированные выезды</label>
+          {% if not deal.deal_id %}
+            Для выбора сохраните сделку
+          {% else %}
+            <div id="DealEmployments" class="deal-info-edit-link-employments"></div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if details.employments %}
+        <div class="d-flex flex-column">
+          <label class="deal-info-block-title">Выполненные выезды</label>
+          <div>
+            {% set employments = details.employments %}
+            {% include 'deal/deal/employment_info.html' %}
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion crm-editor-section" id="accordionOther">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text accordion-button {{ 'collapsed' if not deal.posted }}" data-bs-toggle="collapse"
+      data-bs-target="#collapseOther" aria-expanded="true" aria-controls="collapseOther">Другое</span>
+  </div>
+
+  <div id="collapseOther" class="crm-editor-section-body accordion-collapse collapse {{ 'show' if deal.posted }}"
+    data-bs-parent="#accordionExample">
+    <div class="mb-3 row d-flex flex-column gap-2">
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Дата завершения</label>
+        {% if details.date_end %}
+          <span class="deal-info-edit-link">{{ details.date_end|smart_date }}</span>
+        {% elif deal.deal_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <input type="text"
+          class="form-control border {{ 'visually-hidden' if details.date_end or deal.deal_id }} to-show datepicker"
+          name="date_end" value="{{ details.date_end }}" data-value="{{ details.date|datetime_from_str }}">
+      </div>
+    </div>
+  </div>
+
 </div>

@@ -1,15 +1,16 @@
 from datetime import datetime
 import json
 
-from flask import abort, flash, url_for
+from flask import abort, flash
 from clim.crm.booking.utils import get_event_booking
 from clim.crm.stock.models import StockProduct
 from clim.crm.utils import dt_to_str
+from clim.mixins import JsonDetailsMixin, PageMixin
 from .models import db
 
 
-class DealUtils:
-    URL_PREFIX = '.deal_'
+class DealUtils(PageMixin, JsonDetailsMixin):
+    URL_PREFIX = 'crm.deal.deal_'
 
     @property
     def actions(self):
@@ -19,10 +20,6 @@ class DealUtils:
             'unposting': [True],
             'delete': [self.deal_id, 'Удадить', 'Удалить сделку?', '']
         }
-
-    @property
-    def url_id(self):
-        return dict(deal_id=self.deal_id) if self.deal_id else {}
 
     def pages_settings(self):
         return {'info': [True, 'Инфо']}
@@ -102,7 +99,7 @@ class DealUtils:
         if not action:
             self.stage = new_stage
             db.session.flush()
-            return {'url': url_for('.deal_info', deal_id=self.deal_id)}
+            return
 
         # Сохранение перед постингом
         db.session.commit()

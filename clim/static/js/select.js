@@ -40,22 +40,6 @@ $(document).on("change", ".show-count-selected", function (e) {
   MultipleSelectCount($(this));
 });
 
-// Select Open Focus
-$(document).on("select select2:open", function () {
-  $(this).attr("data-test", "test");
-  var single = $(this).parent().find(".select2-selection--single");
-  if (single.length) {
-    alert("single");
-    var $search = $(".select2-search.select2-search--dropdown").find(
-      ".select2-search__field",
-    );
-  } else {
-    document.querySelector(".select2-search__field").focus();
-    // $(document).find('.select2-search__field').focus();
-  }
-  // $search.focus();
-});
-
 
 function UpdateSelect($select, url_args={}) {
   // var $select = $tr.find("select");

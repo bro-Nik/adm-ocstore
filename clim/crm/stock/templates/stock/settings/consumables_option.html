@@ -3,7 +3,7 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="ConsumablesOption" class="d-grid gap-3" action="{{ url_for('.consumables_in_option', value_id=value.option_value_id) }}">
+<form id="ConsumablesOption" class="d-flex flex-column gap-3" action="{{ url_for('.consumables_in_option', value_id=value.option_value_id) }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading(value.name if value else 'Новое значение опции') }}

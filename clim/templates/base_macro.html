@@ -26,11 +26,13 @@
 
 {# Блок таблицы #}
 {% macro table(table, iterable='', btns='', attrs='') %}
-  <div class="row">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <div class="card h-100">
-        <div class="table-responsive">
-          <table class="table text-nowrap" {{ attrs }}>{{ table }}</table>
+  {% if iterable %}
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+        <div class="card h-100">
+          <div class="table-responsive">
+            <table class="table text-nowrap" {{ attrs }}>{{ table }}</table>
+          </div>
           {% if btns %}
             <div class="d-flex">
               <div>
@@ -46,8 +48,6 @@
           {% endif %}
         </div>
       </div>
-    </div>
-    {% if iterable %}
       {% if iterable.pages %}
         {# Пагинация #}
         {% set products = iterable %}
@@ -60,8 +60,10 @@
           {{ table_actions(p.actions) }}
         {% endif %}
       {% endfor %}
-    {% endif %}
-  </div>
+    </div>
+  {% else %}
+    {% include 'nothing.html' %}
+  {% endif %}
 {% endmacro %}
 
 {# Ссылка #}
@@ -79,7 +81,7 @@
   <div class="row">
     <div class="col-xl-12 col-lg-12 col-md-12 col-12">
       <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
-        {% for item in items %}
+        {% for item in items if item %}
           <li class="nav-item" role="presentation">
             <a class="nav-link {{ item.class }}" id="pills-{{ item.key }}-tab" data-bs-toggle="pill" data-bs-target="#pills-{{ item.key }}"
               role="tab" aria-controls="pills-{{ item.key }}" aria-selected="true">{{ item.text }}</a>
@@ -104,7 +106,7 @@
 {# Блок вкладок меню #}
 {% macro menu_tab(key, tab, class='') %}
   <div class="tab-pane fade {{ class }}" id="pills-{{ key }}" role="tabpanel" aria-labelledby="pills-{{ key }}-tab" tabindex="0">
-    {{ tab }}
+    <div class="d-flex flex-column gap-3">{{ tab }}</div>
   </div>
 {% endmacro %}
 
@@ -116,7 +118,7 @@
 {% endmacro %}
 
 {# Кнопки действий таблицы #}
-{% macro table_actions(actions={}, btns=None) %}
+{% macro table_actions(actions={}, btns='') %}
   {% if actions or btns %}
     <div class="sticky-bottom form-actions">
       <div class="col-12">

@@ -6,7 +6,7 @@ class Deal(DealUtils, db.Model):
     __tablename__ = 'adm_deal'
 
     deal_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128))
+    # name = db.Column(db.String(128))
     contact_id = db.Column(db.Integer, db.ForeignKey('adm_contact.contact_id'))
     stage_id = db.Column(db.Integer, db.ForeignKey('adm_deal_stage.stage_id'))
     details = db.Column(db.Text)

@@ -68,7 +68,6 @@ def movements(movement_type):
 @login_required
 def movement_info():
     movement = StockMovement.get(request.args.get('movement_id'))
-    print(movement.name)
     if not movement:
         movement_type = request.args.get('movement_type') or abort(404)
         movement = StockMovement(movement_type=movement_type)

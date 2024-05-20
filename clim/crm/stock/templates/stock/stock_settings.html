@@ -3,7 +3,7 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="StockInfo" class="d-grid gap-3" action="{{ url_for('.stock_info', stock_id=stock.stock_id) }}">
+<form id="StockInfo" class="d-flex flex-column gap-3" action="{{ url_for('.stock_info', stock_id=stock.stock_id) }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading(stock.name if stock.stock_id else 'Добавить новый', obj=stock) }}

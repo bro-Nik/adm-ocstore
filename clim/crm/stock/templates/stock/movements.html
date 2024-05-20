@@ -8,7 +8,7 @@
 
 {% block content %}
 {% include 'stock/header.html' %}
-<form id="MovementsList" class="d-grid gap-3" action="{{ url_for('.movements', movement_type=movement_type) }}">
+<form id="MovementsList" class="d-flex flex-column gap-3" action="{{ url_for('.movements', movement_type=movement_type) }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading(title, child_obj=child_obj) }}
@@ -35,7 +35,7 @@
 
           {# Ссылка #}
           <td>
-            <div class="d-grid">
+            <div class="d-flex flex-column">
               {{ m.modal_link(movement, "info") }}
               <span class="fs-6">от {{ details.date if details.date }}</span>
             </div>

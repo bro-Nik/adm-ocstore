@@ -3,7 +3,7 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="Options" class="d-grid gap-3" action="{{ url_for('.options') }}">
+<form id="Options" class="d-flex flex-column gap-3" action="{{ url_for('.options') }}">
 
   {# Блок названия и кнопок #}
   {% set heading_btns %}

@@ -8,61 +8,69 @@
 {% set products = deal.get_json('products') or ([] if deal.posted else [{}]) %}
 {% set consumables = deal.get_json('consumables') or ([] if deal.posted else [{}]) %}
 {% set expenses = deal.get_json('expenses') or ([] if deal.posted else [{}]) %}
-{% set analytics = deal.get_json('analytics') or [] %}
+{% set analytics = deal.get_json('analytics') or {} %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='select2/css/select2.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='select2/css/select2-bootstrap-5-theme.css') }}" />
 
-<form id="DealInfo" class="d-grid gap-3" action="{{ url_for('.deal_info', deal_id=deal.deal_id) }}">
-  {% include 'deal/deal/header.html' %}
+<form id="DealInfo" class="d-flex flex-column gap-3" action="{{ url_for('.deal_info', deal_id=deal.deal_id) }}">
+  {# Блок названия и кнопок #}
+  {{ m.heading('Добавление сделки' if not deal.deal_id else details.name, obj=deal) }}
 
-  <div class="row">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <div class="tab-content" id="pills-tabContent">
-        <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
-          <div class="row">
-            {% include 'deal/deal/details.html' %}
-            <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-grid gap-3">
-              {% include 'deal/deal/actions.html' %}
-            </div>
-          </div>
-        </div>
+  <div class="col-12 d-flex gap-2">
+    {% for stage in stages if not 'end_' in stage.type %}
+      <div class="stage" style="{{ '--deal-stage-color: {};'.format(stage.color) }}">
+        <input type="radio" class="btn-check" name="stages" id="stage_{{ stage.stage_id }}"
+          {{ 'checked' if stage.stage_id == deal.stage.stage_id }} value="{{ stage.stage_id }}">
+        <label class="stage-item fs-6" for="stage_{{ stage.stage_id }}">{{ stage.name }}</label>
+        <div class="deal-stage-line"></div>
+      </div>
+    {% endfor %}
 
-        <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-product-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">
-            {% if not products %}{% include 'nothing.html' %}
-            {% else %}{% include 'deal/deal/products.html' %}
-            {% endif %}
-          </div>
-        </div>
+    <div class="stage" style="{{ '--deal-stage-color: {};'.format(deal.stage.color if deal.stage.completed else '#56c31e') }}">
+      <input type="radio" class="btn-check" name="stages" {{ 'checked' if deal.stage.completed }}
+        value="{{ deal.stage_id if deal.stage.completed }}">
+      <label class="stage-item fs-6 not-update" data-modal-id="EndOfDealModal"
+          data-url="{{ url_for('.deal_modal_close', deal_id=deal.deal_id) }}">
+        {{ deal.stage.name if deal.stage.completed else 'Завершить сделку' }}
+      </label>
+      <div class="deal-stage-line"></div>
+    </div>
 
-        <div class="tab-pane fade" id="pills-consumables" role="tabpanel" aria-labelledby="pills-consumables-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">
-            {% if not consumables %}{% include 'nothing.html' %}
-            {% else %}{% include 'deal/deal/consumables.html' %}
-            {% endif %}
-          </div>
-        </div>
+  </div>
 
-        <div class="tab-pane fade" id="pills-expenses" role="tabpanel" aria-labelledby="pills-expenses-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">
-            {% if not expenses %}{% include 'nothing.html' %}
-            {% else %}{% include 'deal/deal/expenses.html' %}
-            {% endif %}
-          </div>
-        </div>
+  {# Блок меню #}
+  {{ m.menu_head([{'text': 'Общие', 'key': 'details', 'class': 'active'},
+                  {'text': 'Товары', 'key': 'products', 'class': ''} if products,
+                  {'text': 'Расходные материалы', 'key': 'consumables', 'class': ''} if consumables,
+                  {'text': 'Расходы', 'key': 'expenses', 'class': ''} if expenses,
+                  {'text': 'Аналитика', 'key': 'analytics', 'class': ''},
+  ]) }}
 
-        <div class="tab-pane fade" id="pills-analytics" role="tabpanel" aria-labelledby="pills-analytics-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">
-            {% if not analytics %}{% include 'nothing.html' %}
-            {% else %}{% include 'deal/deal/analytics.html' %}
-            {% endif %}
-          </div>
-        </div>
-
+  {# Блок вкладок меню #}
+  {% set details_tab %}
+    <div class="row">
+      <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3" data-to-server="info">
+        {% include 'deal/deal/details.html' %}
+      </div>
+      <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
+        {% include 'deal/deal/actions.html' %}
       </div>
     </div>
-  </div>
+  {% endset %}
+  {% set products_tab %}{% include 'deal/deal/products.html' %}{% endset %}
+  {% set consumables_tab %}{% include 'deal/deal/consumables.html' %}{% endset %}
+  {% set expenses_tab %}{% include 'deal/deal/expenses.html' %}{% endset %}
+  {% set analytics_tab %}{% include 'deal/deal/analytics.html' %}{% endset %}
+
+  {% set menu_tabs %}
+    {{ m.menu_tab("details", details_tab, "show active") }}
+    {{ m.menu_tab("products", products_tab, "") }}
+    {{ m.menu_tab("consumables", consumables_tab, "") }}
+    {{ m.menu_tab("expenses", expenses_tab, "") }}
+    {{ m.menu_tab("analytics", analytics_tab, "") }}
+  {% endset %}
+  {{ m.menu_tabs(menu_tabs) }}
 
   {# Кнопки действий формы #}
   {{ m.form_actions(deal) }}

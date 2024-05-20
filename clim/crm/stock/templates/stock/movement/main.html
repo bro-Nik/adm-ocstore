@@ -4,9 +4,10 @@
 {% import 'crm/macro.html' as cm with context %}
 
 {% set details = movement.get_json('details') or {} %}
+{% set products = movement.get_json('products') or [{}] %}
 
 {% block content %}
-<form id="movementInfo" class="d-grid gap-3" action="{{ url_for('.movement_info', movement_type=movement.movement_type, movement_id=movement.movement_id) }}">
+<form id="movementInfo" class="d-flex flex-column gap-3" action="{{ url_for('.movement_info', movement_type=movement.movement_type, movement_id=movement.movement_id) }}">
 
   {# Блок названия и кнопок #}
   {% set heading %}
@@ -16,36 +17,19 @@
   {% endset %}
   {{ m.heading(heading, obj=movement) }}
 
-  <div class="row align-items-center">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
-        <li class="nav-item">
-          <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail" role="tab"
-            aria-controls="pills-detail" aria-selected="false">Общие</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" id="pills-product-tab" data-bs-toggle="pill" data-bs-target="#pills-product"
-            role="tab" aria-controls="pills-product" aria-selected="true">Товары</a>
-        </li>
-      </ul>
-    </div>
-  </div>
+  {# Блок меню #}
+  {{ m.menu_head([{'text': 'Общие', 'key': 'details', 'class': 'active'},
+                  {'text': 'Товары', 'key': 'products', 'class': ''} if products]) }}
 
-  <div class="row">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <div class="tab-content" id="pills-tabContent">
-        <div class="tab-pane fade active show" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
-          {% include 'stock/movement/details.html' %}
-        </div>
+  {# Блок вкладок меню #}
+  {% set details_tab %}{% include 'stock/movement/details.html' %}{% endset %}
+  {% set products_tab %}{% include 'stock/movement/products.html' %}{% endset %}
 
-        <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-product-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3 mb-5">
-            {% include 'stock/movement/products.html' %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  {% set menu_tabs %}
+    {{ m.menu_tab("details", details_tab, "show active") }}
+    {{ m.menu_tab("products", products_tab, "") }}
+  {% endset %}
+  {{ m.menu_tabs(menu_tabs) }}
 
   {# Кнопки действий формы #}
   {{ m.form_actions(movement) }}

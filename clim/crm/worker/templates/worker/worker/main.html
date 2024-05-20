@@ -4,7 +4,7 @@
 {% import 'crm/macro.html' as cm with context %}
 
 {% block content %}
-<form id="WorkerInfo" class="d-grid gap-3" action="{{ url_for('.worker_settings', worker_id=worker.worker_id) }}">
+<form id="WorkerInfo" class="d-flex flex-column gap-3" action="{{ url_for('.worker_settings', worker_id=worker.worker_id) }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading(worker.name or 'Новый работник', obj=worker) }}
@@ -30,7 +30,7 @@
       <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
           <div class="row">
-            <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-grid gap-3">
+            <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
 
               <div class="crm-editor-section">
                 <div class="crm-editor-section-header">
@@ -38,23 +38,23 @@
                 </div>
 
                 <div class="crm-editor-section-body">
-                  <div class="d-grid gap-2">
+                  <div class="d-flex flex-column gap-2">
 
-                    <div class="d-grid">
+                    <div class="d-flex flex-column">
                       <label class="deal-info-block-title">ФИО</label>
                       {{ cm.edit_link(worker.name, worker.worker_id) }}
                       <input type="text" class="form-control border
                         {{ 'visually-hidden' if worker.name or worker.worker_id }} to-show" name="name" value="{{ worker.name or '' }}" required>
                     </div>
 
-                    <div class="d-grid">
+                    <div class="d-flex flex-column">
                       <label class="deal-info-block-title">Начало дня</label>
                       {{ cm.edit_link(worker.start_day, worker.worker_id) }}
                       <input type="text" class="form-control border
                         {{ 'visually-hidden' if worker.start_day or worker.worker_id }} to-show" name="start_day" value="{{ worker.start_day or '09:00:00' }}">
                     </div>
 
-                    <div class="d-grid">
+                    <div class="d-flex flex-column">
                       <label class="deal-info-block-title">Конец дня</label>
                       {{ cm.edit_link(worker.end_day, worker.worker_id) }}
                       <input type="text" class="form-control border
@@ -72,18 +72,18 @@
                 </div>
 
                 <div class="crm-editor-section-body">
-                  <div class="d-grid gap-2">
+                  <div class="d-flex flex-column gap-2">
                   </div>
                 </div>
               </div>
 
             </div>
-            <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-grid gap-3"></div>
+            <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3"></div>
           </div>
         </div>
 
         <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-employments-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">{% include 'worker/worker/employments.html' %}</div>
+          <div class="d-flex flex-column gap-3">{% include 'worker/worker/employments.html' %}</div>
         </div>
 
       </div>

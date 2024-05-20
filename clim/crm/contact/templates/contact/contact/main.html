@@ -2,8 +2,10 @@
 {% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
 {% import 'base_macro.html' as m with context %}
 
+{% set details = deal.get_json('details') or {} %}
+
 {% block content %}
-<form id="ClientInfo" class="d-grid gap-3" action="{{ url_for('.contact_settings', contact_id=contact.contact_id) }}">
+<form id="ClientInfo" class="d-flex flex-column gap-3" action="{{ url_for('.contact_settings', contact_id=contact.contact_id) }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading(contact.name or 'Новый контакт', obj=contact) }}
@@ -29,7 +31,7 @@
       <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
           <div class="row">
-            <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-grid gap-3">
+            <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
 
               <div class="crm-editor-section">
                 <div class="crm-editor-section-header">
@@ -37,9 +39,9 @@
                 </div>
 
                 <div class="crm-editor-section-body">
-                  <div class="d-grid gap-2">
+                  <div class="d-flex flex-column gap-2">
 
-                    <div class="d-grid">
+                    <div class="d-flex flex-column">
                       <label class="deal-info-block-title">ФИО</label>
                       {% if contact.name %}
                         <span class="deal-info-edit-link">{{ contact.name }}</span>
@@ -50,7 +52,7 @@
                         {{ 'visually-hidden' if contact.name or contact.contact_id }} to-show" name="name" value="{{ contact.name or '' }}" required>
                     </div>
 
-                    <div class="d-grid">
+                    <div class="d-flex flex-column">
                       <label class="deal-info-block-title">Телефон</label>
                       {% if contact.phone %}
                         <span class="deal-info-edit-link">{{ contact.phone }}</span>
@@ -61,7 +63,7 @@
                         {{ 'visually-hidden' if contact.phone or contact.contact_id }} to-show" name="phone" value="{{ contact.phone or '' }}">
                     </div>
 
-                    <div class="d-grid">
+                    <div class="d-flex flex-column">
                       <label class="deal-info-block-title">E-mail</label>
                       {% if contact.email %}
                         <span class="deal-info-edit-link">{{ contact.email }}</span>
@@ -83,9 +85,9 @@
                 </div>
 
                 <div class="crm-editor-section-body">
-                  <div class="d-grid gap-2">
+                  <div class="d-flex flex-column gap-2">
 
-                    <div class="d-grid">
+                    <div class="d-flex flex-column">
                       <label class="deal-info-block-title">Роль</label>
                       {% if contact.role and contact.contact_id %}
                         <span class="deal-info-edit-link">{{ roles[contact.role] }}</span>
@@ -107,17 +109,13 @@
               </div>
 
             </div>
-            <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-grid gap-3">
+            <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
             </div>
           </div>
         </div>
 
         <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-deals-tab" tabindex="0">
-          <div class="col-12 d-grid gap-3">
-            {% if not contact.deals %}{% include 'nothing.html' %}
-            {% else %}{% include 'contact/contact/deals.html' %}
-            {% endif %}
-          </div>
+          <div class="d-flex flex-column gap-3">{% include 'contact/contact/deals.html' %}</div>
         </div>
 
       </div>

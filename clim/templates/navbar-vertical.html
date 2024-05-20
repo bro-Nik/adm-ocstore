@@ -38,33 +38,10 @@
             </li>
 
             <li class="nav-item">
-              <a class="nav-link has-arrow collapsed" href="#!" data-bs-toggle="collapse"
-                data-bs-target="#navMenuLevelSecond" aria-expanded="false" aria-controls="navMenuLevelSecond">
+              <a class="nav-link {{ 'active' if request.path == url_for('site.product.products') }}"
+                href="{{ url_for('site.product.products') }}">
                 Товары
               </a>
-              <div id="navMenuLevelSecond" class="collapse {{ 'show' if url_for('site.product.products') in request.path }}"
-                data-bs-parent="#navMenuLevel">
-                <ul class="nav flex-column">
-                  <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.full_path == url_for('site.product.products', path='products') }}"
-                      href="{{ url_for('site.product.products', path='products') }}">
-                      Товары
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.full_path == url_for('site.product.products', path='comparison') }}"
-                      href="{{ url_for('site.product.products', path='comparison') }}">
-                      Сопоставление
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.full_path == url_for('site.product.products', path='prices') }}"
-                      href="{{ url_for('site.product.products', path='prices') }}">
-                      Цены
-                    </a>
-                  </li>
-                </ul>
-              </div>
             </li>
 
             <li class="nav-item">

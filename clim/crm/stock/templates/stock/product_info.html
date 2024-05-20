@@ -3,7 +3,7 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="ProductInfo" class="d-grid gap-3" action="{{ url_for('crm.stock.product_info_update', product_id=product.product_id if product else None) }}">
+<form id="ProductInfo" class="d-flex flex-column gap-3" action="{{ url_for('crm.stock.product_info_update', product_id=product.product_id if product else None) }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading(product.description.name if product else 'Новый товар') }}
@@ -29,7 +29,7 @@
       <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab"
           tabindex="0">
-          <div class="col-12 d-grid gap-3">
+          <div class="d-flex flex-column gap-3">
 
             <div class="card h-100">
               <div class="card-body">
@@ -133,7 +133,7 @@
 
         <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-product-tab"
           tabindex="0">
-          <div class="col-12 d-grid gap-3">
+          <div class="d-flex flex-column gap-3">
 
           </div>
         </div>

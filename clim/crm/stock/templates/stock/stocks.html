@@ -4,7 +4,7 @@
 
 {% block content %}
 {% include 'stock/header.html' %}
-<form id="Stocks" class="d-grid gap-3" action="{{ url_for('.stocks') }}">
+<form id="Stocks" class="d-flex flex-column gap-3" action="{{ url_for('.stocks') }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading("Склады", child_obj=child_obj) }}

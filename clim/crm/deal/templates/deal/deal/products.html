@@ -104,7 +104,7 @@
     <button class="btn rounded-3 btn-primary create-new-line" type="button">Добавить строку</button>
   {% endset %}
 {% endif %}
-{{ m.table(table, btns=table_btns, attrs="id=tabProducts data-to-server=products") }}
+{{ m.table(table, products, btns=table_btns, attrs="id=tabProducts data-to-server=products") }}
 
 {# Блок общая сумма #}
 {{ m.sum() }}

@@ -3,7 +3,7 @@
 {% import 'base_macro.html' as m with context %}
 
 {% block content %}
-<form id="ShopCategories" class="d-grid gap-3" action="{{ url_for('.category_settings', shop_id=shop.shop_id, category_id=category.other_category_id) }}">
+<form id="ShopCategories" class="d-flex flex-column gap-3" action="{{ url_for('.category_settings', shop_id=shop.shop_id, category_id=category.other_category_id) }}">
   {% set parsing = category.parsing|to_json if category.parsing else {} %}
 
   {# Блок названия и кнопок #}

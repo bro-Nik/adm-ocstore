@@ -4,13 +4,13 @@
 
 {% block content %}
 {% set settings = option.settings.text|to_json if option and option.settings else {} %}
-<form id="OptionSettings" class="d-grid gap-3" action="{{ url_for('.option_settings', option_id=option.option_id if option) }}">
+<form id="OptionSettings" class="d-flex flex-column gap-3" action="{{ url_for('.option_settings', option_id=option.option_id if option) }}">
 
   {# Блок названия и кнопок #}
   {{ m.heading(option.description.name if option else 'Новая опция') }}
 
   <div class="row">
-    <div class="col-12 d-grid gap-3">
+    <div class="d-flex flex-column gap-3">
       <div class="card h-100">
         <div class="card-body">
           <div>

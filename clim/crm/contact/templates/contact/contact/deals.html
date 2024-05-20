@@ -13,18 +13,14 @@
   <tbody>
 
     {% for deal in contact.deals %}
-    {% set details = deal.get_json('details') or {} %}
       <tr>
         {# Чекбокс #}
         <td class="checkbox">{{ m.checkbox(deal.deal_id) }}</td>
 
         {# Ссылка #}
-        <td>
-          <a class="text-inherit" data-modal-id="DealInfoModal"
-            data-url="{{ url_for('crm.deal.deal_info', deal_id=deal.deal_id) }}">{{ details.name }}
-          </a>
-        </td>
+        <td>{{ m.modal_link(deal, "info") }}</td>
 
+        {# Адрес #}
         <td>{{ details.adress }}</td>
 
         {# Стадия и дата #}
