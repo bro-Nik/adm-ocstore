@@ -1,6 +1,6 @@
-from flask import flash, url_for
+from flask import flash
 
-from clim.mixins import PageMixin
+from clim.mixins import JsonDetailsMixin, PageMixin
 
 from ..models import db
 
@@ -8,7 +8,7 @@ from ..models import db
 ROLES = {'client': 'Клиент', 'provider': 'Поставщик'}
 
 
-class ContactUtils(PageMixin):
+class ContactUtils(PageMixin, JsonDetailsMixin):
     URL_PREFIX = '.contact_'
 
     @property

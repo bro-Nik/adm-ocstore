@@ -2,7 +2,7 @@
 {% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
 {% import 'base_macro.html' as m with context %}
 
-{% set details = deal.get_json('details') or {} %}
+{% set details = contact.get_json('details') or {} %}
 
 {% block content %}
 <form id="ClientInfo" class="d-flex flex-column gap-3" action="{{ url_for('.contact_settings', contact_id=contact.contact_id) }}">
@@ -10,117 +10,27 @@
   {# Блок названия и кнопок #}
   {{ m.heading(contact.name or 'Новый контакт', obj=contact) }}
 
-  <div class="row align-items-center">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
-        <li class="nav-item" role="presentation">
-          <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail" role="tab"
-            aria-controls="pills-detail" aria-selected="true">Общие</a>
-        </li>
+  {# Блок меню #}
+  {{ m.menu_head([{'text': 'Общие', 'key': 'details', 'class': 'active'},
+                  {'text': 'Сделки', 'key': 'deals', 'class': ''}]) }}
 
-        <li class="nav-item">
-          <a class="nav-link" id="pills-deals-tab" data-bs-toggle="pill" data-bs-target="#pills-product" role="tab"
-            aria-controls="pills-product" aria-selected="false">Сделки</a>
-        </li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <div class="tab-content" id="pills-tabContent">
-        <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
-          <div class="row">
-            <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
-
-              <div class="crm-editor-section">
-                <div class="crm-editor-section-header">
-                  <span class="crm-editor-section-header-text">Контакты</span>
-                </div>
-
-                <div class="crm-editor-section-body">
-                  <div class="d-flex flex-column gap-2">
-
-                    <div class="d-flex flex-column">
-                      <label class="deal-info-block-title">ФИО</label>
-                      {% if contact.name %}
-                        <span class="deal-info-edit-link">{{ contact.name }}</span>
-                      {% elif contact.contact_id %}
-                        <span class="deal-info-edit-link">Нет</span>
-                      {% endif %}
-                      <input type="text" class="form-control border
-                        {{ 'visually-hidden' if contact.name or contact.contact_id }} to-show" name="name" value="{{ contact.name or '' }}" required>
-                    </div>
-
-                    <div class="d-flex flex-column">
-                      <label class="deal-info-block-title">Телефон</label>
-                      {% if contact.phone %}
-                        <span class="deal-info-edit-link">{{ contact.phone }}</span>
-                      {% elif contact.contact_id %}
-                        <span class="deal-info-edit-link">Нет</span>
-                      {% endif %}
-                      <input type="phone" class="form-control border
-                        {{ 'visually-hidden' if contact.phone or contact.contact_id }} to-show" name="phone" value="{{ contact.phone or '' }}">
-                    </div>
-
-                    <div class="d-flex flex-column">
-                      <label class="deal-info-block-title">E-mail</label>
-                      {% if contact.email %}
-                        <span class="deal-info-edit-link">{{ contact.email }}</span>
-                      {% elif contact.contact_id %}
-                        <span class="deal-info-edit-link">Нет</span>
-                      {% endif %}
-                      <input type="email" class="form-control border
-                        {{ 'visually-hidden' if contact.email or contact.contact_id }} to-show" name="email" value="{{ contact.email or '' }}">
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-
-              <div class="crm-editor-section">
-
-                <div class="crm-editor-section-header">
-                  <span class="crm-editor-section-header-text">Детали</span>
-                </div>
-
-                <div class="crm-editor-section-body">
-                  <div class="d-flex flex-column gap-2">
-
-                    <div class="d-flex flex-column">
-                      <label class="deal-info-block-title">Роль</label>
-                      {% if contact.role and contact.contact_id %}
-                        <span class="deal-info-edit-link">{{ roles[contact.role] }}</span>
-                      {% elif contact.contact_id %}
-                        <span class="deal-info-edit-link">Нет</span>
-                      {% endif %}
-                      <div class="{{ 'visually-hidden' if contact.contact_id }} to-show">
-                        <select class="general-select"  data-placeholder="-- Выбрать --" data-width="100%" name="role" data-class="border">
-                          <option></option>
-                          {% for role, role_name in roles.items() %}
-                            <option value="{{ role }}" {{ 'selected' if contact.role==role }}>{{ role_name }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-
-            </div>
-            <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
-            </div>
-          </div>
-        </div>
-
-        <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-deals-tab" tabindex="0">
-          <div class="d-flex flex-column gap-3">{% include 'contact/contact/deals.html' %}</div>
-        </div>
-
+  {# Блок вкладок меню #}
+  {% set details_tab %}
+    <div class="row">
+      <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
+        {% include 'contact/contact/details.html' %}
+      </div>
+      <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
       </div>
     </div>
-  </div>
+  {% endset %}
+  {% set deals_tab %}{% include 'contact/contact/deals.html' %}{% endset %}
+
+  {% set menu_tabs %}
+    {{ m.menu_tab("details", details_tab, "show active") }}
+    {{ m.menu_tab("deals", deals_tab, "") }}
+  {% endset %}
+  {{ m.menu_tabs(menu_tabs) }}
 
   {# Кнопки действий формы #}
   {{ m.form_actions(contact) }}

@@ -22,9 +22,9 @@
     <tbody>
       {% for product in consumables or [{}] %}
         <tr class="product">
-          <td class="checkbox">
-            <input class="form-check-input to-check" type="checkbox" name="" value="" />
-          </td>
+          {# Чекбокс #}
+          <td class="checkbox">{{ m.checkbox("") }}</td>
+
           <td class="col-4">
             <span class="line-count">{{ loop.index }}.</span>
 
@@ -35,8 +35,8 @@
             </select>
             <input type="hidden" value="{{ product.name }}" name="name">
             <input type="hidden" value="{{ product.unit }}" name="unit">
-
           </td>
+
           <td class="col-2">
             <div class="input-group">
               <input type="number" step="any" class="form-control" name="quantity"
@@ -55,7 +55,7 @@
     <button class="btn rounded-3 btn-outline-secondary" type="button" data-modal-id="SelectProductsModal"
       data-url="{{ url_for('.set_products_page') }}">Выбрать товары</button>
   {% endset %}
-  {{ m.table(table, btns=table_btns) }}
+  {{ m.table(table, consumables, btns=table_btns) }}
 
   {# Кнопки действий формы #}
   {{ m.form_actions() }}

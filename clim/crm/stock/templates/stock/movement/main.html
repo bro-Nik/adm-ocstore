@@ -22,7 +22,17 @@
                   {'text': 'Товары', 'key': 'products', 'class': ''} if products]) }}
 
   {# Блок вкладок меню #}
-  {% set details_tab %}{% include 'stock/movement/details.html' %}{% endset %}
+  {% set details_tab %}{% endset %}
+  {% set details_tab %}
+    <div class="row">
+      <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3" data-to-server="info">
+        {% include 'stock/movement/details.html' %}
+      </div>
+      <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
+        {% include 'deal/deal/actions.html' %}
+      </div>
+    </div>
+  {% endset %}
   {% set products_tab %}{% include 'stock/movement/products.html' %}{% endset %}
 
   {% set menu_tabs %}

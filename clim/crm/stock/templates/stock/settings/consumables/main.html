@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "", "modal": True, "fullscreen": True} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<form id="StocksSettings" class="d-flex flex-column gap-3" action="{{ url_for('.settings_consumables') }}">
+
+  {# Блок названия и кнопок #}
+  {{ m.heading("Настройки") }}
+
+  {# Блок меню #}
+  {{ m.menu_head([{'text': 'Общие', 'key': 'details', 'class': 'active'},
+                  {'text': 'Опции', 'key': 'options', 'class': ''}]) }}
+
+  {# Блок вкладок меню #}
+  {% set details_tab %}{% include 'stock/settings/consumables/details.html' %}{% endset %}
+  {% set consumables_tab %}{% include 'stock/settings/consumables/consumables.html' %}{% endset %}
+
+  {% set menu_tabs %}
+    {{ m.menu_tab("details", details_tab, "show active") }}
+    {{ m.menu_tab("options", consumables_tab, "") }}
+  {% endset %}
+  {{ m.menu_tabs(menu_tabs) }}
+
+  {# Кнопки действий формы #}
+  {{ m.form_actions() }}
+
+</form>
+{% endblock %}

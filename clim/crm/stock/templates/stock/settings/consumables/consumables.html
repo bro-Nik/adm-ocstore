@@ -1,0 +1,27 @@
+{# Блок таблицы #}
+{% set table %}
+<thead>
+  <tr>
+    <th></th>
+  </tr>
+</thead>
+<tbody>
+  {% for option in options %}
+    <tr class="table-light">
+      <td><span class="text-inherit">{{ option.name }}</span></td>
+    </tr>
+
+    {% for value in option.values|sort(attribute='sort_order') %}
+    <tr>
+      <td>
+        <span class="text-inherit" data-modal-id="OptionValueModal"
+          data-url="{{ url_for('.consumables_in_option', value_id=value.option_value_id) }}">
+          {{ value.name }}
+        </span>
+      </td>
+    </tr>
+    {% endfor %}
+  {% endfor %}
+</tbody>
+{% endset %}
+{{ m.table(table, options) }}

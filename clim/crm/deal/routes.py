@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import render_template, redirect, url_for, request, session
 from flask_login import login_required
 
-from clim.utils import actions_in, json_loads
+from clim.utils import actions_in
 from clim.crm.booking.utils import get_event_booking
 
 from ..stock.utils import get_consumables_categories_ids

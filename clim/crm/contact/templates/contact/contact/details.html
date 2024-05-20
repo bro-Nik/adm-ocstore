@@ -1,0 +1,75 @@
+{# Jinja2 #}
+<div class="crm-editor-section">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">Контакты</span>
+  </div>
+
+  <div class="crm-editor-section-body">
+    <div class="d-flex flex-column gap-2">
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">ФИО</label>
+        {% if contact.name %}
+          <span class="deal-info-edit-link">{{ contact.name }}</span>
+        {% elif contact.contact_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <input type="text" class="form-control border
+          {{ 'visually-hidden' if contact.name or contact.contact_id }} to-show" name="name" value="{{ contact.name or '' }}" required>
+      </div>
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Телефон</label>
+        {% if contact.phone %}
+          <span class="deal-info-edit-link">{{ contact.phone }}</span>
+        {% elif contact.contact_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <input type="phone" class="form-control border
+          {{ 'visually-hidden' if contact.phone or contact.contact_id }} to-show" name="phone" value="{{ contact.phone or '' }}">
+      </div>
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">E-mail</label>
+        {% if contact.email %}
+          <span class="deal-info-edit-link">{{ contact.email }}</span>
+        {% elif contact.contact_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <input type="email" class="form-control border
+          {{ 'visually-hidden' if contact.email or contact.contact_id }} to-show" name="email" value="{{ contact.email or '' }}">
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="crm-editor-section">
+
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">Детали</span>
+  </div>
+
+  <div class="crm-editor-section-body">
+    <div class="d-flex flex-column gap-2">
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Роль</label>
+        {% if contact.role and contact.contact_id %}
+          <span class="deal-info-edit-link">{{ roles[contact.role] }}</span>
+        {% elif contact.contact_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
+        <div class="{{ 'visually-hidden' if contact.contact_id }} to-show">
+          <select class="general-select"  data-placeholder="-- Выбрать --" data-width="100%" name="role" data-class="border">
+            <option></option>
+            {% for role, role_name in roles.items() %}
+              <option value="{{ role }}" {{ 'selected' if contact.role==role }}>{{ role_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

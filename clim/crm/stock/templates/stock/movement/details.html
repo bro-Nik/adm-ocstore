@@ -1,90 +1,85 @@
 {# Jinja 2 #}
-
-<div class="col-xl-4 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3 mb-5" data-to-server="info">
-
-  <div class="crm-editor-section">
-    <div class="crm-editor-section-header">
-      <span class="crm-editor-section-header-text">Информация</span>
-    </div>
-    <div class="crm-editor-section-body">
-      <div class="d-flex flex-column gap-2">
+<div class="crm-editor-section">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">Информация</span>
+  </div>
+  <div class="crm-editor-section-body">
+    <div class="d-flex flex-column gap-2">
 
 
-        <div class="d-flex flex-column">
-          <label class="deal-info-block-title">Название</label>
-          {{ cm.edit_link(details.name, movement.movement_id) }}
-          <input type="text" class="form-control border {{ 'visually-hidden' if details.name or movement.movement_id else 'focus' }}" name="name" value="{{ details.name if details.name }}">
-        </div>
-
-        <div class="d-flex flex-column">
-          <label class="deal-info-block-title">Сумма</label>
-          {{ cm.edit_link(details.sum, movement.movement_id) }}
-          <input type="number" step="any" class="form-control border {{ 'visually-hidden' if details.sum or movement.movement_id }} to-show"
-            name="deal_sum" value="{{ details.sum or '' }}">
-        </div>
-
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Название</label>
+        {{ cm.edit_link(details.name, movement.movement_id) }}
+        <input type="text" class="form-control border {{ 'visually-hidden' if details.name or movement.movement_id else 'focus' }}" name="name" value="{{ details.name if details.name }}">
       </div>
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Сумма</label>
+        {{ cm.edit_link(details.sum, movement.movement_id) }}
+        <input type="number" step="any" class="form-control border {{ 'visually-hidden' if details.sum or movement.movement_id }} to-show"
+          name="deal_sum" value="{{ details.sum or '' }}">
+      </div>
+
     </div>
   </div>
+</div>
 
-  <div class="crm-editor-section">
-    <div class="crm-editor-section-header">
-      <span class="crm-editor-section-header-text">Поставщик</span>
-    </div>
-    <div class="crm-editor-section-body">
-      <div class="d-flex flex-column gap-2">
+<div class="crm-editor-section">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">Поставщик</span>
+  </div>
+  <div class="crm-editor-section-body">
+    <div class="d-flex flex-column gap-2">
 
-        <div class="d-flex flex-column">
-          <label class="deal-info-block-title">Контакт</label>
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Контакт</label>
 
-          {% if movement.contact %}
-            <div class="deal-info-edit-link">
-              <span>{{ movement.contact.name }}</span>
-              <span class="deal-info-contact">{{ movement.contact.phone|smart_phone }}</span>
-              <span class="deal-info-contact">{{ movement.contact.email }}</span>
-            </div>
-          {% elif movement.movement_id %}
-            <span class="deal-info-edit-link">Нет</span>
-          {% endif %}
-
-          <div class="{{ 'visually-hidden' if movement.contact or movement.movement_id }} to-show">
-            <select class="contact-select" data-placeholder="-- Выбрать --" name="contact_id"
-              data-url="{{ url_for('crm.contact.ajax_contacts', role='provider') }}" data-width="100%" data-class="border">
-              {% if movement.contact %}
-                <option selected value="{{ movement.contact.contact_id }}">{{ movement.contact.name }}</option>
-              {% endif %}
-            </select>
+        {% if movement.contact %}
+          <div class="deal-info-edit-link">
+            <span>{{ movement.contact.name }}</span>
+            <span class="deal-info-contact">{{ movement.contact.phone|smart_phone }}</span>
+            <span class="deal-info-contact">{{ movement.contact.email }}</span>
           </div>
-        </div>
+        {% elif movement.movement_id %}
+          <span class="deal-info-edit-link">Нет</span>
+        {% endif %}
 
+        <div class="{{ 'visually-hidden' if movement.contact or movement.movement_id }} to-show">
+          <select class="contact-select" data-placeholder="-- Выбрать --" name="contact_id"
+            data-url="{{ url_for('crm.contact.ajax_contacts', role='provider') }}" data-width="100%" data-class="border">
+            {% if movement.contact %}
+              <option selected value="{{ movement.contact.contact_id }}">{{ movement.contact.name }}</option>
+            {% endif %}
+          </select>
+        </div>
       </div>
+
     </div>
   </div>
+</div>
 
-  <div class="crm-editor-section">
-    <div class="crm-editor-section-header">
-      <span class="crm-editor-section-header-text">Детали</span>
-    </div>
-    <div class="crm-editor-section-body">
-      <div class="d-flex flex-column gap-2">
+<div class="crm-editor-section">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">Детали</span>
+  </div>
+  <div class="crm-editor-section-body">
+    <div class="d-flex flex-column gap-2">
 
-        <div class="d-flex flex-column">
-          <label class="deal-info-block-title">Комментарий</label>
-          {{ cm.edit_link(details.comment, movement.movement_id) }}
-          <textarea class="form-control border {{ 'visually-hidden' if details.comment or movement.movement_id }} to-show"
-            name="comment">{{ details.comment if details.comment }}</textarea>
-        </div>
-
-        <div class="d-flex flex-column">
-          <label class="deal-info-block-title">Дата</label>
-          {{ cm.edit_link(details.date, movement.movement_id) }}
-          <input type="text"
-            class="form-control border {{ 'visually-hidden' if details.date or movement.movement_id }} to-show datepicker"
-            name="date" value="{{ details.date }}" data-value="{{ details.date|datetime_from_str }}">
-        </div>
-
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Комментарий</label>
+        {{ cm.edit_link(details.comment, movement.movement_id) }}
+        <textarea class="form-control border {{ 'visually-hidden' if details.comment or movement.movement_id }} to-show"
+          name="comment">{{ details.comment if details.comment }}</textarea>
       </div>
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Дата</label>
+        {{ cm.edit_link(details.date, movement.movement_id) }}
+        <input type="text"
+          class="form-control border {{ 'visually-hidden' if details.date or movement.movement_id }} to-show datepicker"
+          name="date" value="{{ details.date }}" data-value="{{ details.date|datetime_from_str }}">
+      </div>
+
     </div>
   </div>
-
 </div>

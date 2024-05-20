@@ -1,0 +1,32 @@
+{# Jinja2 #}
+<div class="row mb-8">
+  <div class="col-xl-3 col-lg-4 col-md-12 col-12">
+    <div class="mb-4 mb-lg-0">
+      <h4 class="mb-1">Расходные материалы</h4>
+    </div>
+  </div>
+
+  <div class="col-xl-9 col-lg-8 col-md-12 col-12">
+    <div class="card">
+      <div class="card-body">
+        <div>
+          <div class="mb-6">
+            <h4 class="mb-1">Категория расходных материалов</h4>
+          </div>
+
+          <div class="mb-3 row">
+            <div class="mb-3 mb-lg-0">
+              <label for="name" class="form-label">Название категорий</label>
+              <select class="general-select" multiple name="consumables_categories_ids"
+                data-url="{{ url_for('main.get_list_all_categories') }}" data-width="100%">
+                {% for category in categories %}
+                  <option selected value="{{ category.category_id }}">{{ category.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

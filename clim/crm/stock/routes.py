@@ -124,8 +124,8 @@ def settings_consumables():
     categories = db.session.execute(
         db.select(Category).filter(Category.category_id.in_(ids))).scalars()
 
-    options = db.session.execute(db.select(Option)).scalars()
-    return render_template('stock/settings/consumables.html', options=options,
+    options = Option.get_all()
+    return render_template('stock/settings/consumables/main.html', options=options,
                            categories=categories)
 
 
@@ -149,7 +149,7 @@ def consumables_in_option():
     consumables = None
     if value.settings and value.settings.consumables:
         consumables = json.loads(value.settings.consumables)
-    return render_template('stock/settings/consumables_option.html',
+    return render_template('stock/settings/consumables/consumables_option.html',
                            value=value, consumables=consumables)
 
 

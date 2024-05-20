@@ -9,86 +9,27 @@
   {# Блок названия и кнопок #}
   {{ m.heading(worker.name or 'Новый работник', obj=worker) }}
 
-  <div class="row align-items-center">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
-        <li class="nav-item" role="presentation">
-          <a class="nav-link active" id="pills-detail-tab" data-bs-toggle="pill" data-bs-target="#pills-detail" role="tab"
-            aria-controls="pills-detail" aria-selected="true">Общие</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" id="pills-employments-tab" data-bs-toggle="pill" data-bs-target="#pills-product" role="tab"
-            aria-controls="pills-product" aria-selected="false">Занятость</a>
-        </li>
+  {# Блок меню #}
+  {{ m.menu_head([{'text': 'Общие', 'key': 'details', 'class': 'active'},
+                  {'text': 'Занятость', 'key': 'employments', 'class': ''}]) }}
 
-      </ul>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-      <div class="tab-content" id="pills-tabContent">
-        <div class="tab-pane fade show active" id="pills-detail" role="tabpanel" aria-labelledby="pills-detail-tab" tabindex="0">
-          <div class="row">
-            <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
-
-              <div class="crm-editor-section">
-                <div class="crm-editor-section-header">
-                  <span class="crm-editor-section-header-text">Контакты</span>
-                </div>
-
-                <div class="crm-editor-section-body">
-                  <div class="d-flex flex-column gap-2">
-
-                    <div class="d-flex flex-column">
-                      <label class="deal-info-block-title">ФИО</label>
-                      {{ cm.edit_link(worker.name, worker.worker_id) }}
-                      <input type="text" class="form-control border
-                        {{ 'visually-hidden' if worker.name or worker.worker_id }} to-show" name="name" value="{{ worker.name or '' }}" required>
-                    </div>
-
-                    <div class="d-flex flex-column">
-                      <label class="deal-info-block-title">Начало дня</label>
-                      {{ cm.edit_link(worker.start_day, worker.worker_id) }}
-                      <input type="text" class="form-control border
-                        {{ 'visually-hidden' if worker.start_day or worker.worker_id }} to-show" name="start_day" value="{{ worker.start_day or '09:00:00' }}">
-                    </div>
-
-                    <div class="d-flex flex-column">
-                      <label class="deal-info-block-title">Конец дня</label>
-                      {{ cm.edit_link(worker.end_day, worker.worker_id) }}
-                      <input type="text" class="form-control border
-                        {{ 'visually-hidden' if worker.end_day or worker.worker_id }} to-show" name="end_day" value="{{ worker.end_day or '17:00:00' }}">
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-
-              <div class="crm-editor-section">
-
-                <div class="crm-editor-section-header">
-                  <span class="crm-editor-section-header-text">Детали</span>
-                </div>
-
-                <div class="crm-editor-section-body">
-                  <div class="d-flex flex-column gap-2">
-                  </div>
-                </div>
-              </div>
-
-            </div>
-            <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3"></div>
-          </div>
-        </div>
-
-        <div class="tab-pane fade" id="pills-product" role="tabpanel" aria-labelledby="pills-employments-tab" tabindex="0">
-          <div class="d-flex flex-column gap-3">{% include 'worker/worker/employments.html' %}</div>
-        </div>
-
+  {# Блок вкладок меню #}
+  {% set details_tab %}
+    <div class="row">
+      <div class="col-xl-4 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
+        {% include 'worker/worker/details.html' %}
+      </div>
+      <div class="col-xl-8 col-lg-12 col-md-12 col-12 d-flex flex-column gap-3">
       </div>
     </div>
-  </div>
+  {% endset %}
+  {% set employments_tab %}{% include 'worker/worker/employments.html' %}{% endset %}
+
+  {% set menu_tabs %}
+    {{ m.menu_tab("details", details_tab, "show active") }}
+    {{ m.menu_tab("employments", employments_tab, "") }}
+  {% endset %}
+  {{ m.menu_tabs(menu_tabs) }}
 
   {# Кнопки действий формы #}
   {{ m.form_actions(worker) }}

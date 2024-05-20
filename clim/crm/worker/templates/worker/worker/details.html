@@ -1,0 +1,45 @@
+{# Jinja2 #}
+<div class="crm-editor-section">
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">Контакты</span>
+  </div>
+
+  <div class="crm-editor-section-body">
+    <div class="d-flex flex-column gap-2">
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">ФИО</label>
+        {{ cm.edit_link(worker.name, worker.worker_id) }}
+        <input type="text" class="form-control border
+          {{ 'visually-hidden' if worker.name or worker.worker_id }} to-show" name="name" value="{{ worker.name or '' }}" required>
+      </div>
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Начало дня</label>
+        {{ cm.edit_link(worker.start_day, worker.worker_id) }}
+        <input type="text" class="form-control border
+          {{ 'visually-hidden' if worker.start_day or worker.worker_id }} to-show" name="start_day" value="{{ worker.start_day or '09:00:00' }}">
+      </div>
+
+      <div class="d-flex flex-column">
+        <label class="deal-info-block-title">Конец дня</label>
+        {{ cm.edit_link(worker.end_day, worker.worker_id) }}
+        <input type="text" class="form-control border
+          {{ 'visually-hidden' if worker.end_day or worker.worker_id }} to-show" name="end_day" value="{{ worker.end_day or '17:00:00' }}">
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="crm-editor-section">
+
+  <div class="crm-editor-section-header">
+    <span class="crm-editor-section-header-text">Детали</span>
+  </div>
+
+  <div class="crm-editor-section-body">
+    <div class="d-flex flex-column gap-2">
+    </div>
+  </div>
+</div>
