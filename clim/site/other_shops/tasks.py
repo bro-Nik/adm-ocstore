@@ -17,7 +17,6 @@ from .models import OtherCategory, OtherProduct
 @celery.task()
 def get_other_products_task(category_id, test=None):
     logs = Log(category_id)
-
     cat = OtherCategory.get(category_id)
 
     if not cat:
@@ -25,13 +24,14 @@ def get_other_products_task(category_id, test=None):
         return
 
     # Блокировка модуля
-    # Ожидание завершения уже запущенной задачи
-    while cat.shop.is_working_now():
-        time.sleep(60)
+    if not test:
+        # Ожидание завершения уже запущенной задачи
+        while cat.shop.is_working_now():
+            time.sleep(60)
 
-    # Блокировка других задач модуля
-    cat.shop.start_work()
-    logs.set('info', f'{cat.name} - Старт парсинга')
+        # Блокировка других задач модуля
+        cat.shop.start_work()
+        logs.set('info', f'{cat.name} - Старт парсинга')
 
     parsing = json.loads(cat.parsing)
     prefix = cat.shop.domain if cat.shop.parsing == 'domain' else cat.url
@@ -191,5 +191,5 @@ def get_other_products_task(category_id, test=None):
     cat.last_parsing = str(datetime.now().date())
     db.session.commit()
 
-    logs.set('info', f'{cat.name} - Старт парсинга')
+    logs.set('info', f'{cat.name} - Конец парсинга')
     cat.shop.end_work()
