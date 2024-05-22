@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
-import redis
+from redis import Redis
 from celery import Celery
 
 from clim.mixins import ModelMixin
@@ -12,7 +12,8 @@ from clim.mixins import ModelMixin
 db = SQLAlchemy(model_class=ModelMixin)
 migrate = Migrate()
 celery = Celery()
-redis = redis.StrictRedis('127.0.0.1', 6379)
+# redis = redis.StrictRedis('127.0.0.1', 6379)
+redis = Redis(host='redis', port=6379)
 login_manager = LoginManager()
 login_manager.login_view = 'user.login'
 login_manager.login_message = 'Пожалуйста, войдите, чтобы получить доступ к этой странице'

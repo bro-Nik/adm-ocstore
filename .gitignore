@@ -2,6 +2,7 @@
 *instance/
 .idea/
 logs/
+data/
 *__pycache__/
 .env
 .flaskenv

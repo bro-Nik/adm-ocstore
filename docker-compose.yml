@@ -1,0 +1,78 @@
+version: '3'
+services:
+  db:
+    image: mariadb
+    container_name: clim_db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - ./data/mysql_data:/var/lib/mysql
+      - ./data/mysql_dump/:/docker-entrypoint-initdb.d/
+    # ports:
+    #   - 3306:3306
+    networks:
+      - clim-net
+  app:
+    # Путь до Dockerfile
+    build: .
+    # Имя для создаваемого контейнера
+    container_name: clim_app
+    image: flask_clim
+    # command: gunicorn --bind 0.0.0.0:5000 clim:app # WSGI server
+    # Создание переменных окружения в контейнере
+    environment:
+      - FLASK_APP=start
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} # путь до бд, см. db service
+      # для отладки (при запуске в релиз убрать!)
+      - FLASK_ENV=development
+      # Позволяет отслеживать процесс работы приложения в командной строке
+      - PYTHONUNBUFFERED=True                   
+    # Перезапускаем сервис в случае падения 
+    restart: on-failure
+    # Прокладывам путь для файлов. Все файлы, которые хранятся у вас в 
+    # директории ./backend, появятся в директории контейнера /backend
+    volumes:
+      - .:/clim
+    # Открываем порт в контейнер
+    # Порт, который будет смотреть наружу : порт который используется внутри контейнера
+    ports:
+      - 5000:5000
+    command: python start.py
+    # command: flask db upgrade && flask run
+    networks:
+      - clim-net
+    depends_on:
+      - db
+      - redis
+  redis:
+    image: redis:latest
+    container_name: clim_redis
+    restart: always
+    volumes:
+      - ./data/redis_data:/root/redis
+      - ./data/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - clim-net
+  celery_worker:
+    image: flask_clim
+    container_name: clim_celery
+    command: celery -A start.celery worker -l info
+    environment:
+      - FLASK_APP=start
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} # путь до бд, см. db service
+    networks:
+      - clim-net
+    depends_on:
+      - redis
+      - db
+networks:
+  clim-net:
+    driver: bridge

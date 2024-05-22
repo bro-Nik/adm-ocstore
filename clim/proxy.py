@@ -17,6 +17,7 @@ API_NAME = 'proxy'
 def get_proxies() -> dict:
     attempts = 5
     redis_value = redis.hget(API_NAME, DATA_KEY)
+    first_request = True
     while attempts >= 0:
         attempts -= 1
         if redis_value:
@@ -29,7 +30,9 @@ def get_proxies() -> dict:
             if period > time_left:
                 return value
 
-        time.sleep(30)
+        if not first_request:
+            time.sleep(30)
+        first_request = False
         proxy_update()
 
 
