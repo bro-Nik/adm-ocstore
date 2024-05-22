@@ -17,15 +17,11 @@ services:
     networks:
       - clim-net
   app:
-    # Путь до Dockerfile
     build: .
-    # Имя для создаваемого контейнера
     container_name: clim_app
     image: flask_clim
-    # command: gunicorn --bind 0.0.0.0:5000 clim:app # WSGI server
-    # Создание переменных окружения в контейнере
     environment:
-      - FLASK_APP=start
+      - FLASK_APP=wsgi
       - CELERY_BROKER_URL=redis://redis:6379
       - CELERY_RESULT_BACKEND=redis://redis:6379
       - SQLALCHEMY_DATABASE_URI=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} # путь до бд, см. db service
@@ -43,7 +39,7 @@ services:
     # Порт, который будет смотреть наружу : порт который используется внутри контейнера
     ports:
       - 5000:5000
-    command: python start.py
+    command: python wsgi.py
     # command: flask db upgrade && flask run
     networks:
       - clim-net
@@ -53,7 +49,7 @@ services:
   redis:
     image: redis:latest
     container_name: clim_redis
-    restart: always
+    restart: on-failure
     volumes:
       - ./data/redis_data:/root/redis
       - ./data/redis.conf:/usr/local/etc/redis/redis.conf
@@ -64,7 +60,6 @@ services:
     container_name: clim_celery
     command: celery -A start.celery worker -l info
     environment:
-      - FLASK_APP=start
       - CELERY_BROKER_URL=redis://redis:6379
       - CELERY_RESULT_BACKEND=redis://redis:6379
       - SQLALCHEMY_DATABASE_URI=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} # путь до бд, см. db service
@@ -73,6 +68,7 @@ services:
     depends_on:
       - redis
       - db
+      - app
 networks:
   clim-net:
     driver: bridge
