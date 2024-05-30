@@ -250,7 +250,7 @@ def get_stock(self, stock_id, create=False):
         if stock.stock_id == stock_id:
             return stock
     if create:
-        from .stock.models import StockProduct
+        from .models import StockProduct
         stock = StockProduct(stock_id=stock_id, quantity=0)
         self.stocks.append(stock)
         return stock

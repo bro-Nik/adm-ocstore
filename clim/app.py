@@ -32,7 +32,7 @@ def create_app():
     from . import site, main, user, crm
     app.register_blueprint(crm.bp, url_prefix='/crm')
     app.register_blueprint(site.bp, url_prefix='/site')
-    app.register_blueprint(user.bp, url_prefix='/crm/user')
+    app.register_blueprint(user.bp, url_prefix='/user')
     app.register_blueprint(main.bp)
 
     return app

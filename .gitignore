@@ -9,3 +9,4 @@ data/
 pyrightconfig.json
 .pylintrc
 dump.rdb
+.DS_Store

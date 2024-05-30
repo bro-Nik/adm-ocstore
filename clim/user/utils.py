@@ -54,7 +54,7 @@ def login(form: dict) -> bool:
             flash(f'Вход заблокирован. Осталось {m} мин. {s} сек.', 'warning')
             return False
 
-    user = find_user(login)
+    user = find_user(login=login)
 
     # Пользователь не найден
     if not user:

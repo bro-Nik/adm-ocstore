@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from . import deal, stock, contact, worker, booking, utils
+from . import deal, stock, contact, worker, booking, utils, user
 
 
 bp = Blueprint('crm', __name__, template_folder='templates', static_folder='static')
@@ -11,6 +11,7 @@ bp.register_blueprint(stock.bp, url_prefix='/stock')
 bp.register_blueprint(deal.bp, url_prefix='/deal')
 bp.register_blueprint(contact.bp, url_prefix='/contact')
 bp.register_blueprint(worker.bp, url_prefix='/worker')
+bp.register_blueprint(user.bp, url_prefix='/user')
 bp.register_blueprint(booking.bp, url_prefix='/booking')
 
 

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "Пользователи", "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+<form id="UsersForm" class="d-flex flex-column gap-3">
+
+  {# Блок названия и кнопок #}
+  {{ m.heading("Пользователи") }}
+
+  {# Блок таблицы #}
+  {% set table %}
+    <thead class="">
+      <tr>
+        <th class="checkbox"><input class="form-check-input check-all" type="checkbox"></th>
+        <th>Login</th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for user in users %}
+        <tr>
+          {# Чекбокс #}
+          <td class="checkbox">{{ m.checkbox(user.id) }}</td>
+
+          {# Ссылка #}
+          <td>{{ user.login }}</td>
+
+          {# Меню #}
+          <td class="align-middle text-end"></td>
+
+        </tr>
+      {% endfor %}
+    </tbody>
+  {% endset %}
+  {{ m.table(table, users) }}
+
+</form>
+{% endblock %}
