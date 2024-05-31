@@ -47,7 +47,8 @@ bp.add_app_template_filter(to_json)
 
 def smart_date(date_time):
     ''' Возвращает сколько прошло от входящей даты '''
-    locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
+    # locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
+    # locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
 
     if isinstance(date_time, str):
         if 'T' in date_time:
