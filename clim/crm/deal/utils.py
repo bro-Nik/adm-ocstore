@@ -123,7 +123,7 @@ class DealUtils(PageMixin, JsonDetailsMixin):
                     continue
 
                 # Пропускаем товары с неверным количеством
-                quantity = p.get('quantity') or 0
+                quantity = float(p.get('quantity') or 0)
                 if quantity <= 0:
                     errors.append(f'Неверное количество - {p["name"]}')
                     continue
