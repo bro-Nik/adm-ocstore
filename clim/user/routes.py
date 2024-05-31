@@ -9,27 +9,12 @@ from . import bp, utils
 def login():
     """Отдает страницу входа и принимает форму."""
     if current_user.is_authenticated:
-        return redirect(url_for('deal.deals'))
+        return redirect(url_for('crm.deal.deals'))
 
     if request.method == 'POST':
         # Проверка данных
         if utils.login(request.form) is True:
-            page = request.args.get('next', url_for('deal.deals'))
-            return redirect(page)
-
-    return render_template('user/login.html')
-
-
-@bp.route('/login_test', methods=['GET', 'POST'])
-def login_test():
-    """Отдает страницу входа и принимает форму."""
-    # if current_user.is_authenticated:
-    #     return redirect(url_for('deal.deals'))
-
-    if request.method == 'POST':
-        # Проверка данных
-        if utils.login_test(request.form) is True:
-            page = request.args.get('next', url_for('deal.deals'))
+            page = request.args.get('next', url_for('crm.deal.deals'))
             return redirect(page)
 
     return render_template('user/login.html')

@@ -81,15 +81,15 @@ def actions_in(function_or_obj: Callable, **kwargs):
             # Добавление объекта в сессию
             obj = function_or_obj
             obj.save_data = data
-            new_obj = not obj.get_id
-            if not obj.get_id:
+            new_obj = not obj._id
+            if not obj._id:
                 db.session.add(obj)
             try_action_and_save(obj)
             # если это новый объект - отправляем url
-            if new_obj and obj.get_id:
+            if new_obj and obj._id:
                 return {'url': obj.urls(key_type='new')[0][2]}
             # если объект удален - отправляем close
-            if not obj.get_id:
+            if not obj._id:
                 return {'close': 'true'}
     return ''
 

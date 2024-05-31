@@ -221,7 +221,7 @@
             {% if allowed %}
               {% if title %}
                 <li><button class="dropdown-item" type="button" data-modal-confirm data-action="{{ action }}"
-                      data-title="{{ title }}" data-text="{{ description }}" data-id="{{ obj.get_id }}" data-after="update">{{ text }}</button></li>
+                      data-title="{{ title }}" data-text="{{ description }}" data-id="{{ obj._id }}" data-after="update">{{ text }}</button></li>
               {% else %}
                 <li><button class="dropdown-item" type="submit" data-action="{{ action }}" data-after="update">{{ text }}</button></li>
               {% endif %}
@@ -244,7 +244,7 @@
 	    </a>
       <ul class="dropdown-menu">
         {# Кнопки переходов #}
-        {% if obj.get_id %}
+        {% if obj._id %}
           {% set urls = obj.urls() %}
 
           {% if urls %}
@@ -265,7 +265,7 @@
             {% set allowed_btns.need = True %}
             {% if title %}
               <li><button class="dropdown-item" type="button" data-modal-confirm data-action="{{ action }}"
-                    data-title="{{ title }}" data-text="{{ description }}" data-id="{{ obj.get_id }}"
+                    data-title="{{ title }}" data-text="{{ description }}" data-id="{{ obj._id }}"
                     {{ 'formaction=' + obj.url_actions if obj.url_actions }} data-after="update">{{ text }}</button></li>
             {% else %}
               <li><button class="dropdown-item" type="submit" data-action="{{ action }}" data-after="update">{{ text }}</button></li>

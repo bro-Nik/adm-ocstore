@@ -134,7 +134,7 @@ def json_module_logs():
         ids_list = [category_id]
     else:
         shop = OtherShops.get(request.args.get('shop_id'))
-        ids_list = [cat.get_id for cat in shop.categories]
+        ids_list = [cat._id for cat in shop.categories]
 
     for cat_id in ids_list:
         module_logs = Log(cat_id)

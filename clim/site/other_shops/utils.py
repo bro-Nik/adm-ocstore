@@ -47,10 +47,10 @@ class ShopUtils(PageMixin):
             category.delete_logs()
 
     def start_work(self) -> None:
-        redis.set(f'{self.REDIS_KEY}_{self.get_id}.working', str(datetime.now()))
+        redis.set(f'{self.REDIS_KEY}_{self._id}.working', str(datetime.now()))
 
     def is_working_now(self) -> bool:
-        time_start = redis.get(f'{self.REDIS_KEY}_{self.get_id}.working')
+        time_start = redis.get(f'{self.REDIS_KEY}_{self._id}.working')
         if not time_start:
             return False
 
@@ -59,7 +59,7 @@ class ShopUtils(PageMixin):
         return datetime.now() < time_start + timedelta(hours=2)
 
     def end_work(self) -> None:
-        redis.delete(f'{self.REDIS_KEY}_{self.get_id}.working')
+        redis.delete(f'{self.REDIS_KEY}_{self._id}.working')
 
 
 class CategoryUtils(PageMixin):
@@ -67,8 +67,8 @@ class CategoryUtils(PageMixin):
     PAGES = {'new': 'settings', 'actions': 'settings'}
 
     def init_to_parsing(self):
-        self.logs = Log(self.get_id)
-        self.events = Event(self.get_id)
+        self.logs = Log(self._id)
+        self.events = Event(self._id)
 
     @property
     def actions(self):
@@ -125,7 +125,7 @@ class CategoryUtils(PageMixin):
         flash(f'{self.name} - парсинг запущен')
 
     def delete_logs(self):
-        logs = Log(self.get_id)
+        logs = Log(self._id)
         redis.delete(logs.key)
         flash(f'{self.name} - Логи удалены', 'info')
 

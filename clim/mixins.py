@@ -42,7 +42,6 @@ class ModelMixin(Model):
         from clim.app import db
         self.delete_dependencies()
         setattr(self, self.primary_attr_name, None)
-        print(f'id={self.get_id}')
         db.session.delete(self)
 
     @classmethod
@@ -78,7 +77,7 @@ class ModelMixin(Model):
         return list(self.__table__.primary_key)[0].name
 
     @property
-    def get_id(self):
+    def _id(self):
         """ Получение имени столбца primary key """
         attr = self.primary_attr_name
         return getattr(self, attr, None)
@@ -100,7 +99,7 @@ class PageMixin:
         return {}
 
     def url_id(self):
-        return {self.primary_attr_name: self.get_id} if self.get_id else {}
+        return {self.primary_attr_name: self._id} if self._id else {}
 
     def pages_settings(self):
         return {}
