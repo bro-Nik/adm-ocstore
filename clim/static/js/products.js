@@ -1,7 +1,7 @@
 // Обновление общей суммы
 $("body").on("input change", ".sum", function () {
   var all_sum = 0;
-    $tab = $(this).closest(".tab-pane");
+  $tab = $(this).closest(".tab-pane");
 
   $tab.find(".sum").each(function () {
     all_sum += +$(this).text();
@@ -9,15 +9,16 @@ $("body").on("input change", ".sum", function () {
   $tab.find(".all-sum").text(all_sum);
 });
 
-
 // Обновление суммы товара
 $("body").on("input change", "[name=quantity], [name=price]", function () {
   var $tr = $(this).closest("tr"),
     quantity = $tr.find("[name=quantity]").val();
-    price = $tr.find("[name=price]").val();
-  $tr.find(".sum").text(price * quantity).trigger("change");
+  price = $tr.find("[name=price]").val();
+  $tr
+    .find(".sum")
+    .text(price * quantity)
+    .trigger("change");
 });
-
 
 $("body").on("click", ".delete-product", function () {
   var $tab = $(this).closest("div[id]");
@@ -29,15 +30,15 @@ $("body").on("click", ".delete-product", function () {
   LineCount($tab);
 });
 
-
 function LineCount($tab) {
   var count = 1;
   $tab.find("tr.product").each(function () {
-    $(this).find(".line-count").text(count + ".");
+    $(this)
+      .find(".line-count")
+      .text(count + ".");
     count += 1;
   });
 }
-
 
 function UpdateProductSelect($tr) {
   var $productSelect = $tr.find("select.product-select");
@@ -48,7 +49,10 @@ function UpdateProductSelect($tr) {
       $tr = $(this).closest("tr");
 
     if (data != undefined) {
-      $tr.find("[name=price]").val(data.price || "").trigger('change');
+      $tr
+        .find("[name=price]")
+        .val(data.price || "")
+        .trigger("change");
       $tr.find("[name=type]").val(data.type);
       $tr.find("[name=name]").val(data.text);
       $tr.find("[name=unit]").val(data.unit);
@@ -61,7 +65,6 @@ function UpdateProductSelect($tr) {
   // UpdateStockSelect($tr);
 }
 
-
 function UpdateStockSelect($tr) {
   var product_id = $tr.find("select.product-select").val(),
     product_type = $tr.find("[name=type]").val();
@@ -71,7 +74,8 @@ function UpdateStockSelect($tr) {
 
     // Если услуга - убираем склад
     if (product_type === "service") {
-      if ($stockSelect.hasClass("select2-hidden-accessible")) $stockSelect.select2("destroy");
+      if ($stockSelect.hasClass("select2-hidden-accessible"))
+        $stockSelect.select2("destroy");
       $stockSelect.addClass("visually-hidden");
       return false;
     } else {
@@ -79,7 +83,7 @@ function UpdateStockSelect($tr) {
     }
 
     //$stockSelect.prop("disabled", !product_id);
-    UpdateSelect($stockSelect, url_args={product_id: +product_id || 0});
+    UpdateSelect($stockSelect, (url_args = { product_id: +product_id || 0 }));
 
     $stockSelect.on("select change", function (evt, config) {
       if ($stockSelect.prop("disabled")) return;
@@ -88,11 +92,18 @@ function UpdateStockSelect($tr) {
 
       if (data != undefined) {
         // Текст в скрытый инпут
-        $tr.find(`[name=${$stockSelect.data("text-to-input-name")}]`).val(data.text);
+        $tr
+          .find(`[name=${$stockSelect.data("text-to-input-name")}]`)
+          .val(data.text);
         if (product_id) {
           // Количество на складе
-          var $available_box = $tr.find(`[data-stock-available=${$stockSelect.attr("name")}]`)
-          $available_box.text(data.subtext || $stockSelect.find("option:selected").data("quantity"));
+          var $available_box = $tr.find(
+            `[data-stock-available=${$stockSelect.attr("name")}]`,
+          );
+          $available_box.text(
+            data.subtext ||
+              $stockSelect.find("option:selected").data("quantity"),
+          );
         }
       }
 
@@ -119,9 +130,13 @@ function UpdateStockSelect($tr) {
 
       $stockSelect.empty().append(option);
       // Текст в скрытый инпут
-      $tr.find(`[name=${$stockSelect.data("text-to-input-name")}]`).val(data.text);
+      $tr
+        .find(`[name=${$stockSelect.data("text-to-input-name")}]`)
+        .val(data.text);
       // Количество на складе
-      $tr.find(`[data-stock-available=${$stockSelect.attr("name")}]`).text(data.subtext);
+      $tr
+        .find(`[data-stock-available=${$stockSelect.attr("name")}]`)
+        .text(data.subtext);
 
       $stockSelect.trigger({
         type: "select2:select",
@@ -133,8 +148,7 @@ function UpdateStockSelect($tr) {
   });
 }
 
-
-function newLine($tab="", $new_line="", product_id="") {
+function newLine($tab = "", $new_line = "", product_id = "") {
   // var $tab = $(tab);
   var $line = $tab.find("tr.product").eq(-1);
 
@@ -162,19 +176,26 @@ function newLine($tab="", $new_line="", product_id="") {
   $new_line.find("[data-new-line-value]").each(function () {
     var value = $(this).attr("data-new-line-value");
     // Копирование значения
-    if (value === "previous") $(this).val($line.find(`[name=${$(this).attr("name")}]`).val());
+    if (value === "previous")
+      $(this).val($line.find(`[name=${$(this).attr("name")}]`).val());
     // Значение по умолчанию
     else $(this).val(value);
   });
 
   UpdateProductSelect($new_line);
   UpdateStockSelect($new_line);
-  $("#tabProducts").find(".table-responsive").animate({scrollLeft: 0}, 0);
+  $("#tabProducts").find(".table-responsive").animate({ scrollLeft: 0 }, 0);
   $new_line.find("select.product-select").select2("open");
 }
 
 $("body").on("click", ".create-new-line", function () {
-  newLine($(this).closest("div[id]"));
-})
-
-
+  var $parent = $(this).parent();
+  while ($parent.length) {
+    var $table = $parent.find("table");
+    if ($table.length) {
+      newLine($table);
+      return;
+    }
+    $parent = $parent.parent();
+  }
+});

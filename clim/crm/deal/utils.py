@@ -37,7 +37,7 @@ class DealUtils(PageMixin, JsonDetailsMixin):
         # Contact
         self.contact_id = info.get('contact_id')
         # Date
-        details['date_add'] = datetime.strftime(datetime.now(), "%d.%m.%Y %H:%M")
+        details['date_add'] = details.get('date_add', datetime.strftime(datetime.now(), "%d.%m.%Y %H:%M"))
         details['date_end'] = info.get('date_end')
 
         details['adress'] = info.get('adress')
@@ -76,11 +76,13 @@ class DealUtils(PageMixin, JsonDetailsMixin):
             for expense in expenses:
                 analytics['cost_expenses'] += float(expense['price'] or 0)
 
+            # Аналитика
+            self.analytics = json.dumps(analytics, ensure_ascii=False)
+
             details['profit'] = (details['sum'] - (analytics['cost_products'] +
                                  analytics['cost_consumables'] + analytics['cost_expenses']))
 
         self.details = json.dumps(details, ensure_ascii=False)
-        self.analytics = json.dumps(analytics, ensure_ascii=False)
 
         # ToDo Проверка смены статуса после постинга
         new_stage = DealStage.get(info['stage_id']) or abort(404)

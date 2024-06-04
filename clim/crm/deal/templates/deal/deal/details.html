@@ -148,6 +148,7 @@
         <input type="text"
           class="form-control border {{ 'visually-hidden' if details.date_end or deal.deal_id }} to-show datepicker"
           name="date_end" value="{{ details.date_end }}" data-value="{{ details.date|datetime_from_str }}">
+        {{ details.date_end }}
       </div>
     </div>
   </div>

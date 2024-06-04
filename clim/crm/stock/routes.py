@@ -203,13 +203,15 @@ def product_info_update(product_id=None):
             language_id=1
         )
 
-    product.price = request.form.get('price')
-    product.cost = request.form.get('cost')
-    product.weight_class_id = request.form.get('unit_id')
-    product.description.name = request.form.get('short_name')
-    product.description.meta_h1 = request.form.get('full_name')
 
-    main_category_id = int(request.form.get('main_category_id'))
+    data = json.loads(request.data) if request.data else {}
+    product.price = data.get('price')
+    product.cost = data.get('cost')
+    product.weight_class_id = data.get('unit_id')
+    product.description.name = data.get('short_name')
+    product.description.meta_h1 = data.get('full_name')
+
+    main_category_id = int(data.get('main_category_id'))
 
     product_to_categories = db.session.execute(
         db.select(ProductToCategory)
