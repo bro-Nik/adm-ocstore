@@ -10,7 +10,7 @@
             <h3 class="mb-0">{{ heading }}</h3>
           </div>
           <div class="ms-auto d-flex gap-2">
-            <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
+            <input type="text" class="form-control border-0 filter" placeholder="Поиск">
             {# Кнопка добывления новго #}
             {% if child_obj %}{{ form_btns_add(child_obj) }}{% endif %}
             {# Кнопки переданные #}

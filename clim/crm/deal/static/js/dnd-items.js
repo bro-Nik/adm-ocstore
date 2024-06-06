@@ -77,7 +77,7 @@
   };
 
   const setMovingElement = (event) => {
-    movingElement = event.target;
+    movingElement = event.target.closest(".board-item");
   };
 
   const onMouseUp = () => {
@@ -100,17 +100,14 @@
       var color = $(placeholder.closest(".column")).find('.stage-color').val()
       $(movingElement).attr('style', '--crm-kanban-item-color: ' + color)
 
+      // Отправить на сервер сортировку
       var url = "/crm/deal/update_stage";
       var stage_id = $(placeholder.closest(".column")).data('stage');
       var deal_id = $(movingElement).attr('data-item')
       var previous_deal_sort = $(placeholder.previousElementSibling).attr('data-item-sort');
       if (!previous_deal_sort) {previous_deal_sort = 0}
       url += `${url.indexOf("?") > 0 ? "&" : "?"}stage_id=${stage_id}&deal_id=${deal_id}&previous_deal_sort=${previous_deal_sort}`;
-      $.ajax({
-        type: "GET",
-        url: url,
-      });
-
+      $.get(url);
 
     placeholder.parentNode.insertBefore(movingElement, placeholder);
     Object.assign(movingElement.style, {
@@ -131,20 +128,28 @@
     processEmptySections();
   };
 
-  const onMouseDown = (event) => {
+  // const onMouseDown = (event) => {
+  //   setMovingElement(event);
+  //   shifts.set(event.clientX, event.clientY, movingElement);
+  //   initialMovingElementPageXY.set(movingElement);
+  //   document.addEventListener("mousemove", onMouseMove);
+  //   movingElement.onmouseup = onMouseUp;
+  // };
+  //
+  // window.addEventListener("load", () => {
+  //   for (const draggableElement of document.querySelectorAll(".board-item")) {
+  //     draggableElement.onmousedown = onMouseDown;
+  //     draggableElement.ondragstart = () => {
+  //       return false;
+  //     };
+  //   }
+  // });
+
+  $("body").on("mousedown", ".board-item", function (event) {
     setMovingElement(event);
     shifts.set(event.clientX, event.clientY, movingElement);
     initialMovingElementPageXY.set(movingElement);
     document.addEventListener("mousemove", onMouseMove);
     movingElement.onmouseup = onMouseUp;
-  };
-
-  window.addEventListener("load", () => {
-    for (const draggableElement of document.querySelectorAll(".board-item")) {
-      draggableElement.onmousedown = onMouseDown;
-      draggableElement.ondragstart = () => {
-        return false;
-      };
-    }
-  });
+  })
 })();

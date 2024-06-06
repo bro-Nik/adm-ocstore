@@ -216,6 +216,25 @@ def sort_stage_deals(stage_id, deal_id, previous_deal_sort):
     db.session.commit()
 
 
+def sort_stages(stage_id, sort_order):
+    count = 0
+    prew_stage = this_stage = None
+    for stage in get_stages():
+        if stage.sort_order == sort_order - 1:
+            prew_stage = stage
+        elif stage.stage_id == stage_id:
+            this_stage = stage
+        elif stage.sort_order == sort_order:
+            count += 1
+
+        stage.sort_order = count
+        count += 1
+    if this_stage and prew_stage:
+        this_stage.sort_order = prew_stage.sort_order + 1
+    elif this_stage:
+        this_stage.sort_order = 0
+
+
 def employment_info(employments):
     result = {}
     for e in employments:

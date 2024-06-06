@@ -13,8 +13,6 @@
 
   {# Блок названия и кнопок #}
   {% set heading_btns %}
-    <input type="text" class="form-control border-0" id="filter" placeholder="Поиск">
-
     {% set filter = session.get('stage_type', '') %}
     <div class="d-flex gap-3 align-items-center col-auto">
       <div class="form-check">
@@ -81,7 +79,34 @@
 <script src="{{ url_for('.static', filename='js/deal.js') }}"></script>
 <script src="{{ url_for('.static', filename='js/stages.js') }}"></script>
 {% include 'deal/deals_modals.html' %}
-{% include 'deal/deals_scripts.html' %}
 <script src="{{ url_for('.static', filename='js/products.js') }}"></script>
 
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('.static', filename='js/dnd.js') }}"></script>
+  <script src="{{ url_for('.static', filename='js/dnd-items.js') }}"></script>
+  <script src="{{ url_for('.static', filename='js/dnd-columns.js') }}"></script>
+  <script>
+
+    // New Stage
+    $("body").on("click", "svg.new-stage", function () {
+      var $column = $(this).closest(".stage-column");
+      var $new_column = $($column).clone();
+      $new_column.find(".stage-name").text("Новая стадия");
+      $new_column.find(".stage-deal-count").text("(0)");
+      $new_column.find(".board-column-content-wrapper").html("");
+      $column.after($new_column);
+
+      var url = "{{ url_for('.new_stage') }}";
+      url += "?stage_id=" + $column.data("stage");
+      $.ajax({
+        type: "GET",
+        url: url,
+        success: function (data) {
+          $new_column.attr("data-stage", data);
+        },
+      });
+    });
+  </script>
 {% endblock %}

@@ -13,7 +13,7 @@ from ..utils import smart_int
 from ..models import Product, db, OptionValueDescription, ProductDescription, \
     OptionValue, Category
 from .models import Deal, DealStage
-from .utils import employment_info, get_stages, sort_stage_deals
+from .utils import employment_info, get_stages, sort_stage_deals, sort_stages
 from . import bp
 
 
@@ -197,6 +197,18 @@ def update_stage():
     db.session.commit()
 
     sort_stage_deals(deal.stage_id, deal.deal_id, previous_deal_sort)
+    return redirect(url_for('.deals'))
+
+
+@bp.route('/stage_move', methods=['GET'])
+@login_required
+def stage_move():
+    stage_id = request.args.get('stage_id', 0, type=int)
+    sort_order = request.args.get('sort_order', 0, type=int)
+    print(sort_order)
+    sort_stages(stage_id, sort_order)
+    db.session.commit()
+
     return redirect(url_for('.deals'))
 
 

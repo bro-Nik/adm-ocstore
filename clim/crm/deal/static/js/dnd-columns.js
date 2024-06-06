@@ -67,6 +67,13 @@
       placeholder.previousElementSibling
     );
 
+    // Отправить на сервер сортировку
+    var url = "/crm/deal/stage_move";
+    var stage_id = $(movingElement).data("stage");
+    var sort_order = $(placeholder.previousElementSibling).data("item-sort") + 1 || 0;
+    url += `${url.indexOf("?") > 0 ? "&" : "?"}stage_id=${stage_id}&sort_order=${sort_order}`;
+    $.get(url);
+
     placeholder.parentNode.insertBefore(movingElement, placeholder);
     Object.assign(movingElement.style, {
       position: "static",
@@ -82,23 +89,34 @@
     movingElement = null;
   };
 
-  const onMouseDown = (event) => {
+  // const onMouseDown = (event) => {
+  //   setMovingElement(event);
+  //   initialHeight = movingElement.getBoundingClientRect().height;
+  //   shifts.set(event.clientX, event.clientY, movingElement);
+  //   initialMovingElementPageXY.set(movingElement);
+  //   document.addEventListener("mousemove", onMouseMove);
+  //   movingElement.onmouseup = onMouseUp;
+  // };
+  //
+  // window.addEventListener("load", () => {
+  //   for (const draggableElement of document.querySelectorAll(
+  //     ".board-column-header"
+  //   )) {
+  //     draggableElement.onmousedown = onMouseDown;
+  //     draggableElement.ondragstart = () => {
+  //       return false;
+  //     };
+  //   }
+  // });
+  //
+
+  $("body").on("mousedown", ".board-column-header", function (event) {
     setMovingElement(event);
     initialHeight = movingElement.getBoundingClientRect().height;
     shifts.set(event.clientX, event.clientY, movingElement);
     initialMovingElementPageXY.set(movingElement);
     document.addEventListener("mousemove", onMouseMove);
     movingElement.onmouseup = onMouseUp;
-  };
+  })
 
-  window.addEventListener("load", () => {
-    for (const draggableElement of document.querySelectorAll(
-      ".board-column-header"
-    )) {
-      draggableElement.onmousedown = onMouseDown;
-      draggableElement.ondragstart = () => {
-        return false;
-      };
-    }
-  });
 })();

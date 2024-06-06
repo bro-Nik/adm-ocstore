@@ -3,9 +3,9 @@
 }
 
 :root {
-  --item-width: 288px;
-  --item-height: 120px;
-  --column-width: 300px;
+  --item-width: 288px !important;
+  --item-height: 120px !important;
+  --column-width: 300px !important;
 }
 
 body {
@@ -108,8 +108,14 @@ body {
 .placeholder-column {
   background-color: white;
   width: var(--column-width);
-  border: none;
-  margin-right: 20px;
+  min-width: var(--column-width);
+  /* height: 500px; */
+  /* min-height: 500px; */
+  /* border: none; */
+  border: 2px dashed #ccc;
+  border-radius: 5px;
+  margin-left: 10px;
+  margin-right: 10px;
   padding: 5px;
 }
 .crm-kanban-item-checkbox {

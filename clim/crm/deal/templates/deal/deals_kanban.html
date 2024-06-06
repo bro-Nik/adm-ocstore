@@ -7,31 +7,37 @@
     {% for stage in stages %}
 
       {% set var.column_count = var.column_count + 1 %}
-      <div class="column stage-column" data-stage="{{ stage.stage_id }}" draggable>
+      <div class="column stage-column" data-stage="{{ stage.stage_id }}" data-item-sort="{{ stage.sort_order }}" draggable>
         <input type="hidden" class="stage-type" value="{{ stage.type }}">
         <input type="hidden" class="stage-color" value="{{ stage.color if stage.color }}">
 
-        <div class="board-column-header check-all d-flex stage-header" style="{{ 'background: ' + stage.color + ';' if stage.color }}">
-          <div class="stage-name">{{ stage.name }}</div>
-          <div class="stage-deal-count ms-1">({{ stage.deals|length }})</div>
-          <div class="ms-auto stage-action">
-            {{ m.modal_link(stage, "settings", svg.edit('text-white nav-icon icon-xs me-2')) }}
-            {{ svg.plus('text-white nav-icon icon-xs me-2 new-stage') }}
+        <div class="board-column-header d-flex check-all" style="{{ 'background: ' + stage.color + ';' if stage.color }}">
+          <div class="d-flex stage-header">
+            <div class="stage-name">{{ stage.name }}</div>
+            <div class="stage-deal-count ms-1">({{ stage.deals|length }})</div>
           </div>
-          <div class="ms-auto crm-kanban-item-checkbox visually-hidden">
-            <input class="form-check-input" type="checkbox">
+          <div class="ms-auto">
+            <div class="stage-action">
+              {{ m.modal_link(stage, "settings", svg.edit('text-white nav-icon icon-xs me-2')) }}
+              {{ svg.plus('text-white nav-icon icon-xs me-2 new-stage') }}
+            </div>
+            <div class="crm-kanban-item-checkbox visually-hidden">
+              <input class="form-check-input" type="checkbox">
+            </div>
           </div>
         </div>
         <div class="board-column-content-wrapper">
 
           {% for deal in stage.deals|sort(attribute='sort_order') %}
             {% set var.item_count = var.item_count + 1 %}
+            {% set details = deal.get_json('details') or {} %}
 
-            <div class="board-item" draggable data-deal-id="{{ deal.deal_id }}" data-item="{{ deal.deal_id }}" data-item-sort="{{ deal.sort_order }}" style="{{ '--crm-kanban-item-color: ' + stage.color + ';' if stage.color }}">
+            <div class="board-item find-item" draggable data-deal-id="{{ deal.deal_id }}" data-item="{{ deal.deal_id }}" data-item-sort="{{ deal.sort_order }}" style="{{ '--crm-kanban-item-color: ' + stage.color + ';' if stage.color }}">
               <a class="crm-kanban-deal-title" data-modal-id="DealInfoModal"
                 data-url="{{ url_for('.deal_info', deal_id=deal.deal_id) }}" >{{ deal.name }}</a>
               <div class="crm-kanban-item-line"></div>
-              <div class="crm-kanban-deal-price">{{ deal.sum|money }} ₽</div>
+              <div class="crm-kanban-deal-price">{{ details.sum|money }} ₽</div>
+              <span class="fs-6">{{ details.adress }}</span>
               <div class="crm-kanban-deal-date-add">
                 <span class="">{{ deal.date_add|smart_date }}</span>
               </div>
@@ -106,7 +112,4 @@ $('body').on('click', '.decheck-all', function() {
 });
 </script>
 
-<script src="{{ url_for('.static', filename='js/dnd.js') }}"></script>
-<script src="{{ url_for('.static', filename='js/dnd-items.js') }}"></script>
-<script src="{{ url_for('.static', filename='js/dnd-columns.js') }}"></script>
 {% endblock %}
