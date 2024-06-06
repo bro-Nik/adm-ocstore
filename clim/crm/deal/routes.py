@@ -33,6 +33,11 @@ def deals(view=None):
     if view not in ['kanban', 'list']:
         view = session.get('crm_view', 'kanban')
         return redirect(url_for('.deals', view=view))
+    # ToDo
+    for d in Deal.get_all():
+        if not d.sort_order:
+            d.sort_order = 0
+    db.session.commit()
 
     session['crm_view'] = view
     stage_type = session.get('stage_type', 'in_work')

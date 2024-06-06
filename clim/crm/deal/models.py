@@ -28,7 +28,7 @@ class DealStage(StageUtils, db.Model):
     stage_id = db.Column(db.Integer, primary_key=True,)
     name = db.Column(db.String(128))
     type = db.Column(db.String(64))
-    sort_order = db.Column(db.Integer)
+    sort_order = db.Column(db.Integer, default=0)
     color = db.Column(db.String(45))
     deals = db.relationship('Deal', backref=db.backref('stage', lazy=True),
                             order_by='Deal.sort_order')
