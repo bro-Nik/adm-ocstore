@@ -16,7 +16,7 @@
     </tr>
   </thead>
 
-  <tbody>
+  <tbody class="connectedSortable">
     {% for product in products %}
       <tr class="product">
         {# Чекбокс #}
@@ -33,7 +33,7 @@
           {% else %}
             <select class="product-select" data-placeholder="-- Выбрать товар или услугу --"
               data-url="{{ url_for('.ajax_products') }}" data-class="bg-light"
-              data-width="300px" name="id" data-required="true">
+              data-width="100%" name="id" data-required="true">
               <option value="{{ product.id }}" selected>{{ product.name }}</option>
             </select>
             <input type="hidden" value="{{ product.name }}" name="name">

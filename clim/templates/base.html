@@ -51,6 +51,7 @@
   {% include 'toasts.html' %}
 
 </body>
+<script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script>
 <script src="{{ url_for('static', filename='js/toasts.js') }}"></script>
 <script src="{{ url_for('static', filename='js/select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
@@ -61,6 +62,7 @@
   const url_stock_first = "{{ url_for('crm.deal.ajax_stocks_first') }}";
   const url_contact_info = "{{ url_for('crm.contact.contact_settings') }}";
 </script>
+
 {% block scripts %}{% endblock %}
 
 </html>

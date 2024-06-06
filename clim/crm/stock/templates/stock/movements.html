@@ -29,7 +29,7 @@
       {% for movement in movements %}
         {% set details = movement.get_json('details') or {} %}
 
-        <tr>
+        <tr class="find-item">
           {# Чекбокс #}
           <td class="checkbox">{{ m.checkbox(movement.movement_id) }}</td>
 

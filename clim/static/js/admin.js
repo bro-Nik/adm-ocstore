@@ -308,6 +308,7 @@ function UpdateScripts($element = $("body")) {
   UpdateProductItems($element);
   UpdateDatepicker($element);
   // feather.replace();
+  UpdateSortable($element)
 }
 
 UpdateScripts();
@@ -560,3 +561,13 @@ $("body").find(".filter").keyup(function () {
   var numberItems = count;
   $("#filter-count").text("Number of Filter = " + count);
 });
+
+
+
+function UpdateSortable($element = $("body")) {
+  $element.find(".connectedSortable").sortable({
+    opacity: 0.5,
+    change: function() {$(this).closest("form").trigger("change")},
+    update: function() {LineCount($(this).closest("table"))},
+  })
+}
