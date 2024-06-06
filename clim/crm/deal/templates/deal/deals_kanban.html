@@ -1,7 +1,7 @@
 {% extends "deal/deals.html" %}
 {% block deals_content %}
 <div class="row table-responsive">
-  <div id="Deals" class="board">
+  <div id="Deals" class="board" style="height: 100vh;">
 
     {% set var = namespace(column_count=0, item_count=0) %}
     {% for stage in stages %}
