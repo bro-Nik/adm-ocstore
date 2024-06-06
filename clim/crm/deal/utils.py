@@ -196,18 +196,13 @@ def get_stages(status=''):
 
 def sort_stage_deals(stage_id, deal_id, previous_deal_sort):
     from .models import DealStage
-    def number(number):
-        try:
-            return int(number)
-        except:
-            return 0
-
-    previous_deal_sort = number(previous_deal_sort)
+    previous_deal_sort = int(previous_deal_sort or 0)
 
     stage = DealStage.get(stage_id)
 
     for deal_in_stage in stage.deals:
-        deal_in_stage.sort_order = number(deal_in_stage.sort_order)
+        # deal_in_stage.sort_order = number(deal_in_stage.sort_order)
+        deal_in_stage.sort_order = deal_in_stage.sort_order
 
         if (deal_in_stage.sort_order > previous_deal_sort
             and deal_in_stage.deal_id != deal_id):
@@ -238,3 +233,29 @@ def employment_info(employments):
         if e.worker.name not in result[date]:
             result[date].append(e.worker.name)
     return result
+
+
+class StageUtils(PageMixin, JsonDetailsMixin):
+    URL_PREFIX = 'crm.deal.stage_'
+
+    @property
+    def actions(self):
+        return {
+            'save': [True],
+            'delete': [self.stage_id, 'Удадить', 'Удалить стадию?', '']
+        }
+    def pages_settings(self):
+        return {'settings': [True, 'Настройки']}
+
+    def save(self):
+        data = self.save_data
+        self.name = data.get('name')
+        self.type = data.get('type')
+        self.color = data.get('color')
+
+    def delete(self):
+        if self.deals:
+            flash(f'У стадии есть сделки', 'warning')
+            return False
+
+        super().delete()

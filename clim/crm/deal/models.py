@@ -1,5 +1,5 @@
 from ..models import db
-from .utils import DealUtils
+from .utils import DealUtils, StageUtils
 
 
 class Deal(DealUtils, db.Model):
@@ -22,7 +22,7 @@ class Deal(DealUtils, db.Model):
     sort_order = db.Column(db.Integer)
 
 
-class DealStage(db.Model):
+class DealStage(StageUtils, db.Model):
     __tablename__ = 'adm_deal_stage'
 
     stage_id = db.Column(db.Integer, primary_key=True,)

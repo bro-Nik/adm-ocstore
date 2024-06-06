@@ -295,11 +295,11 @@
 {% endmacro %}
 
 {# Ссылка на модульное #}
-{% macro modal_link(obj, page) %}
+{% macro modal_link(obj, page, btn_text=None) %}
   {% for key, text, url in obj.urls(key_name=page) %}
-    <a class="text-inherit" {{ modal_attrs(obj, page, url) }}>{{ obj.name }}</a>
+    <a class="text-inherit" {{ modal_attrs(obj, page, url) }}>{{ btn_text or obj.name }}</a>
   {% else %}
-    <span class="text-inherit">{{ obj.name }}</span>
+    <span class="text-inherit">{{ btn_text or obj.name }}</span>
   {% endfor %}
 {% endmacro %}
 

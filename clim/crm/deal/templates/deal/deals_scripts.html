@@ -36,7 +36,7 @@
     $column.after($new_column);
 
     var url = "{{ url_for('.new_stage') }}";
-    url += "/" + $column.attr("data-stage");
+    url += "?stage_id=" + $column.data("stage");
     $.ajax({
       type: "GET",
       url: url,
@@ -72,9 +72,11 @@
     $modal.modal("toggle");
   });
 
+{#}
   // Update Data To Server
   $("#StageUpdate").find("form").submit(function (e) {
       var posting = $.post("{{ url_for('.stage_update') }}", $(this).serialize(),);
       posting.done(function (data) { });
     });
+{#}
 </script>

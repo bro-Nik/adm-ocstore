@@ -2,8 +2,10 @@
 {% set page_settings = {"title": stage.name if stage.stage_id else 'Новая стадия', "modal": True, "fullscreen": False} %}
 
 {% block content %}
-<form id="StageForm" method="post" action="{{ url_for('.stage_settings', stage_id=stage.stage_id) }}">
+<form id="StageForm" method="post" action="{{ url_for('crm.deal.stage_settings', stage_id=stage.stage_id) }}">
+  {#}
   <input type="hidden" name="stage_id" value="" />
+  {#}
 
   <label class="col-sm-3 col-form-label form-label">Название</label>
   <input type="text" class="form-control mb-" name="name" value="{{ stage.name }}" />
@@ -11,7 +13,7 @@
   <div class="d-flex mb-3">
     <div class="col-9">
       <label class="col-sm-3 col-form-label form-label">Тип</label>
-      <select class="form-control" name="type" required>
+      <select class="general-select" data-class="border" name="type" data-width="100%" required>
         <option value="start" {{ 'selected' if stage.type == 'start' }}>Начальная</option>
         <option value="" {{ 'selected' if not stage.type }}>Промежуточная</option>
         <option value="end_good" {{ 'selected' if stage.type == 'end_good' }}>Удачная сделка</option>

@@ -101,11 +101,11 @@
       $(movingElement).attr('style', '--crm-kanban-item-color: ' + color)
 
       var url = "/crm/deal/update_stage";
-      var stage_id = $(placeholder.closest(".column")).attr('data-stage');
+      var stage_id = $(placeholder.closest(".column")).data('stage');
       var deal_id = $(movingElement).attr('data-item')
       var previous_deal_sort = $(placeholder.previousElementSibling).attr('data-item-sort');
       if (!previous_deal_sort) {previous_deal_sort = 0}
-      url += '/' + stage_id + '/' + deal_id + '/' + previous_deal_sort
+      url += `${url.indexOf("?") > 0 ? "&" : "?"}stage_id=${stage_id}&deal_id=${deal_id}&previous_deal_sort=${previous_deal_sort}`;
       $.ajax({
         type: "GET",
         url: url,

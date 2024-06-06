@@ -15,8 +15,8 @@
           <div class="stage-name">{{ stage.name }}</div>
           <div class="stage-deal-count ms-1">({{ stage.deals|length }})</div>
           <div class="ms-auto stage-action">
-            <i data-feather="edit" class="nav-icon icon-xs me-2 update-stage"></i>
-            <i data-feather="plus-circle" class="nav-icon icon-xs me-2 new-stage"></i>
+            {{ m.modal_link(stage, "settings", svg.edit('text-white nav-icon icon-xs me-2')) }}
+            {{ svg.plus('text-white nav-icon icon-xs me-2 new-stage') }}
           </div>
           <div class="ms-auto crm-kanban-item-checkbox visually-hidden">
             <input class="form-check-input" type="checkbox">

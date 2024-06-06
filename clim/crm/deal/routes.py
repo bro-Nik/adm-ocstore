@@ -192,10 +192,11 @@ def ajax_stocks():
 def update_stage():
     deal = Deal.get(request.args.get('deal_id'))
     deal.stage_id = request.args.get('stage_id')
+    previous_deal_sort = request.args.get('previous_deal_sort')
     deal.sort_order = request.args.get('stage_id', 0, type=int) + 1
     db.session.commit()
 
-    sort_stage_deals(deal.stage_id, deal.deal_id, deal.previous_deal_sort)
+    sort_stage_deals(deal.stage_id, deal.deal_id, previous_deal_sort)
     return redirect(url_for('.deals'))
 
 
@@ -226,19 +227,6 @@ def new_stage():
     return str(new_stage.stage_id)
 
 
-@bp.route('/stage_info/update', methods=['POST'])
-@login_required
-def stage_update():
-    stage = DealStage.get(request.form.get('stage_id'))
-    if stage:
-        stage.name = request.form.get('name')
-        stage.type = request.form.get('type')
-        stage.color = request.form.get('color')
-        db.session.commit()
-
-    return redirect(url_for('deals'))
-
-
 @bp.route('/close_deal', methods=['GET'])
 @login_required
 def deal_modal_close():
@@ -251,14 +239,9 @@ def deal_modal_close():
 @login_required
 def stage_settings():
     stage = DealStage.get(request.args.get('stage_id')) or DealStage(type='')
+
     if request.method == 'POST':
-        if stage:
-            stage.name = request.form.get('name')
-            stage.type = request.form.get('type')
-            stage.color = request.form.get('color')
-            db.session.commit()
-        data = json.loads(request.data) if request.data else {}
-        info = data.get('info')
+        return actions_in(stage)
 
     return render_template('deal/deals_modal_stage.html', stage=stage)
 
