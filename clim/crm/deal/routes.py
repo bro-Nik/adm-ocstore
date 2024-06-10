@@ -36,6 +36,11 @@ def deals(view=None):
 
     session['crm_view'] = view
     stage_type = session.get('stage_type', 'in_work')
+
+    for d in Deal.get_all():
+        if not d.sort_order:
+            d.sort_order = 0
+    db.session.commit()
     return render_template(f'deal/deals_{view}.html', stage_type=stage_type,
                            stages=tuple(get_stages(stage_type)),
                            deals=Deal.get_all())
@@ -47,7 +52,8 @@ def deal_info():
     deal = Deal.get(request.args.get('deal_id'))
     if not deal:
         deal = Deal(date_add=datetime.now(),
-                    stage=DealStage.get(type='start'))
+                    stage=DealStage.get(type='start') or
+                          list(DealStage.get_all())[0])
 
     if request.method == 'POST':
         return actions_in(deal)

@@ -19,7 +19,7 @@ class Deal(DealUtils, db.Model):
     sum = db.Column(db.Float(15.4))
     analytics = db.Column(db.Text)
     profit = db.Column(db.Float(15.4))
-    sort_order = db.Column(db.Integer)
+    sort_order = db.Column(db.Integer, default=0)
 
 
 class DealStage(StageUtils, db.Model):

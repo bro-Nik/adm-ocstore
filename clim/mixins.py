@@ -57,11 +57,12 @@ class ModelMixin(Model):
         return db.session.execute(select).scalars()
 
     @classmethod
-    def get(cls, unique_id=None, **kwargs):
+    def get(cls, *args, **kwargs):
         """ Получение объекта по primary key """
         from clim.app import db
-        if not kwargs:
-            return db.session.get(cls, unique_id)
+        if args:
+            unique_id = args[0]
+            return db.session.get(cls, unique_id) if unique_id else None
         return db.session.execute(db.select(cls).filter_by(**kwargs)).scalar()
 
     @classmethod
