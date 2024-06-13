@@ -258,6 +258,24 @@ def employment_info(employments):
     return result
 
 
+def update_deal_employments(deal):
+    employments = []
+    booking = get_event_booking(f'deal_{deal.deal_id}')
+    if not booking:
+        return
+
+    for e in booking:
+        print(type(e.date_start))
+        print(type(e.time_start))
+        start = dt_to_str(datetime.combine(e.date_start, e.time_start))
+        employments.append(start)
+
+    details = deal.get_json('details') or {}
+    details['new_employments'] = employments
+    deal.details = json.dumps(details, ensure_ascii=False)
+    db.session.commit()
+
+
 class StageUtils(PageMixin, JsonDetailsMixin):
     URL_PREFIX = 'crm.deal.stage_'
 

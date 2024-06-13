@@ -28,8 +28,7 @@ def booking_page():
 @bp.route('/booking_post', methods=['POST'])
 @login_required
 def booking_post():
-    from clim.crm.deal.utils import employment_info
-    from clim.crm.utils import dt_to_str
+    from clim.crm.deal.utils import update_deal_employments
 
     def str_date(string):
         return datetime.strptime(string, '%Y-%m-%d')
@@ -63,14 +62,11 @@ def booking_post():
             employment.date_start = str_date(schedule.get('startDate'))
             employment.date_end = str_date(schedule.get('endDate'))
 
-            # Заносим в сделку краткую запись
-            details = event.get_json('details') or {}
-            employments = details.get('new_employments') or []
-            employments.append(f'{employment.date_start} {employment.time_start}')
-            details['new_employments'] = employments
-            event.details = json.dumps(details, ensure_ascii=False)
 
     db.session.commit()
+
+    # Заносим в сделку краткую запись
+    update_deal_employments(event)
     return ''
 
 
