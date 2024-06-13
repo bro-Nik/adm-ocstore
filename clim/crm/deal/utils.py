@@ -170,6 +170,10 @@ class DealUtils(PageMixin, JsonDetailsMixin):
         for e in employments:
             db.session.delete(e)
 
+        # Удаляем краткую запись выездов
+        if details.get('new_employments'):
+            del details['new_employments']
+
         self.details = json.dumps(details)
         self.posted = d == 1  # True or False
 

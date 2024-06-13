@@ -38,6 +38,7 @@
               <div class="crm-kanban-item-line"></div>
               <div class="crm-kanban-deal-price">{{ details.sum|money }} ₽</div>
               <span class="fs-6">{{ details.adress }}</span>
+              <span class="fs-6">{% for e in details.new_employments %}{{ e }}{% endfor %}</span>
               <div class="crm-kanban-deal-date-add">
                 <span class="">{{ deal.date_add|smart_date }}</span>
               </div>
