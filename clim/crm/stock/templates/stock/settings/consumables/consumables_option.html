@@ -55,7 +55,7 @@
     <button class="btn rounded-3 btn-outline-secondary" type="button" data-modal-id="SelectProductsModal"
       data-url="{{ url_for('.set_products_page') }}">Выбрать товары</button>
   {% endset %}
-  {{ m.table(table, consumables, btns=table_btns) }}
+  {{ m.table(table, consumables, btns=table_btns, attrs="id=tabProducts data-to-server=products") }}
 
   {# Кнопки действий формы #}
   {{ m.form_actions() }}

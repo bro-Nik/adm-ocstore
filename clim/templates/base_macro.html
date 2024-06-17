@@ -25,45 +25,43 @@
 {% endmacro %}
 
 {# Блок таблицы #}
-{% macro table(table, iterable='', btns='', attrs='') %}
-  {% if iterable %}
-    <div class="row">
-      <div class="col-xl-12 col-lg-12 col-md-12 col-12">
-        <div class="card h-100">
-          <div class="table-responsive">
-            <table class="table text-nowrap" {{ attrs }}>{{ table }}</table>
-          </div>
-          {% if btns %}
-            <div class="d-flex">
-              <div>
-                <div class="m-3 gap-2 justify-content-start actions form-actions">
-                  Отмеченно: <span class="checks-count"></span>
-                  <div class="m-3 gap-2 d-flex justify-content-start actions">
-                    <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
-                  </div>
+{% macro table(table, iterable=[], btns='', attrs='') %}
+  <div class="row">
+    <div class="col-xl-12 col-lg-12 col-md-12 col-12">
+      <div class="card h-100">
+        <div class="table-responsive">
+          <table class="table text-nowrap" {{ attrs }}>{{ table }}</table>
+        </div>
+        {% if btns %}
+          <div class="d-flex">
+            <div>
+              <div class="m-3 gap-2 justify-content-start actions form-actions">
+                Отмеченно: <span class="checks-count"></span>
+                <div class="m-3 gap-2 d-flex justify-content-start actions">
+                  <button class="btn rounded-3 delete-product" type="button" disabled>Удалить</button>
                 </div>
               </div>
-              <div class="m-3 ms-auto gap-2">{{ btns }}</div>
             </div>
-          {% endif %}
-        </div>
+            <div class="m-3 ms-auto gap-2">{{ btns }}</div>
+          </div>
+        {% endif %}
       </div>
-      {% if iterable.pages %}
-        {# Пагинация #}
-        {% set products = iterable %}
-        {% include 'pagination.html' %}
-      {% endif %}
+    </div>
+    {% if iterable.pages %}
+      {# Пагинация #}
+      {% set products = iterable %}
+      {% include 'pagination.html' %}
+    {% endif %}
 
-      {# Кнопки действий таблицы #}
+    {# Кнопки действий таблицы #}
+    {% if iterable %}
       {% for p in iterable %}
         {% if loop.index == 1 %}
           {{ table_actions(p.actions) }}
         {% endif %}
       {% endfor %}
-    </div>
-  {% else %}
-    {% include 'nothing.html' %}
-  {% endif %}
+    {% endif %}
+  </div>
 {% endmacro %}
 
 {# Ссылка #}

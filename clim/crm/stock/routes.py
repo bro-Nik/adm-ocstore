@@ -141,6 +141,9 @@ def consumables_in_option():
             value.settings = OptionValueSetting()
 
         data = json.loads(request.data) if request.data else {}
+        print(data)
+        print(value)
+        print(value.settings)
         products = data.get('products')
         value.settings.consumables = json.dumps(products) if data else None
         db.session.commit()

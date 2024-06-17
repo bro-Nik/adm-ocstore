@@ -265,8 +265,6 @@ def update_deal_employments(deal):
         return
 
     for e in booking:
-        print(type(e.date_start))
-        print(type(e.time_start))
         start = dt_to_str(datetime.combine(e.date_start, e.time_start))
         employments.append(start)
 
