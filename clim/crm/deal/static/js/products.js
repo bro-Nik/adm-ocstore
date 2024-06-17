@@ -32,7 +32,7 @@ async function DealConsumablesFillAdd(url, option_quantity) {
       product.quantity = +option_quantity * +product.quantity;
 
       var $tr = $("#tabConsumables").find("tr.product").eq(-1);
-      $tr.find("select.product-select").append(new Option(product.name, product.product_id, true, true));
+      $tr.find("select.product-select").append(new Option(product.name, product.id, true, true));
       $tr.find("[name=quantity]").val(product.quantity);
       $tr.find("[name=price]").val(product.price).trigger("change");
       $tr.find("[name=name]").val(product.name);
