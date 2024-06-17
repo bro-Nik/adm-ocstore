@@ -141,9 +141,6 @@ def consumables_in_option():
             value.settings = OptionValueSetting()
 
         data = json.loads(request.data) if request.data else {}
-        print(data)
-        print(value)
-        print(value.settings)
         products = data.get('products')
         value.settings.consumables = json.dumps(products) if data else None
         db.session.commit()
@@ -167,7 +164,7 @@ def json_consumables_in_option(option_value_id=None):
     if option_value and option_value.consumables:
         consumables = json.loads(option_value.consumables)
         for consumable in consumables:
-            product = Product.get(consumable['product_id'])
+            product = Product.get(consumable['id'])
             consumable['price'] = product.cost or 0
             consumable['name'] = product.description.name
             consumable['unit'] = product.unit
