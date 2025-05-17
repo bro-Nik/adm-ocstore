@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, date
 import locale
 
 from clim.main import bp
@@ -91,16 +91,23 @@ bp.add_app_template_filter(smart_date)
 
 def how_long_ago(event_date):
     ''' Возвращает сколько прошло от входящей даты '''
+    if not event_date:
+        return ''
+    # Преобразуем строку в дату
     if isinstance(event_date, str):
-        event_date = datetime.strptime(event_date, '%Y-%m-%d')
+        event_date = datetime.strptime(event_date, '%Y-%m-%d').date()
 
-    today = datetime.now().date()
-    if today == datetime.date(event_date):
-        result = 'сегодня'
-    else:
-        result = str((today - datetime.date(event_date)).days) + ' д. назад'
+    # Если пришел datetime - преобразуем в date
+    elif isinstance(event_date, datetime):
+        event_date = event_date.date()
 
-    return result
+    today = date.today()
+    # today = datetime.now().date()
+    if today == event_date:
+        return 'сегодня'
+
+    delta = today - event_date
+    return f"{delta.days} д. назад"
 
 
 bp.add_app_template_filter(how_long_ago)

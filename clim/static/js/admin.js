@@ -151,6 +151,9 @@ $(function () {
       $modal = $form.closest(".modal"),
       $btn = $(event.originalEvent.submitter);
 
+    // стандартная отправка формы
+    if ($form.hasClass('default-form-action')) return;
+
     event.preventDefault();
 
     // Если кнопка меняет Action
@@ -224,7 +227,8 @@ $(function () {
 });
 
 // Load to Page
-function LoadToPage(url = $(location).attr("href")) {
+function LoadToPage(url) {
+  if (!url) url = $(location).attr("href");
   $("#content").load(OnlyContentUrl(url), function () {
     UpdateScripts($("#content"));
     UpdateFocus($("#content"));

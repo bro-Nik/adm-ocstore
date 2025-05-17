@@ -6,10 +6,13 @@
       <ul class="nav nav-lt-tab px-4" id="pills-tab" role="tablist">
         {% set menu = {'Наличие': url_for('site.product.products', path='products'),
                        'Цены': url_for('site.product.products', path='prices'),
+                       'Цены конкурентов': url_for('site.product.products', path='competitors_prices'),
+                       'Прайслисты': url_for('site.product.products_upload_prices'),
                        'Сопоставление': url_for('site.product.products', path='comparison')} %}
         {% for name, url in menu.items() %}
           <li class="nav-item">
-            <a class="nav-link {{ 'active' if url == request.full_path }}" href="{{ url }}">{{ name }}</a>
+            {# <a class="nav-link {{ 'active' if url == request.full_path }}" href="{{ url }}">{{ name }}</a> #}
+            <a class="nav-link {{ 'active' if url == request.path }}" href="{{ url }}">{{ name }}</a>
           </li>
         {% endfor %}
       </ul>

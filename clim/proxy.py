@@ -9,7 +9,8 @@ from flask import current_app
 from .app import redis
 
 
-BASE_URL: str = 'https://proxy6.net/api'
+# BASE_URL: str = 'https://proxy6.net/api'
+BASE_URL: str = 'https://px6.link/api'
 DATA_KEY = 'proxy_list'
 API_NAME = 'proxy'
 

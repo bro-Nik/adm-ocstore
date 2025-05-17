@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% set page_settings = {"title": "Загрузка прайсов", "modal": False, "fullscreen": False} %}
+{% import 'base_macro.html' as m with context %}
+
+{% block content %}
+{% include 'product/header.html' %}
+
+  {# Блок загрузки файла #}
+  <div class="card">
+    <div class="card-body">
+      <form id="UploadForm" action="{{ url_for('.products_upload_prices') }}" method="post" enctype="multipart/form-data" class="default-form-action">
+        <div class="mb-3">
+          <label for="price_file" class="form-label">Загрузите прайс-лист</label>
+          <div class="input-group">
+            <input class="form-control" type="file" id="price_file" name="price_file" accept=".xlsx, .xls" required>
+            <button class="btn btn-primary" type="submit">Анализировать</button>
+          </div>
+          <div class="form-text">
+            Поддерживаются файлы Excel (.xlsx, .xls). Система автоматически определит структуру прайса.
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# Блок результатов обновления #}
+  {% if updated_products %}
+  <div class="card">
+    <div class="card-header">
+      <h4>Обновленные цены</h4>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+    
+          <thead>
+            <tr>
+              <th>Товар</th>
+              <th>Новая цена</th>
+              <th>Цена в прайслисте</th>
+              <th>Дата обновления</th>
+            </tr>
+          </thead>
+        <tbody>
+          {% for product in updated_products %}
+          <tr>
+            <td>{{ product.product_name }}</td>
+            <td class="text-success">{{ product.current_price }}</td>
+            <td class="text-muted">{{ product.new_price }}</td>
+            <td class="text-muted">{{ product.date_updated_price|how_long_ago }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+<form id="PriceUpload" class="d-flex flex-column gap-3" action="{{ url_for('.products_apply_prices') }}" method="post" class="default-form-action">
+  {# Блок результатов сопоставления #}
+  {% if matched_products %}
+  <div class="card">
+    <div class="card-header">
+      <h4>Результаты сопоставления</h4>
+      <div class="alert alert-info">
+        Найдено {{ matched_products|length }} совпадений
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th><input type="checkbox" class="form-check-input check-all" checked></th>
+              <th>Мой товар</th>
+              <th>Товар прайса</th>
+              <th>Текущая цена</th>
+              <th>Новая цена</th>
+              <th>Тип цены</th>
+              <th>Совпадение</th>
+              <th>Лист</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in matched_products %}
+            <tr>
+              <td>
+                <input type="checkbox" 
+                       class="form-check-input to-check" 
+                       name="apply_price" 
+                       value="{{ item.product_id }}_{{ item.new_price }}"
+                       checked>
+              </td>
+              <td class="my-product">
+                <a href="url_for('site.product.edit', product_id=item.product_id) " target="_blank">
+                  {{ item.product_name }}
+                </a>
+              </td>
+              <td class="other-product">
+                {{ item.price_name }}
+              </td>
+              <td>
+                {% if item.current_special_price %}
+                  <span class="text-danger">{{ item.current_special_price|smart_int }}</span>
+                  <del class="text-muted">{{ item.current_price|smart_int }}</del>
+                {% else %}
+                  {{ item.current_price|smart_int }}
+                {% endif %}
+              </td>
+              <td class="{{ 'text-success fw-bold' if item.new_price < (item.current_special_price or item.current_price) }}">
+                {{ item.new_price|smart_int }}
+              </td>
+              <td>{{ item.price_type }}</td>
+              <td>
+                <div class="progress" style="height: 20px;">
+                  <div class="progress-bar bg-{{ 'success' if item.match_percentage > 85 else 'warning' }}" 
+                       role="progressbar" 
+                       style="width: {{ item.match_percentage }}%" 
+                       aria-valuenow="{{ item.match_percentage }}" 
+                       aria-valuemin="0" 
+                       aria-valuemax="100">
+                    {{ item.match_percentage }}%
+                  </div>
+                </div>
+              </td>
+              <td>{{ item.sheet }}</td>
+              <td>
+                <span class="delete-line">Удалить</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# Блок действий #}
+  <div class="card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="update_only_lower" name="update_only_lower">
+            <label class="form-check-label" for="update_only_lower">
+              Обновлять только если новая цена ниже текущей
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="skip_zero_prices" name="skip_zero_prices" checked>
+            <label class="form-check-label" for="skip_zero_prices">
+              Пропускать нулевые цены
+            </label>
+          </div>
+        </div>
+        
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary" name="price_action" value="normal_price">
+            Применить как обычную цену
+          </button>
+          <button type="submit" class="btn btn-success" name="price_action" value="special_price">
+            Применить как спеццену
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</form>
+
+<script>
+function findLCS(str1, str2) {
+  // Реализация алгоритма поиска наибольшей общей подпоследовательности
+  const matrix = Array(str2.length + 1).fill().map(() => Array(str1.length + 1).fill(0));
+  
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2[i-1].toLowerCase() === str1[j-1].toLowerCase()) {
+        matrix[i][j] = matrix[i-1][j-1] + 1;
+      } else {
+        matrix[i][j] = Math.max(matrix[i-1][j], matrix[i][j-1]);
+      }
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
+
+function highlightWithLCS(myText, otherText) {
+  const myChars = myText.split('');
+  const otherChars = otherText.split('');
+  const lcsLength = findLCS(myChars, otherChars);
+  const threshold = Math.max(3, lcsLength * 0.7); // Порог для подсветки
+  
+  let result = '';
+  
+  for (let i = 0; i < otherChars.length; i++) {
+    const char = otherChars[i];
+    const isMatch = myChars.some(c => c.toLowerCase() === char.toLowerCase());
+    
+    result += isMatch
+      ? `<span class="text-success">${char}</span>`
+      : `<span class="text-danger">${char}</span>`;
+  }
+  
+  return result;
+}
+
+document.querySelectorAll(".table tbody tr").forEach(tr => {
+  const myName = tr.querySelector('.my-product');
+  if (myName) {
+    myName = myName.textContent;
+    tr.querySelectorAll('.other-product').forEach(otherName => {
+      otherName.innerHTML = highlightWithLCS(myName, otherName.textContent);
+    });
+  }
+});
+</script>
+{% endblock %}

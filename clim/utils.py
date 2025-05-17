@@ -107,6 +107,7 @@ class ProductUtils:
     def all_by_filter(cls, pagination=True, filter=None):
         from .models import Category, Product, ProductAttribute, ProductOptionValue
         filter = filter or {}
+        print(filter)
         products = db.select(Product)
 
         if filter.get('group_attribute'):
@@ -189,8 +190,21 @@ class ProductUtils:
         if filter.get('new_products'):
             products = products.filter(Product.date_added == 0)
 
-        if filter.get('sort') == 'viewed':
-            products = products.order_by(Product.viewed.desc())
+        if filter.get('sort'):
+            field, dep = filter.get('sort').split('/')
+            # Получаем атрибут модели Product по имени поля
+            sort_field = getattr(Product, field, None)
+            if sort_field is None:
+                raise ValueError(f"Поле {field} не существует в модели Product")
+            # Определяем направление сортировки
+            if dep.lower() == 'desc':
+                sort_field = sort_field.desc()
+            elif dep.lower() == 'asc':
+                sort_field = sort_field.asc()
+            else:
+                raise ValueError(f"Неподдерживаемое направление сортировки: {dep}")
+            # Применяем сортировку
+            products = products.order_by(sort_field)
         else:
             products = products.order_by(Product.mpn)
 

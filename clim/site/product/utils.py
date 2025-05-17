@@ -15,11 +15,13 @@ def get_filter(method=None, path=None):
         session['stock'] = f.get('stock')
         session['field'] = f.get('field')
         session['new_products'] = f.get('new_products')
+        session['sort'] = f.get('sort')
         if path:
             session[path + '_other_filter'] = f.get('other_filter')
 
-        session['results_per_page'] = f.get('results_per_page')
+        session['results_per_page'] = f.get('results_per_page', 20)
         session['group_attribute'] = f.get('group_attribute', 0, type=int)
+        print(f.get('group_attribute', 0, type=int))
 
     filter = {
         'categories_ids': session.get('categories_ids'),
@@ -27,7 +29,8 @@ def get_filter(method=None, path=None):
         'stock': session.get('stock'),
         'field': session.get('field'),
         'group_attribute': session.get('group_attribute'),
-        'new_products': session.get('new_products')
+        'new_products': session.get('new_products'),
+        'sort': session.get('sort')
     }
 
     if path:
@@ -122,6 +125,8 @@ def new_price(self, price, price_type):
     """ Записывает цену товара и удаляет лишние """
     settings = products_prices_module.get_settings()
     special_offer_id = settings.get('special_offer_id', 0)
+
+    self.date_updated_price = datetime.now().date()
 
     product_special_offer = None
     delete_special_offer = False

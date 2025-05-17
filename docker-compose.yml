@@ -69,6 +69,19 @@ services:
       - redis
       - db
       - app
+
+  # phpmyadmin:
+  #   image: arm64v8/phpmyadmin
+  #   ports:
+  #     - "8081:80"
+  #   environment:
+  #     PMA_PORT: 3306
+  #     PMA_USER: ${MYSQL_USER}
+  #     PMA_PASSWORD: ${MYSQL_PASSWORD}
+  #   networks:
+  #     - clim-net
+  #   depends_on:
+  #     - db
 networks:
   clim-net:
     driver: bridge

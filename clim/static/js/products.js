@@ -30,6 +30,21 @@ $("body").on("click", ".delete-product", function () {
   LineCount($tab);
 });
 
+$("body").on("click", ".delete-checked", function () {
+  var $tab = $(this).closest("div[id]");
+  $tab.find(".to-check:checked").each(function () {
+    if ($tab.find("tr.product").length > 1) $(this).closest("tr").remove();
+    else newLine($tab, $(this).closest("tr"));
+  });
+  $tab.find(".to-check:checkbox").trigger("change");
+  LineCount($tab);
+});
+
+$("body").on("click", ".delete-line", function () {
+  var $tr = $(this).closest("tr");
+  $tr.remove();
+});
+
 function LineCount($tab) {
   var count = 1;
   $tab.find("tr.product").each(function () {

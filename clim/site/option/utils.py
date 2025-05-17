@@ -150,9 +150,9 @@ def get_filter_options(value, request):
         filter['stock'] = settings.get('stock')
 
     if request.method == 'POST':
-        session_post('manufacturers_ids', request.form.getlist('manufacturers_ids')) 
-        session_post('options', request.form.get('options')) 
-        session_post('per_page', request.form.get('per_page')) 
+        session_post('manufacturers_ids', request.form.getlist('manufacturers_ids'))
+        session_post('options', request.form.get('options'))
+        session_post('per_page', request.form.get('per_page'))
 
     filter['manufacturers_ids'] = session_get('manufacturers_ids')
     filter['options'] = session_get('options')

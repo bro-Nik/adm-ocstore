@@ -51,6 +51,7 @@ class Product(ProductUtils, db.Model):
     viewed = db.Column(db.Integer, default=0)
     date_added = db.Column(db.Date, default=0)
     date_modified = db.Column(db.Date, default=0)
+    date_updated_price = db.Column(db.Date, default=0)
     noindex = db.Column(db.Boolean, default=1)
     cost = db.Column(db.Float, default=0)
     description = db.relationship('ProductDescription',

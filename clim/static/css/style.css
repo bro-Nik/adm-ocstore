@@ -37,6 +37,7 @@ div#footer {
 }
 .btn-group, .btn-group-vertical {
     padding: 5px;
+    gap: 5px;
 }
 .btn-outline-not_active {
     border: none;

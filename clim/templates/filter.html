@@ -96,6 +96,18 @@
             </select>
           </div>
 
+          {% set sort = session.get('sort') %}
+          <div class="col-md-2">
+            <label class="form-label h7">Сортировка</label>
+            <select class="general-select" name="sort" data-width="100%">
+              <option value="">Нет</option>
+              <option {{ 'selected' if sort == 'date_updated_price/desc' }} value="date_updated_price/desc">По изменению цены (от раннего)</option>
+              <option {{ 'selected' if sort == 'date_updated_price/asc' }} value="date_updated_price/asc">По изменению цены (от позднего)</option>
+              <option {{ 'selected' if sort == 'viewed/desc' }} value="viewed/desc">По просмотрам (от большего)</option>
+              <option {{ 'selected' if sort == 'viewed/asc' }} value="viewed/asc">По просмотрам (от малого)</option>
+            </select>
+          </div>
+
           <div class="col-md-1 d-flex align-items-end">
             <button id="resetFilter" class="btn btn-primary" type="button">Сбросить</button>
           </div>

@@ -31,7 +31,12 @@
       <tr>
         <th class="sticky-table">Название</th>
         <th>Цена</th>
-        <th>Дата обновления</th>
+        {% for shop in other_shops %}
+          <th>
+            <input id="shop-{{ shop.shop_id }}" class="form-check-input check-group" type="checkbox">
+            {{ shop.name }}
+          </th>
+        {% endfor %}
       </tr>
     </thead>
     <tbody>
@@ -45,6 +50,11 @@
             <tr>
               <td><b>{{ attribute.text }}</b></td>
               <td></td>
+              {% for shop in other_shops %}
+                <td>
+                  <input id="shop-{{ shop.shop_id }}-group-{{ var.group_count }}" class="form-check-input check-group" type="checkbox">
+                </td>
+              {% endfor %}
             </tr>
           {% endif %}
         {% endfor %}
@@ -60,7 +70,29 @@
               {{ product.price|smart_int }}
             {% endif %}
           </td>
-          <td>{{ product.date_updated_price|how_long_ago }}</td>
+
+          {% for shop in other_shops %}
+            <td>
+              {% if product.other_shop %}
+                {% for other_product in product.other_shop %}
+                  {% if other_product.shop_id == shop.shop_id %}
+                    {% if other_product.link_confirmed %}
+                      {% if special_price and other_product.price|int == special_price|int %}
+                        <span class="text-success">{{ other_product.price }}</span>
+                      {% elif not special_price and other_product.price|int == product.price|int %}
+                        <span class="text-success">{{ other_product.price }}</span>
+                      {% else %}
+                        <input class="form-check-input to-check shop-{{ shop.shop_id }} shop-{{ shop.shop_id }}-group-{{ var.group_count }}" type="radio"
+                        value="{{ product.product_id }}-{{ other_product.price }}">
+                        <span class="text-danger">{{ other_product.price }}</span>
+                      {% endif %}
+                      {{ '(' + other_product.text|how_long_ago + ')' if other_product.text }}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </td>
+          {% endfor %}
         </tr>
       {% endfor %}
     </tbody>
