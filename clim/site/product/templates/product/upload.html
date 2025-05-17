@@ -197,8 +197,8 @@ function highlightWithLCS(myText, otherText) {
   let result = '';
   
   for (let i = 0; i < otherChars.length; i++) {
-    const char = otherChars[i];
-    const isMatch = myChars.some(c => c.toLowerCase() === char.toLowerCase());
+    var char = otherChars[i];
+    var isMatch = myChars.some(c => c.toLowerCase() === char.toLowerCase());
     
     result += isMatch
       ? `<span class="text-success">${char}</span>`
@@ -211,9 +211,8 @@ function highlightWithLCS(myText, otherText) {
 document.querySelectorAll(".table tbody tr").forEach(tr => {
   const myName = tr.querySelector('.my-product');
   if (myName) {
-    myName = myName.textContent;
     tr.querySelectorAll('.other-product').forEach(otherName => {
-      otherName.innerHTML = highlightWithLCS(myName, otherName.textContent);
+      otherName.innerHTML = highlightWithLCS(myName.textContent, otherName.textContent);
     });
   }
 });
