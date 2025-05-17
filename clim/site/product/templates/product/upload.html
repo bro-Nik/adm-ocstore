@@ -56,7 +56,7 @@
   </div>
   {% endif %}
 
-<form id="PriceUpload" class="d-flex flex-column gap-3" action="{{ url_for('.products_apply_prices') }}" method="post" class="default-form-action">
+<form id="PriceUpload" class="d-flex flex-column gap-3 default-form-action" action="{{ url_for('.products_apply_prices') }}" method="post">
   {# Блок результатов сопоставления #}
   {% if matched_products %}
   <div class="card">
